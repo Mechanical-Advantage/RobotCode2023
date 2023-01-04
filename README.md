@@ -1,6 +1,6 @@
 # RobotCode2023
 
-[![Build](https://github.com/Mechanical-Advantage/RobotCode2023/actions/workflows/build.yml/badge.svg?branch=main&event=push)](https://github.com/Mechanical-Advantage/RobotCode2023/actions/workflows/build.yml) ![Visitor Badge](https://visitor-badge.glitch.me/badge?page_id=org.littletonrobotics.frc2023.visitor-badge)
+[![Build](https://github.com/Mechanical-Advantage/RobotCode2023/actions/workflows/build.yml/badge.svg?branch=main&event=push)](https://github.com/Mechanical-Advantage/RobotCode2023/actions/workflows/build.yml)
 
 This project contains 6328's robot code for the 2023 CHARGED UP game. See also:
 
