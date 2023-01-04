@@ -12,6 +12,8 @@ import edu.wpi.first.wpilibj.Threads;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.BiConsumer;
 import org.littletonrobotics.frc2023.Constants.Mode;
 import org.littletonrobotics.frc2023.util.Alert;
@@ -95,12 +97,16 @@ public class Robot extends LoggedRobot {
     logger.start();
 
     // Log active commands
+    Map<String, Integer> commandCounts = new HashMap<>();
     BiConsumer<Command, Boolean> logCommandFunction =
         (Command command, Boolean active) -> {
+          String name = command.getName();
+          int count = commandCounts.getOrDefault(name, 0) + (active ? 1 : -1);
+          commandCounts.put(name, count);
           Logger.getInstance()
               .recordOutput(
-                  "Commands/" + command.getName() + "_" + Integer.toHexString(command.hashCode()),
-                  active);
+                  "CommandsUnique/" + name + "_" + Integer.toHexString(command.hashCode()), active);
+          Logger.getInstance().recordOutput("CommandsAll/" + name, count > 0);
         };
     CommandScheduler.getInstance()
         .onCommandInitialize(
