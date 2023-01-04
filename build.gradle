@@ -1,6 +1,6 @@
 plugins {
     id "java"
-    id "edu.wpi.first.GradleRIO" version "2023.1.1-beta-7"
+    id "edu.wpi.first.GradleRIO" version "2023.1.1"
     id "com.peterabeles.gversion" version "1.10"
     id "com.diffplug.spotless" version "6.12.0"
 }
@@ -91,7 +91,7 @@ dependencies {
 
     implementation "gov.nist.math:jama:1.0.3"
 
-    annotationProcessor "org.littletonrobotics.akit.junction:junction-autolog:2.0.0-beta-4"
+    annotationProcessor "org.littletonrobotics.akit.junction:junction-autolog:2.0.0"
 }
 
 test {
@@ -101,7 +101,6 @@ test {
 
 // Simulation configuration (e.g. environment variables).
 wpi.sim.addGui()
-wpi.sim.addDriverstation()
 
 // Setting up my Jar File. In this case, adding all libraries into the main jar ("fat jar")
 // in order to make them all available at runtime. Also adding the manifest so WPILib
