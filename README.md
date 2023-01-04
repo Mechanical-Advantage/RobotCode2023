@@ -4,7 +4,7 @@
 
 This project contains 6328's robot code for the 2023 CHARGED UP game. See also:
 
-* Our #OpenAlliance build thread on Chief Delphi (coming soon).
+* Our #OpenAlliance [build thread](https://www.chiefdelphi.com/t/frc-6328-mechanical-advantage-2023-build-thread/420691) on Chief Delphi.
 
 * Our logging framework [AdvantageKit](https://github.com/Mechanical-Advantage/AdvantageKit), used heavily in this project.
 
