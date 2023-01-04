@@ -43,5 +43,7 @@
   "[json]": {
     "editor.defaultFormatter": "richardwillis.vscode-spotless-gradle"
   },
+  "wpilib.deployOffline": true,
+  "wpilib.offline": false,
   "wpilib.skipTests": false
 }
