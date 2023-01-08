@@ -190,6 +190,21 @@ public final class FieldConstants {
         singleSubstationLowZ + singleSubstationHeight;
   }
 
+  // Locations of staged game pieces
+  public static final class StagingLocations {
+    public static final double centerOffsetX = Units.inchesToMeters(47.36);
+    public static final double positionX = fieldLength / 2.0 - Units.inchesToMeters(47.36);
+    public static final double firstY = Units.inchesToMeters(36.19);
+    public static final double separationY = Units.inchesToMeters(48.0);
+    public static final Translation2d[] translations = new Translation2d[4];
+
+    static {
+      for (int i = 0; i < translations.length; i++) {
+        translations[i] = new Translation2d(positionX, firstY + (i * separationY));
+      }
+    }
+  }
+
   // AprilTag locations (do not flip for red alliance)
   public static final Map<Integer, Pose3d> aprilTags =
       Map.of(
