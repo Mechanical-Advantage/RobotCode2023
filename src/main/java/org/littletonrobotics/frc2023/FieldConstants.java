@@ -169,6 +169,7 @@ public final class FieldConstants {
     // Double substation dimensions
     public static final double doubleSubstationLength = Units.inchesToMeters(14.0);
     public static final double doubleSubstationX = innerX - doubleSubstationLength;
+    public static final double doubleSubstationShelfZ = Units.inchesToMeters(37.375);
 
     // Single substation dimensions
     public static final double singleSubstationWidth = Units.inchesToMeters(22.75);
@@ -178,8 +179,15 @@ public final class FieldConstants {
         singleSubstationLeftX + (singleSubstationWidth / 2.0);
     public static final double singleSubstationRightX =
         singleSubstationLeftX + singleSubstationWidth;
-    public static final Translation2d singleSubstationCenter =
+    public static final Translation2d singleSubstationTranslation =
         new Translation2d(singleSubstationCenterX, leftY);
+
+    public static final double singleSubstationHeight = Units.inchesToMeters(18.0);
+    public static final double singleSubstationLowZ = Units.inchesToMeters(27.125);
+    public static final double singleSubstationCenterZ =
+        singleSubstationLowZ + (singleSubstationHeight / 2.0);
+    public static final double singleSubstationHighZ =
+        singleSubstationLowZ + singleSubstationHeight;
   }
 
   // AprilTag locations (do not flip for red alliance)
