@@ -32,10 +32,10 @@ deploy {
                 }
 
                 // Static files artifact
-                // frcStaticFileDeploy(getArtifactTypeClass("FileTreeArtifact")) {
-                //     files = project.fileTree("src/main/deploy")
-                //     directory = "/home/lvuser/deploy"
-                // }
+                frcStaticFileDeploy(getArtifactTypeClass("FileTreeArtifact")) {
+                    files = project.fileTree("src/main/deploy")
+                    directory = "/home/lvuser/deploy"
+                }
             }
         }
     }
@@ -90,6 +90,8 @@ dependencies {
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.4.2"
 
     implementation "gov.nist.math:jama:1.0.3"
+    implementation "io.javalin:javalin:5.3.0"
+    implementation "org.slf4j:slf4j-simple:2.0.3"
 
     annotationProcessor "org.littletonrobotics.akit.junction:junction-autolog:2.0.0"
 }

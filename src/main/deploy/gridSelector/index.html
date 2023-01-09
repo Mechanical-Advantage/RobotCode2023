@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>6328 Grid Selector</title>
+
+    <style>
+      body {
+        background-color: red;
+      }
+
+      table {
+        position: absolute;
+        left: 0%;
+        width: 100%;
+        top: 0%;
+        height: 100%;
+        border-spacing: 10px;
+      }
+
+      td.hybrid {
+        background-color: #777;
+      }
+
+      td.cone {
+        background-color: #333;
+      }
+
+      td.cube {
+        background-color: #aaa;
+      }
+
+      td.active {
+        background-color: orange;
+      }
+    </style>
+
+    <script>
+      let socket = null;
+
+      function connect() {
+        socket = new WebSocket("ws://" + window.location.host + "/ws");
+
+        socket.addEventListener("open", () => {
+          document.body.style.backgroundColor = "white";
+        });
+
+        socket.addEventListener("close", () => {
+          socket = null;
+          window.setTimeout(connect, 250);
+
+          document.body.style.backgroundColor = "red";
+          Array.from(document.getElementsByClassName("active")).forEach(
+            (element) => {
+              element.classList.remove("active");
+            }
+          );
+        });
+
+        socket.addEventListener("message", (event) => {
+          let index = Number(event.data);
+          Array.from(document.getElementsByClassName("active")).forEach(
+            (element) => {
+              element.classList.remove("active");
+            }
+          );
+          if (!isNaN(index) && index !== -1) {
+            document.getElementsByTagName("td")[index].classList.add("active");
+          }
+        });
+      }
+
+      window.addEventListener("load", () => {
+        Array.from(document.getElementsByTagName("td")).forEach(
+          (cell, index) => {
+            cell.addEventListener("click", () => {
+              if (socket !== null) {
+                socket.send(index.toString());
+              }
+            });
+          }
+        );
+
+        connect();
+      });
+    </script>
+  </head>
+
+  <body>
+    <table>
+      <tbody>
+        <tr>
+          <td class="hybrid"></td>
+          <td class="hybrid"></td>
+          <td class="hybrid"></td>
+          <td class="hybrid"></td>
+          <td class="hybrid"></td>
+          <td class="hybrid"></td>
+          <td class="hybrid"></td>
+          <td class="hybrid"></td>
+          <td class="hybrid"></td>
+        </tr>
+        <tr>
+          <td class="cone"></td>
+          <td class="cube"></td>
+          <td class="cone"></td>
+          <td class="cone"></td>
+          <td class="cube"></td>
+          <td class="cone"></td>
+          <td class="cone"></td>
+          <td class="cube"></td>
+          <td class="cone"></td>
+        </tr>
+        <tr>
+          <td class="cone"></td>
+          <td class="cube"></td>
+          <td class="cone"></td>
+          <td class="cone"></td>
+          <td class="cube"></td>
+          <td class="cone"></td>
+          <td class="cone"></td>
+          <td class="cube"></td>
+          <td class="cone"></td>
+        </tr>
+      </tbody>
+    </table>
+  </body>
+</html>
