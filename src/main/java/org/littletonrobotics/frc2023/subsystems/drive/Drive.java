@@ -32,7 +32,7 @@ public class Drive extends SubsystemBase {
   private static final double coastThresholdMetersPerSec =
       0.05; // Need to be under this to switch to coast when disabling
   private static final double coastThresholdSecs =
-      4.0; // Need to be under the above speed for this length of time to switch to coast
+      6.0; // Need to be under the above speed for this length of time to switch to coast
 
   private final GyroIO gyroIO;
   private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
