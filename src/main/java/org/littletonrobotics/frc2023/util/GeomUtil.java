@@ -13,6 +13,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Twist2d;
 
 /** Geometry utilities for working with translations, rotations, transforms, and poses. */
 public class GeomUtil {
@@ -86,6 +87,17 @@ public class GeomUtil {
    */
   public static Pose2d rotationToPose(Rotation2d rotation) {
     return new Pose2d(new Translation2d(), rotation);
+  }
+
+  /**
+   * Multiplies a twist by a scaling factor
+   *
+   * @param twist The twist to multiply
+   * @param factor The scaling factor for the twist components
+   * @return The new twist
+   */
+  public static Twist2d multiplyTwist(Twist2d twist, double factor) {
+    return new Twist2d(twist.dx * factor, twist.dy * factor, twist.dtheta * factor);
   }
 
   /**

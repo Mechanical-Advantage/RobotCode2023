@@ -20,4 +20,11 @@ public class OverrideOI {
   public OverrideOI(int port) {
     overrides = new Joystick(port);
   }
+
+  public boolean getRobotRelative() {
+    if (overrides == null) {
+      return false;
+    }
+    return overrides.getRawButton(1);
+  }
 }

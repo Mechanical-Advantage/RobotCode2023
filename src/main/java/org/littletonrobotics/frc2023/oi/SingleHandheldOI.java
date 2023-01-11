@@ -8,43 +8,43 @@
 package org.littletonrobotics.frc2023.oi;
 
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
-import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 
 /** Class for controlling the robot with a single Xbox controller. */
 public class SingleHandheldOI extends HandheldOI {
-  private final XboxController controller;
+  private final CommandXboxController controller;
 
   public SingleHandheldOI(int port) {
-    controller = new XboxController(port);
+    controller = new CommandXboxController(port);
   }
 
   @Override
   public double getLeftDriveX() {
-    return controller.getLeftX();
+    return -controller.getLeftY();
   }
 
   @Override
   public double getLeftDriveY() {
-    return controller.getLeftY() * -1;
+    return -controller.getLeftX();
   }
 
   @Override
   public double getRightDriveX() {
-    return controller.getRightX();
+    return -controller.getRightY();
   }
 
   @Override
   public double getRightDriveY() {
-    return controller.getRightY() * -1;
+    return -controller.getRightX();
   }
 
   @Override
   public void setDriverRumble(double percent) {
-    controller.setRumble(RumbleType.kRightRumble, percent);
+    controller.getHID().setRumble(RumbleType.kRightRumble, percent);
   }
 
   @Override
   public void setOperatorRumble(double percent) {
-    controller.setRumble(RumbleType.kRightRumble, percent);
+    controller.getHID().setRumble(RumbleType.kRightRumble, percent);
   }
 }

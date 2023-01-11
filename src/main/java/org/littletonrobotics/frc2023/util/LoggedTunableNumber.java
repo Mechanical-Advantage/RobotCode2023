@@ -7,6 +7,8 @@
 
 package org.littletonrobotics.frc2023.util;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.littletonrobotics.frc2023.Constants;
 import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
@@ -21,7 +23,7 @@ public class LoggedTunableNumber {
   private boolean hasDefault = false;
   private double defaultValue;
   private LoggedDashboardNumber dashboardNumber;
-  private double lastHasChangedValue;
+  private Map<Integer, Double> lastHasChangedValues = new HashMap<>();
 
   /**
    * Create a new LoggedTunableNumber
@@ -74,13 +76,16 @@ public class LoggedTunableNumber {
   /**
    * Checks whether the number has changed since our last check
    *
+   * @param id Unique identifier for the caller to avoid conflicts when shared between multiple
+   *     objects. Recommended approach is to pass the result of "hashCode()"
    * @return True if the number has changed since the last time this method was called, false
-   *     otherwise
+   *     otherwise.
    */
-  public boolean hasChanged() {
+  public boolean hasChanged(int id) {
     double currentValue = get();
-    if (currentValue != lastHasChangedValue) {
-      lastHasChangedValue = currentValue;
+    Double lastValue = lastHasChangedValues.get(id);
+    if (lastValue == null || currentValue != lastValue) {
+      lastHasChangedValues.put(id, currentValue);
       return true;
     }
 
