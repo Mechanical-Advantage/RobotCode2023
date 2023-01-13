@@ -8,11 +8,16 @@
 package org.littletonrobotics.frc2023;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import java.util.List;
 import org.littletonrobotics.frc2023.Constants.Mode;
+import org.littletonrobotics.frc2023.commands.DriveTrajectory;
 import org.littletonrobotics.frc2023.commands.DriveWithJoysticks;
+import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization;
+import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
 import org.littletonrobotics.frc2023.oi.HandheldOI;
 import org.littletonrobotics.frc2023.oi.OISelector;
 import org.littletonrobotics.frc2023.oi.OverrideOI;
@@ -25,6 +30,7 @@ import org.littletonrobotics.frc2023.subsystems.drive.ModuleIOSparkMax;
 import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
 import org.littletonrobotics.frc2023.util.SparkMaxBurnManager;
+import org.littletonrobotics.frc2023.util.trajectory.Waypoint;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 public class RobotContainer {
@@ -92,8 +98,26 @@ public class RobotContainer {
 
     // Set up auto routines
     autoChooser.addDefaultOption("Do Nothing", null);
-    autoChooser.addDefaultOption(
-        "Reset Odometry", new InstantCommand(() -> drive.setPose(new Pose2d())));
+    autoChooser.addOption("Reset Odometry", new InstantCommand(() -> drive.setPose(new Pose2d())));
+    autoChooser.addOption(
+        "Drive Characterization",
+        new FeedForwardCharacterization(
+            drive,
+            true,
+            new FeedForwardCharacterizationData("drive"),
+            drive::runCharacterizationVolts,
+            drive::getCharacterizationVelocity));
+
+    autoChooser.addOption(
+        "Test Trajectory",
+        new InstantCommand(() -> drive.setPose(new Pose2d()))
+            .andThen(
+                new DriveTrajectory(
+                    drive,
+                    List.of(
+                        Waypoint.fromHolonomicPose(new Pose2d()),
+                        Waypoint.fromHolonomicPose(
+                            new Pose2d(3.0, 0.0, Rotation2d.fromDegrees(45.0)))))));
 
     // Alert if in tuning mode
     if (Constants.tuningMode) {

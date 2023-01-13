@@ -9,13 +9,10 @@ package org.littletonrobotics.frc2023;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import java.util.Map;
 
 /**
@@ -256,33 +253,4 @@ public final class FieldConstants {
               Units.inchesToMeters(42.19),
               Units.inchesToMeters(18.22),
               new Rotation3d()));
-
-  /**
-   * Flips a translation to the correct side of the field based on the current alliance color. By
-   * default, all translations and poses in {@link FieldConstants} are stored with the origin at the
-   * rightmost point on the BLUE ALLIANCE wall.
-   */
-  public static Translation2d allianceFlip(Translation2d translation) {
-    if (DriverStation.getAlliance() == Alliance.Red) {
-      return new Translation2d(fieldLength - translation.getX(), translation.getY());
-    } else {
-      return translation;
-    }
-  }
-
-  /**
-   * Flips a pose to the correct side of the field based on the current alliance color. By default,
-   * all translations and poses in {@link FieldConstants} are stored with the origin at the
-   * rightmost point on the BLUE ALLIANCE wall.
-   */
-  public static Pose2d allianceFlip(Pose2d pose) {
-    if (DriverStation.getAlliance() == Alliance.Red) {
-      return new Pose2d(
-          fieldLength - pose.getX(),
-          pose.getY(),
-          new Rotation2d(-pose.getRotation().getCos(), pose.getRotation().getSin()));
-    } else {
-      return pose;
-    }
-  }
 }
