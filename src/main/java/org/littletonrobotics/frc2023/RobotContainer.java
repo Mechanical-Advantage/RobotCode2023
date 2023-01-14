@@ -21,6 +21,9 @@ import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization.FeedFo
 import org.littletonrobotics.frc2023.oi.HandheldOI;
 import org.littletonrobotics.frc2023.oi.OISelector;
 import org.littletonrobotics.frc2023.oi.OverrideOI;
+import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVision;
+import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIO;
+import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIONorthstar;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
 import org.littletonrobotics.frc2023.subsystems.drive.GyroIO;
 import org.littletonrobotics.frc2023.subsystems.drive.GyroIOPigeon2;
@@ -37,6 +40,7 @@ public class RobotContainer {
 
   // Subsystems
   private Drive drive;
+  private AprilTagVision aprilTagVision;
 
   // OI objects
   private OverrideOI overrideOI = new OverrideOI();
@@ -72,20 +76,32 @@ public class RobotContainer {
                   new ModuleIOSim(),
                   new ModuleIOSim(),
                   new ModuleIOSim());
+          aprilTagVision = new AprilTagVision(new AprilTagVisionIONorthstar("northstar_0"));
           break;
       }
     }
 
     // Instantiate missing subsystems
-    drive =
-        drive != null
-            ? drive
-            : new Drive(
-                new GyroIO() {},
-                new ModuleIO() {},
-                new ModuleIO() {},
-                new ModuleIO() {},
-                new ModuleIO() {});
+    if (drive == null) {
+      drive =
+          new Drive(
+              new GyroIO() {},
+              new ModuleIO() {},
+              new ModuleIO() {},
+              new ModuleIO() {},
+              new ModuleIO() {});
+    }
+    if (aprilTagVision == null) {
+      // In replay, match the number of instances for each robot
+      switch (Constants.getRobot()) {
+        case ROBOT_SIMBOT:
+          aprilTagVision = new AprilTagVision(new AprilTagVisionIO() {});
+          break;
+        default:
+          aprilTagVision = new AprilTagVision();
+          break;
+      }
+    }
 
     // Set up subsystems
     drive.setDefaultCommand(
@@ -95,6 +111,7 @@ public class RobotContainer {
             () -> handheldOI.getLeftDriveY(),
             () -> handheldOI.getRightDriveY(),
             () -> overrideOI.getRobotRelative()));
+    aprilTagVision.setDataInterfaces(drive::getPose, drive::addVisionData);
 
     // Set up auto routines
     autoChooser.addDefaultOption("Do Nothing", null);

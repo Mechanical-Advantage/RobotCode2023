@@ -27,6 +27,7 @@ public final class FieldConstants {
   public static final double fieldLength = Units.inchesToMeters(651.25);
   public static final double fieldWidth = Units.inchesToMeters(315.5);
   public static final double tapeWidth = Units.inchesToMeters(2.0);
+  public static final double aprilTagWidth = Units.inchesToMeters(6.0);
 
   // Dimensions for community and charging station, including the tape.
   public static final class Community {

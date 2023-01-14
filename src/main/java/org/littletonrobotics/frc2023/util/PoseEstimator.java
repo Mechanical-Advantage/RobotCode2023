@@ -54,41 +54,48 @@ public class PoseEstimator {
   }
 
   /** Records a new set of vision updates. */
-  public void addVisionData(double timestamp, List<VisionUpdate> visionUpdates) {
-    if (updates.containsKey(timestamp)) {
-      // There was already an update at this timestamp, add to it
-      var oldVisionUpdates = updates.get(timestamp).visionUpdates();
-      oldVisionUpdates.addAll(visionUpdates);
-      oldVisionUpdates.sort(VisionUpdate.compareDescStdDev);
+  public void addVisionData(List<TimestampedVisionUpdate> visionData) {
+    for (var timestampedVisionUpdate : visionData) {
+      var timestamp = timestampedVisionUpdate.timestamp();
+      var visionUpdate =
+          new VisionUpdate(timestampedVisionUpdate.pose(), timestampedVisionUpdate.stdDevs());
 
-    } else {
-      // Insert a new update
-      var prevUpdate = updates.floorEntry(timestamp);
-      var nextUpdate = updates.ceilingEntry(timestamp);
-      if (prevUpdate == null || nextUpdate == null) {
-        // Outside the range of existing data
-        return;
+      if (updates.containsKey(timestamp)) {
+        // There was already an update at this timestamp, add to it
+        var oldVisionUpdates = updates.get(timestamp).visionUpdates();
+        oldVisionUpdates.add(visionUpdate);
+        oldVisionUpdates.sort(VisionUpdate.compareDescStdDev);
+
+      } else {
+        // Insert a new update
+        var prevUpdate = updates.floorEntry(timestamp);
+        var nextUpdate = updates.ceilingEntry(timestamp);
+        if (prevUpdate == null || nextUpdate == null) {
+          // Outside the range of existing data
+          return;
+        }
+
+        // Create partial twists (prev -> vision, vision -> next)
+        var twist0 =
+            GeomUtil.multiplyTwist(
+                nextUpdate.getValue().twist(),
+                (timestamp - prevUpdate.getKey()) / (nextUpdate.getKey() - prevUpdate.getKey()));
+        var twist1 =
+            GeomUtil.multiplyTwist(
+                nextUpdate.getValue().twist(),
+                (nextUpdate.getKey() - timestamp) / (nextUpdate.getKey() - prevUpdate.getKey()));
+
+        // Add new pose updates
+        var newVisionUpdates = new ArrayList<VisionUpdate>();
+        newVisionUpdates.add(visionUpdate);
+        newVisionUpdates.sort(VisionUpdate.compareDescStdDev);
+        updates.put(timestamp, new PoseUpdate(twist0, newVisionUpdates));
+        updates.put(
+            nextUpdate.getKey(), new PoseUpdate(twist1, nextUpdate.getValue().visionUpdates()));
       }
-
-      // Create partial twists (prev -> vision, vision -> next)
-      var twist0 =
-          GeomUtil.multiplyTwist(
-              nextUpdate.getValue().twist(),
-              (timestamp - prevUpdate.getKey()) / (nextUpdate.getKey() - prevUpdate.getKey()));
-      var twist1 =
-          GeomUtil.multiplyTwist(
-              nextUpdate.getValue().twist(),
-              (nextUpdate.getKey() - timestamp) / (nextUpdate.getKey() - prevUpdate.getKey()));
-
-      // Add new pose updates
-      var newVisionUpdates = new ArrayList<VisionUpdate>();
-      newVisionUpdates.addAll(visionUpdates);
-      newVisionUpdates.sort(VisionUpdate.compareDescStdDev);
-      updates.put(timestamp, new PoseUpdate(twist0, newVisionUpdates));
-      updates.put(
-          nextUpdate.getKey(), new PoseUpdate(twist1, nextUpdate.getValue().visionUpdates()));
     }
 
+    // Recalculate latest pose once
     update();
   }
 
@@ -161,4 +168,8 @@ public class PoseEstimator {
               b.stdDevs().get(0, 0) + b.stdDevs().get(1, 0));
         };
   }
+
+  /** Represents a single vision pose with a timestamp and associated standard deviations. */
+  public static record TimestampedVisionUpdate(
+      double timestamp, Pose2d pose, Matrix<N3, N1> stdDevs) {}
 }

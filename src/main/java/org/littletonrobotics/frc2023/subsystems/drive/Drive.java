@@ -25,7 +25,7 @@ import java.util.List;
 import org.littletonrobotics.frc2023.Constants;
 import org.littletonrobotics.frc2023.util.LoggedTunableNumber;
 import org.littletonrobotics.frc2023.util.PoseEstimator;
-import org.littletonrobotics.frc2023.util.PoseEstimator.VisionUpdate;
+import org.littletonrobotics.frc2023.util.PoseEstimator.TimestampedVisionUpdate;
 import org.littletonrobotics.junction.Logger;
 
 public class Drive extends SubsystemBase {
@@ -248,8 +248,8 @@ public class Drive extends SubsystemBase {
   }
 
   /** Adds vision data to the pose esimation. */
-  public void addVisionData(double timestamp, List<VisionUpdate> visionUpdates) {
-    poseEstimator.addVisionData(timestamp, visionUpdates);
+  public void addVisionData(List<TimestampedVisionUpdate> visionData) {
+    poseEstimator.addVisionData(visionData);
   }
 
   /** Returns an array of module translations. */
