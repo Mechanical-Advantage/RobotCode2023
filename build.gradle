@@ -1,6 +1,6 @@
 plugins {
     id "java"
-    id "edu.wpi.first.GradleRIO" version "2023.1.1"
+    id "edu.wpi.first.GradleRIO" version "2023.2.1"
     id "com.peterabeles.gversion" version "1.10"
     id "com.diffplug.spotless" version "6.12.0"
 }
@@ -91,7 +91,7 @@ dependencies {
 
     implementation "gov.nist.math:jama:1.0.3"
 
-    annotationProcessor "org.littletonrobotics.akit.junction:junction-autolog:2.1.0"
+    annotationProcessor "org.littletonrobotics.akit.junction:junction-autolog:2.1.1"
 }
 
 test {
