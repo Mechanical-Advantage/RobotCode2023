@@ -69,7 +69,9 @@ public class AprilTagVision extends SubsystemBase {
     // Loop over instances
     Pose2d currentPose = poseSupplier.get();
     List<TimestampedVisionUpdate> visionUpdates = new ArrayList<>();
-    List<Pose2d> visionPoses = new ArrayList<>();
+    List<Pose2d> visionPose2ds = new ArrayList<>();
+    List<Pose3d> tagPose3ds = new ArrayList<>();
+    List<Integer> tagIDs = new ArrayList<>();
     for (int instanceIndex = 0; instanceIndex < io.length; instanceIndex++) {
       // Loop over frames
       for (int frameIndex = 0; frameIndex < inputs[instanceIndex].timestamps.length; frameIndex++) {
@@ -119,30 +121,47 @@ public class AprilTagVision extends SubsystemBase {
 
           // Choose better pose
           Pose2d robotPose;
+          Pose3d tagPose;
           if (error0 < error1 * ambiguityThreshold) {
             robotPose = robotPose0;
+            tagPose = pose0;
           } else if (error1 < error0 * ambiguityThreshold) {
             robotPose = robotPose1;
+            tagPose = pose1;
           } else if (robotPose0.getTranslation().getDistance(currentPose.getTranslation())
               < robotPose1.getTranslation().getDistance(currentPose.getTranslation())) {
             robotPose = robotPose0;
+            tagPose = pose0;
           } else {
             robotPose = robotPose1;
+            tagPose = pose1;
           }
+
+          // Log tag pose
+          tagPose3ds.add(tagPose);
+          tagIDs.add(tagId);
 
           // Add to vision updates
           visionUpdates.add(
               new TimestampedVisionUpdate(timestamp, robotPose, VecBuilder.fill(0.1, 0.1, 0.1)));
-          visionPoses.add(robotPose);
+          visionPose2ds.add(robotPose);
         }
       }
     }
 
     // Log poses
-    if (visionPoses.size() > 0) {
+    if (visionPose2ds.size() > 0) {
       Logger.getInstance()
           .recordOutput(
-              "Odometry/VisionPoses", visionPoses.toArray(new Pose2d[visionPoses.size()]));
+              "Odometry/VisionPoses", visionPose2ds.toArray(new Pose2d[visionPose2ds.size()]));
+    }
+    if (tagPose3ds.size() > 0) {
+      Logger.getInstance()
+          .recordOutput(
+              "AprilTagVision/TagPoses", tagPose3ds.toArray(new Pose3d[tagPose3ds.size()]));
+      Logger.getInstance()
+          .recordOutput(
+              "AprilTagVision/TagIDs", tagIDs.stream().mapToLong(Long::valueOf).toArray());
     }
 
     // Send results to pose esimator
