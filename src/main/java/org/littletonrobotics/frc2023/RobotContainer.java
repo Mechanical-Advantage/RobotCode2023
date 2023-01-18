@@ -76,7 +76,7 @@ public class RobotContainer {
                   new ModuleIOSim(),
                   new ModuleIOSim(),
                   new ModuleIOSim());
-          aprilTagVision = new AprilTagVision(new AprilTagVisionIONorthstar("northstar_0"));
+          aprilTagVision = new AprilTagVision(new AprilTagVisionIONorthstar("northstar"));
           break;
       }
     }

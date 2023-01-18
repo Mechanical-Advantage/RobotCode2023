@@ -14,11 +14,11 @@ import edu.wpi.first.networktables.StringSubscriber;
 import org.littletonrobotics.frc2023.FieldConstants;
 
 public class AprilTagVisionIONorthstar implements AprilTagVisionIO {
-  private static final int cameraId = 1;
+  private static final int cameraId = 0;
   private static final int cameraResolutionWidth = 1600;
   private static final int cameraResolutionHeight = 1200;
-  private static final int cameraResolutionAutoExposure = 1;
-  private static final int cameraResolutionExposure = 15;
+  private static final int cameraAutoExposure = 1;
+  private static final int cameraExposure = 25;
   private static final double fiducialSize = FieldConstants.aprilTagWidth;
 
   private final StringSubscriber observationSubscriber;
@@ -31,8 +31,8 @@ public class AprilTagVisionIONorthstar implements AprilTagVisionIO {
     configTable.getIntegerTopic("camera_id").publish().set(cameraId);
     configTable.getIntegerTopic("camera_resolution_width").publish().set(cameraResolutionWidth);
     configTable.getIntegerTopic("camera_resolution_height").publish().set(cameraResolutionHeight);
-    configTable.getIntegerTopic("camera_auto_exposure").publish().set(cameraResolutionAutoExposure);
-    configTable.getIntegerTopic("camera_exposure").publish().set(cameraResolutionExposure);
+    configTable.getIntegerTopic("camera_auto_exposure").publish().set(cameraAutoExposure);
+    configTable.getIntegerTopic("camera_exposure").publish().set(cameraExposure);
     configTable.getDoubleTopic("fiducial_size_m").publish().set(fiducialSize);
 
     var outputTable = northstarTable.getSubTable("output");
