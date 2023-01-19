@@ -91,7 +91,8 @@ dependencies {
 
     implementation "gov.nist.math:jama:1.0.3"
 
-    annotationProcessor "org.littletonrobotics.akit.junction:junction-autolog:2.1.1"
+    def akitJson = new groovy.json.JsonSlurper().parseText(new File(projectDir.getAbsolutePath() + "/vendordeps/AdvantageKit.json").text)
+    annotationProcessor "org.littletonrobotics.akit.junction:junction-autolog:$akitJson.version"
 }
 
 test {
