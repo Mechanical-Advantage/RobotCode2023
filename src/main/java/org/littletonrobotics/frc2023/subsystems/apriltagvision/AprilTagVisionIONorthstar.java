@@ -18,8 +18,8 @@ public class AprilTagVisionIONorthstar implements AprilTagVisionIO {
   private static final int cameraResolutionWidth = 1600;
   private static final int cameraResolutionHeight = 1200;
   private static final int cameraAutoExposure = 1;
-  private static final int cameraExposure = 25;
-  private static final double fiducialSize = FieldConstants.aprilTagWidth;
+  private static final int cameraExposure = 5;
+  private static final int cameraGain = 25;
 
   private final StringSubscriber observationSubscriber;
   private final IntegerSubscriber fpsSubscriber;
@@ -33,7 +33,8 @@ public class AprilTagVisionIONorthstar implements AprilTagVisionIO {
     configTable.getIntegerTopic("camera_resolution_height").publish().set(cameraResolutionHeight);
     configTable.getIntegerTopic("camera_auto_exposure").publish().set(cameraAutoExposure);
     configTable.getIntegerTopic("camera_exposure").publish().set(cameraExposure);
-    configTable.getDoubleTopic("fiducial_size_m").publish().set(fiducialSize);
+    configTable.getIntegerTopic("camera_gain").publish().set(cameraGain);
+    configTable.getDoubleTopic("fiducial_size_m").publish().set(FieldConstants.aprilTagWidth);
 
     var outputTable = northstarTable.getSubTable("output");
     observationSubscriber =

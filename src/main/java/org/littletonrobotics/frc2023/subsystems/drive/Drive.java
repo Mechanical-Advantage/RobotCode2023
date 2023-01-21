@@ -54,7 +54,7 @@ public class Drive extends SubsystemBase {
   private boolean isBrakeMode = false;
   private Timer lastMovementTimer = new Timer();
 
-  private PoseEstimator poseEstimator = new PoseEstimator(VecBuilder.fill(0.1, 0.1, 0.1));
+  private PoseEstimator poseEstimator = new PoseEstimator(VecBuilder.fill(0.005, 0.005, 0.0005));
   private double[] lastModulePositionsMeters = new double[] {0.0, 0.0, 0.0, 0.0};
   private Rotation2d lastGyroYaw = new Rotation2d();
 

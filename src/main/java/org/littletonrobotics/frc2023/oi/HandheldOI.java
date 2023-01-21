@@ -29,6 +29,10 @@ public class HandheldOI {
     return 0.0;
   }
 
+  public Trigger getDriverAssist() {
+    return dummyTrigger;
+  }
+
   public void setDriverRumble(double percent) {}
 
   public void setOperatorRumble(double percent) {}

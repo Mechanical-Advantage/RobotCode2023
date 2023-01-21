@@ -9,6 +9,8 @@ package org.littletonrobotics.frc2023;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
@@ -18,6 +20,7 @@ import org.littletonrobotics.frc2023.commands.DriveTrajectory;
 import org.littletonrobotics.frc2023.commands.DriveWithJoysticks;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
+import org.littletonrobotics.frc2023.commands.HoldPose;
 import org.littletonrobotics.frc2023.oi.HandheldOI;
 import org.littletonrobotics.frc2023.oi.OISelector;
 import org.littletonrobotics.frc2023.oi.OverrideOI;
@@ -67,6 +70,7 @@ public class RobotContainer {
                   new ModuleIOSparkMax(1),
                   new ModuleIOSparkMax(2),
                   new ModuleIOSparkMax(3));
+          aprilTagVision = new AprilTagVision(new AprilTagVisionIONorthstar("northstar"));
           break;
         case ROBOT_SIMBOT:
           drive =
@@ -76,7 +80,6 @@ public class RobotContainer {
                   new ModuleIOSim(),
                   new ModuleIOSim(),
                   new ModuleIOSim());
-          aprilTagVision = new AprilTagVision(new AprilTagVisionIONorthstar("northstar"));
           break;
       }
     }
@@ -94,7 +97,7 @@ public class RobotContainer {
     if (aprilTagVision == null) {
       // In replay, match the number of instances for each robot
       switch (Constants.getRobot()) {
-        case ROBOT_SIMBOT:
+        case ROBOT_2023P:
           aprilTagVision = new AprilTagVision(new AprilTagVisionIO() {});
           break;
         default:
@@ -159,6 +162,12 @@ public class RobotContainer {
     handheldOI = OISelector.findHandheldOI();
 
     // *** DRIVER CONTROLS ***
+    var target =
+        FieldConstants.aprilTags
+            .get(2)
+            .toPose2d()
+            .transformBy(new Transform2d(new Translation2d(1.0, 0.0), new Rotation2d()));
+    handheldOI.getDriverAssist().whileTrue(new HoldPose(drive, target));
 
     // *** OPERATOR CONTROLS ***
   }

@@ -119,11 +119,12 @@ public class DriveTrajectory extends CommandBase {
       Drive drive, List<Waypoint> waypoints, List<TrajectoryConstraint> constraints) {
     this.drive = drive;
     addRequirements(drive);
-    generate(waypoints, constraints);
+    generate(waypoints, constraints, true);
   }
 
   /** Generates the trajectory. */
-  private void generate(List<Waypoint> waypoints, List<TrajectoryConstraint> constraints) {
+  private void generate(
+      List<Waypoint> waypoints, List<TrajectoryConstraint> constraints, boolean alertOnFail) {
     // Set up trajectory configuration
     TrajectoryConfig config =
         new TrajectoryConfig(maxVelocityMetersPerSec, maxAccelerationMetersPerSec2)
@@ -139,7 +140,7 @@ public class DriveTrajectory extends CommandBase {
     try {
       customGenerator.generate(config, waypoints);
     } catch (TrajectoryGenerationException exception) {
-      if (supportedRobot) {
+      if (supportedRobot && alertOnFail) {
         generatorAlert.set(true);
         DriverStation.reportError("Failed to generate trajectory.", true);
       }
@@ -150,7 +151,7 @@ public class DriveTrajectory extends CommandBase {
   public void initialize() {
     // Generate trajectory if supplied
     if (waypointsSupplier != null || constraintsSupplier != null) {
-      generate(waypointsSupplier.get(), constraintsSupplier.get());
+      generate(waypointsSupplier.get(), constraintsSupplier.get(), false);
     }
 
     // Log trajectory
@@ -164,12 +165,12 @@ public class DriveTrajectory extends CommandBase {
     thetaController.reset();
 
     // Reset PID gains
-    xController.setD(driveKd.get());
     xController.setP(driveKp.get());
-    yController.setD(driveKd.get());
+    xController.setD(driveKd.get());
     yController.setP(driveKp.get());
-    thetaController.setD(driveKd.get());
-    thetaController.setP(driveKp.get());
+    yController.setD(driveKd.get());
+    thetaController.setP(turnKp.get());
+    thetaController.setD(turnKd.get());
   }
 
   @Override
@@ -179,14 +180,17 @@ public class DriveTrajectory extends CommandBase {
         || driveKp.hasChanged(hashCode())
         || turnKd.hasChanged(hashCode())
         || turnKp.hasChanged(hashCode())) {
-      xController.setD(driveKd.get());
       xController.setP(driveKp.get());
-
-      yController.setD(driveKd.get());
+      xController.setD(driveKd.get());
       yController.setP(driveKp.get());
-
-      thetaController.setD(turnKd.get());
+      yController.setD(driveKd.get());
       thetaController.setP(turnKp.get());
+      thetaController.setD(turnKd.get());
+    }
+
+    // Exit if trajectory generation failed
+    if (customGenerator.getDriveTrajectory().getStates().size() <= 1) {
+      return;
     }
 
     // Get setpoint

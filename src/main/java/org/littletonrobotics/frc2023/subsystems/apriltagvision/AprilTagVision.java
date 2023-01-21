@@ -14,34 +14,75 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.littletonrobotics.frc2023.Constants;
 import org.littletonrobotics.frc2023.FieldConstants;
 import org.littletonrobotics.frc2023.util.GeomUtil;
+import org.littletonrobotics.frc2023.util.PolynomialRegression;
 import org.littletonrobotics.frc2023.util.PoseEstimator.TimestampedVisionUpdate;
 import org.littletonrobotics.junction.Logger;
 
 public class AprilTagVision extends SubsystemBase {
-  private static final double ambiguityThreshold = 0.4;
+  private static final double ambiguityThreshold = 0.15;
+  private static final double targetLogTimeSecs = 0.1;
   private static final Pose3d[] cameraPoses;
+  private static final PolynomialRegression xyStdDevModel;
+  private static final PolynomialRegression thetaStdDevModel;
 
   private final AprilTagVisionIO[] io;
   private final AprilTagVisionIOInputsAutoLogged[] inputs;
 
   private Supplier<Pose2d> poseSupplier = () -> new Pose2d();
   private Consumer<List<TimestampedVisionUpdate>> visionConsumer = (x) -> {};
+  private Map<Integer, Double> lastDetectionTimeIds = new HashMap<>();
 
   static {
     switch (Constants.getRobot()) {
-      case ROBOT_SIMBOT:
-        cameraPoses = new Pose3d[] {new Pose3d(0.0, 0.0, 1.0, new Rotation3d())};
+      case ROBOT_2023P:
+        cameraPoses =
+            new Pose3d[] {
+              new Pose3d(
+                  Units.inchesToMeters(12.5),
+                  Units.inchesToMeters(6.0),
+                  Units.inchesToMeters(9.5),
+                  new Rotation3d(0.0, 0.0, Math.PI)
+                      .rotateBy(new Rotation3d(0.0, Units.degreesToRadians(25.0), 0.0)))
+            };
+        xyStdDevModel =
+            new PolynomialRegression(
+                new double[] {
+                  0.752358, 1.016358, 1.296358, 1.574358, 1.913358, 2.184358, 2.493358, 2.758358,
+                  3.223358, 4.093358, 4.726358
+                },
+                new double[] {
+                  0.005, 0.0135, 0.016, 0.038, 0.0515, 0.0925, 0.0695, 0.046, 0.1245, 0.0815, 0.193
+                },
+                1);
+        thetaStdDevModel =
+            new PolynomialRegression(
+                new double[] {
+                  0.752358, 1.016358, 1.296358, 1.574358, 1.913358, 2.184358, 2.493358, 2.758358,
+                  3.223358, 4.093358, 4.726358
+                },
+                new double[] {
+                  0.008, 0.027, 0.015, 0.044, 0.04, 0.078, 0.049, 0.027, 0.059, 0.029, 0.068
+                },
+                1);
         break;
       default:
         cameraPoses = new Pose3d[] {};
+        xyStdDevModel =
+            new PolynomialRegression(new double[] {0.0, 1.0}, new double[] {0.1, 0.1}, 1);
+        thetaStdDevModel =
+            new PolynomialRegression(new double[] {0.0, 1.0}, new double[] {0.1, 0.1}, 1);
         break;
     }
   }
@@ -52,6 +93,14 @@ public class AprilTagVision extends SubsystemBase {
     for (int i = 0; i < io.length; i++) {
       inputs[i] = new AprilTagVisionIOInputsAutoLogged();
     }
+
+    // Create map of last detection times
+    FieldConstants.aprilTags
+        .keySet()
+        .forEach(
+            (Integer id) -> {
+              lastDetectionTimeIds.put(id, 0.0);
+            });
   }
 
   public void setDataInterfaces(
@@ -63,16 +112,17 @@ public class AprilTagVision extends SubsystemBase {
   public void periodic() {
     for (int i = 0; i < io.length; i++) {
       io[i].updateInputs(inputs[i]);
-      Logger.getInstance().processInputs("AprilTagVision/" + Integer.toString(i), inputs[i]);
+      Logger.getInstance().processInputs("AprilTagVision/Inst" + Integer.toString(i), inputs[i]);
     }
 
     // Loop over instances
     Pose2d currentPose = poseSupplier.get();
     List<TimestampedVisionUpdate> visionUpdates = new ArrayList<>();
-    List<Pose2d> visionPose2ds = new ArrayList<>();
-    List<Pose3d> tagPose3ds = new ArrayList<>();
-    List<Integer> tagIDs = new ArrayList<>();
     for (int instanceIndex = 0; instanceIndex < io.length; instanceIndex++) {
+      List<Pose2d> visionPose2ds = new ArrayList<>();
+      List<Pose3d> tagPose3ds = new ArrayList<>();
+      List<Integer> tagIds = new ArrayList<>();
+
       // Loop over frames
       for (int frameIndex = 0; frameIndex < inputs[instanceIndex].timestamps.length; frameIndex++) {
         var timestamp = inputs[instanceIndex].timestamps[frameIndex];
@@ -80,6 +130,11 @@ public class AprilTagVision extends SubsystemBase {
         if (observationString.length() == 0) {
           continue;
         }
+
+        Logger.getInstance()
+            .recordOutput(
+                "AprilTagVision/Inst" + Integer.toString(instanceIndex) + "/LatencySecs",
+                Timer.getFPGATimestamp() - timestamp);
 
         // Parse string to double array
         String[] stringComponents = observationString.split(",");
@@ -128,8 +183,9 @@ public class AprilTagVision extends SubsystemBase {
           } else if (error1 < error0 * ambiguityThreshold) {
             robotPose = robotPose1;
             tagPose = pose1;
-          } else if (robotPose0.getTranslation().getDistance(currentPose.getTranslation())
-              < robotPose1.getTranslation().getDistance(currentPose.getTranslation())) {
+          } else if (Math.abs(
+                  robotPose0.getRotation().minus(currentPose.getRotation()).getRadians())
+              < Math.abs(robotPose1.getRotation().minus(currentPose.getRotation()).getRadians())) {
             robotPose = robotPose0;
             tagPose = pose0;
           } else {
@@ -139,30 +195,48 @@ public class AprilTagVision extends SubsystemBase {
 
           // Log tag pose
           tagPose3ds.add(tagPose);
-          tagIDs.add(tagId);
+          tagIds.add(tagId);
+          lastDetectionTimeIds.put(tagId, Timer.getFPGATimestamp());
 
           // Add to vision updates
+          double tagDistance = tagPose.getTranslation().getNorm();
+          double xyStdDev = xyStdDevModel.predict(tagDistance);
+          double thetaStdDev = thetaStdDevModel.predict(tagDistance);
           visionUpdates.add(
-              new TimestampedVisionUpdate(timestamp, robotPose, VecBuilder.fill(0.1, 0.1, 0.1)));
+              new TimestampedVisionUpdate(
+                  timestamp, robotPose, VecBuilder.fill(xyStdDev, xyStdDev, thetaStdDev)));
           visionPose2ds.add(robotPose);
         }
       }
+
+      // Log poses
+      boolean hasFrames = inputs[instanceIndex].timestamps.length > 0;
+      if (hasFrames) {
+        Logger.getInstance()
+            .recordOutput(
+                "AprilTagVision/Inst" + Integer.toString(instanceIndex) + "/RobotPoses",
+                visionPose2ds.toArray(new Pose2d[visionPose2ds.size()]));
+        Logger.getInstance()
+            .recordOutput(
+                "AprilTagVision/Inst" + Integer.toString(instanceIndex) + "/TagPoses",
+                tagPose3ds.toArray(new Pose3d[tagPose3ds.size()]));
+        Logger.getInstance()
+            .recordOutput(
+                "AprilTagVision/Inst" + Integer.toString(instanceIndex) + "/TagIDs",
+                tagIds.stream().mapToLong(Long::valueOf).toArray());
+      }
     }
 
-    // Log poses
-    if (visionPose2ds.size() > 0) {
-      Logger.getInstance()
-          .recordOutput(
-              "Odometry/VisionPoses", visionPose2ds.toArray(new Pose2d[visionPose2ds.size()]));
+    // Log target poses
+    List<Pose3d> targetPose3ds = new ArrayList<>();
+    for (Map.Entry<Integer, Double> detectionEntry : lastDetectionTimeIds.entrySet()) {
+      if (Timer.getFPGATimestamp() - detectionEntry.getValue() < targetLogTimeSecs) {
+        targetPose3ds.add(FieldConstants.aprilTags.get(detectionEntry.getKey()));
+      }
     }
-    if (tagPose3ds.size() > 0) {
-      Logger.getInstance()
-          .recordOutput(
-              "AprilTagVision/TagPoses", tagPose3ds.toArray(new Pose3d[tagPose3ds.size()]));
-      Logger.getInstance()
-          .recordOutput(
-              "AprilTagVision/TagIDs", tagIDs.stream().mapToLong(Long::valueOf).toArray());
-    }
+    Logger.getInstance()
+        .recordOutput(
+            "AprilTagVision/TargetPoses", targetPose3ds.toArray(new Pose3d[targetPose3ds.size()]));
 
     // Send results to pose esimator
     visionConsumer.accept(visionUpdates);
