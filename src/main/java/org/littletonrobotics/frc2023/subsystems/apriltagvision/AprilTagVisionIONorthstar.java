@@ -7,10 +7,10 @@
 
 package org.littletonrobotics.frc2023.subsystems.apriltagvision;
 
+import edu.wpi.first.networktables.DoubleArraySubscriber;
 import edu.wpi.first.networktables.IntegerSubscriber;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.PubSubOption;
-import edu.wpi.first.networktables.StringSubscriber;
 import org.littletonrobotics.frc2023.FieldConstants;
 
 public class AprilTagVisionIONorthstar implements AprilTagVisionIO {
@@ -21,7 +21,7 @@ public class AprilTagVisionIONorthstar implements AprilTagVisionIO {
   private static final int cameraExposure = 5;
   private static final int cameraGain = 25;
 
-  private final StringSubscriber observationSubscriber;
+  private final DoubleArraySubscriber observationSubscriber;
   private final IntegerSubscriber fpsSubscriber;
 
   public AprilTagVisionIONorthstar(String identifier) {
@@ -39,15 +39,16 @@ public class AprilTagVisionIONorthstar implements AprilTagVisionIO {
     var outputTable = northstarTable.getSubTable("output");
     observationSubscriber =
         outputTable
-            .getStringTopic("observations")
-            .subscribe("", PubSubOption.keepDuplicates(true), PubSubOption.sendAll(true));
+            .getDoubleArrayTopic("observations")
+            .subscribe(
+                new double[] {}, PubSubOption.keepDuplicates(true), PubSubOption.sendAll(true));
     fpsSubscriber = outputTable.getIntegerTopic("fps").subscribe(0);
   }
 
   public void updateInputs(AprilTagVisionIOInputs inputs) {
     var queue = observationSubscriber.readQueue();
     inputs.timestamps = new double[queue.length];
-    inputs.frames = new String[queue.length];
+    inputs.frames = new double[queue.length][];
     for (int i = 0; i < queue.length; i++) {
       inputs.timestamps[i] = queue[i].timestamp / 1000000.0;
       inputs.frames[i] = queue[i].value;

@@ -25,6 +25,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.littletonrobotics.frc2023.Constants;
 import org.littletonrobotics.frc2023.FieldConstants;
+import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIO.AprilTagVisionIOInputs;
 import org.littletonrobotics.frc2023.util.GeomUtil;
 import org.littletonrobotics.frc2023.util.PolynomialRegression;
 import org.littletonrobotics.frc2023.util.PoseEstimator.TimestampedVisionUpdate;
@@ -38,7 +39,7 @@ public class AprilTagVision extends SubsystemBase {
   private static final PolynomialRegression thetaStdDevModel;
 
   private final AprilTagVisionIO[] io;
-  private final AprilTagVisionIOInputsAutoLogged[] inputs;
+  private final AprilTagVisionIOInputs[] inputs;
 
   private Supplier<Pose2d> poseSupplier = () -> new Pose2d();
   private Consumer<List<TimestampedVisionUpdate>> visionConsumer = (x) -> {};
@@ -89,9 +90,9 @@ public class AprilTagVision extends SubsystemBase {
 
   public AprilTagVision(AprilTagVisionIO... io) {
     this.io = io;
-    inputs = new AprilTagVisionIOInputsAutoLogged[io.length];
+    inputs = new AprilTagVisionIOInputs[io.length];
     for (int i = 0; i < io.length; i++) {
-      inputs[i] = new AprilTagVisionIOInputsAutoLogged();
+      inputs[i] = new AprilTagVisionIOInputs();
     }
 
     // Create map of last detection times
@@ -126,22 +127,11 @@ public class AprilTagVision extends SubsystemBase {
       // Loop over frames
       for (int frameIndex = 0; frameIndex < inputs[instanceIndex].timestamps.length; frameIndex++) {
         var timestamp = inputs[instanceIndex].timestamps[frameIndex];
-        var observationString = inputs[instanceIndex].frames[frameIndex];
-        if (observationString.length() == 0) {
-          continue;
-        }
-
+        var values = inputs[instanceIndex].frames[frameIndex];
         Logger.getInstance()
             .recordOutput(
                 "AprilTagVision/Inst" + Integer.toString(instanceIndex) + "/LatencySecs",
                 Timer.getFPGATimestamp() - timestamp);
-
-        // Parse string to double array
-        String[] stringComponents = observationString.split(",");
-        double[] values = new double[stringComponents.length];
-        for (int i = 0; i < stringComponents.length; i++) {
-          values[i] = Double.parseDouble(stringComponents[i]);
-        }
 
         // Loop over observations
         for (int i = 0; i < values.length; i += 15) {
