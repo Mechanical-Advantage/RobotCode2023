@@ -22,7 +22,7 @@ import java.util.NavigableMap;
 import java.util.TreeMap;
 
 public class PoseEstimator {
-  private static final double historyLengthSecs = 1.5;
+  private static final double historyLengthSecs = 0.3;
 
   private Pose2d basePose = new Pose2d();
   private Pose2d latestPose = new Pose2d();
