@@ -6,7 +6,7 @@ import matplotlib.animation
 import sys
 
 opti = Opti()
-opti.solver("ipopt")
+opti.solver("ipopt", {'ipopt.print_level':0, 'print_time':0})
 
 n = 25
 L_1 = 3
@@ -88,10 +88,10 @@ for i in range(n + 2):
 opti.minimize(total_time)
 
 # start_time = time.time()
-# for i in range(100):
+# for i in range(1000):
 #     opti.solve()
 # end_time = time.time()
-# print((end_time - start_time) / 100)
+# print((end_time - start_time) / 1000)
 # sys.exit(0)
 try:
     opti.solve()
