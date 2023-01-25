@@ -7,14 +7,12 @@
 
 package org.littletonrobotics.frc2023.subsystems.arm;
 
-import org.littletonrobotics.frc2023.Constants;
-
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
+import org.littletonrobotics.frc2023.Constants;
 
-public class ArmIOSim implements ArmIO 
-{
+public class ArmIOSim implements ArmIO {
   private boolean invert = false;
   private double appliedVolts = 0.0;
 
@@ -28,27 +26,32 @@ public class ArmIOSim implements ArmIO
 
   private DCMotor singleJointedArmMotor = DCMotor.getNEO(1);
 
-  private SingleJointedArmSim singleJointedArmSim = new SingleJointedArmSim(singleJointedArmMotor, afterEncoderReduction, jKGMetersSquared,
-      armLengthMeters, minAngleRads, maxAngleRads, armMassKG, simulateGravity);
+  private SingleJointedArmSim singleJointedArmSim =
+      new SingleJointedArmSim(
+          singleJointedArmMotor,
+          afterEncoderReduction,
+          jKGMetersSquared,
+          armLengthMeters,
+          minAngleRads,
+          maxAngleRads,
+          armMassKG,
+          simulateGravity);
 
-  public ArmIOSim() 
-  {}
-  
+  public ArmIOSim() {}
+
   @Override
-  public void updateInputs(ArmIOInputs inputs) 
-  {
+  public void updateInputs(ArmIOInputs inputs) {
     singleJointedArmSim.update(Constants.loopPeriodSecs);
 
     inputs.positionRad = singleJointedArmSim.getAngleRads();
     inputs.velocityRadPerSec = singleJointedArmSim.getVelocityRadPerSec();
     inputs.appliedVolts = appliedVolts;
     inputs.currentAmps = new double[] {singleJointedArmSim.getCurrentDrawAmps()};
-    inputs.tempCelcius = new double[] {};    
-    }
+    inputs.tempCelcius = new double[] {};
+  }
 
   @Override
-  public void setVoltage(double volts) 
-  {
+  public void setVoltage(double volts) {
     appliedVolts = MathUtil.clamp(volts, -12.0, 12.0);
     singleJointedArmSim.setInputVoltage(appliedVolts);
   }
