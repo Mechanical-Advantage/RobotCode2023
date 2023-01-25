@@ -21,7 +21,7 @@ import org.littletonrobotics.frc2023.util.GeomUtil;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 public class DriveWithJoysticks extends CommandBase {
-  private static final double deadband = 0.1;
+  public static final double deadband = 0.1;
 
   private final Drive drive;
   private final Supplier<Double> leftXSupplier;
