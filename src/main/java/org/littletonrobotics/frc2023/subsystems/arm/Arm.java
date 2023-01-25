@@ -1,23 +1,27 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
+// Copyright (c) 2023 FRC 6328
+// http://github.com/Mechanical-Advantage
+//
+// Use of this source code is governed by an MIT-style
+// license that can be found in the LICENSE file at
+// the root directory of this project.
 
 package org.littletonrobotics.frc2023.subsystems.arm;
 
+import edu.wpi.first.wpilibj2.command.CommandBase;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+
 import org.littletonrobotics.frc2023.Constants;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmIO.ArmIOInputs;
+import org.littletonrobotics.junction.Logger;
 
-import edu.wpi.first.wpilibj2.command.CommandBase;
-
-public class Arm extends CommandBase {
+public class Arm extends SubsystemBase {
   private ArmIO io;
-  private final ArmIOInputs armInputs = new ArmIOInputs();
+  private final ArmIOInputsAutoLogged armInputs = new ArmIOInputsAutoLogged();
 
   /** Creates a new Arm. */
   public Arm(ArmIO io) {
     this.io = io;
-    switch (Constants.getRobot())
-    {
+    switch (Constants.getRobot()) {
       case ROBOT_2023C:
         break;
       case ROBOT_SIMBOT:
@@ -28,21 +32,19 @@ public class Arm extends CommandBase {
     // Use addRequirements() here to declare subsystem dependencies.
   }
 
-  // Called when the command is initially scheduled.
-  @Override
-  public void initialize() {}
+  public void periodic()
+  {
+    io.updateInputs(armInputs);
+    Logger.getInstance().processInputs("Arm", armInputs);
+  }
 
-  // Called every time the scheduler runs while the command is scheduled.
-  @Override
-  public void execute() {}
+  public void updateInputs(ArmIOInputs inputs)
+  {
+    io.updateInputs(inputs);
+  }
 
-  // Called once the command ends or is interrupted.
-  @Override
-  public void end(boolean interrupted) {}
-
-  // Returns true when the command should end.
-  @Override
-  public boolean isFinished() {
-    return false;
+  public void setVoltage(double volts)
+  {
+    io.setVoltage(volts);
   }
 }
