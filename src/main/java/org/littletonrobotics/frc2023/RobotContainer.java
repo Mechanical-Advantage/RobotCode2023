@@ -24,6 +24,10 @@ import org.littletonrobotics.frc2023.oi.OverrideOI;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVision;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIO;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIONorthstar;
+import org.littletonrobotics.frc2023.subsystems.arm.Arm;
+import org.littletonrobotics.frc2023.subsystems.arm.ArmIO;
+import org.littletonrobotics.frc2023.subsystems.arm.ArmIOSim;
+import org.littletonrobotics.frc2023.subsystems.arm.ArmIOSparkMax;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
 import org.littletonrobotics.frc2023.subsystems.drive.GyroIO;
 import org.littletonrobotics.frc2023.subsystems.drive.GyroIOPigeon2;
@@ -41,6 +45,7 @@ public class RobotContainer {
   // Subsystems
   private Drive drive;
   private AprilTagVision aprilTagVision;
+  private Arm arm;
 
   // OI objects
   private OverrideOI overrideOI = new OverrideOI();
@@ -60,6 +65,9 @@ public class RobotContainer {
         case ROBOT_2023C:
           break;
         case ROBOT_2023P:
+          arm =
+              new Arm(
+                  new ArmIOSparkMax());
           drive =
               new Drive(
                   new GyroIOPigeon2(),
@@ -69,6 +77,9 @@ public class RobotContainer {
                   new ModuleIOSparkMax(3));
           break;
         case ROBOT_SIMBOT:
+          arm =
+              new Arm(
+                  ArmIOSim());
           drive =
               new Drive(
                   new GyroIO() {},
@@ -83,6 +94,9 @@ public class RobotContainer {
 
     // Instantiate missing subsystems
     if (drive == null) {
+      arm =
+          new Arm(
+              new ArmIO() {});
       drive =
           new Drive(
               new GyroIO() {},
@@ -143,6 +157,10 @@ public class RobotContainer {
 
     // Instantiate OI classes and bind buttons
     updateOI();
+  }
+
+  private ArmIO ArmIOSim() {
+    return null;
   }
 
   /**
