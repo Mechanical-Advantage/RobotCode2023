@@ -1,0 +1,45 @@
+{
+  "origin": [
+    0.0,
+    0.2
+  ],
+  "shoulder": {
+    "mass": 0.0,
+    "length": 0.0,
+    "moi": 0.0,
+    "cgRadius": 0.0,
+    "motorCount": 0,
+    "reduction": 0.0
+  },
+  "elbow": {
+    "mass": 0.0,
+    "length": 0.0,
+    "moi": 0.0,
+    "cgRadius": 0.0,
+    "motorCount": 0,
+    "reduction": 0.0
+  },
+  "solver": {
+    "maxIterations": 500,
+    "interiorPoints": 25,
+    "maxVoltage": 8
+  },
+  "constraints": {
+    "testCircleFront": {
+      "type": "circle",
+      "args": [
+        0.5,
+        0.0,
+        0.1
+      ]
+    },
+    "testCircleBack": {
+      "type": "circle",
+      "args": [
+        -0.5,
+        0.0,
+        0.1
+      ]
+    }
+  }
+}
