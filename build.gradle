@@ -148,6 +148,11 @@ spotless {
         endWithNewline()
         licenseHeader("// Copyright (c) 2023 FRC 6328\n// http://github.com/Mechanical-Advantage\n//\n// Use of this source code is governed by an MIT-style\n// license that can be found in the LICENSE file at\n// the root directory of this project.\n\n")
     }
+    python {
+        target("kairos/*.py")
+        toggleOffOn()
+        black().pathToExe("venv/bin/black")
+    }
     groovyGradle {
         target fileTree(".") {
             include "**/*.gradle"
@@ -168,7 +173,7 @@ spotless {
     format "misc", {
         target fileTree(".") {
             include "**/*.md", "**/.gitignore"
-            exclude "**/build/**", "**/build-*/**", "**/*.py"
+            exclude "**/build/**", "**/build-*/**"
         }
         trimTrailingWhitespace()
         indentWithSpaces(2)

@@ -11,3 +11,13 @@ This project contains 6328's robot code for the 2023 CHARGED UP game. See also:
 * Robot code from past seasons: [2022](https://github.com/Mechanical-Advantage/RobotCode2022), [2020/2021](https://github.com/Mechanical-Advantage/RobotCode2020), [2019](https://github.com/Mechanical-Advantage/RobotCode2019), [2018](https://github.com/Mechanical-Advantage/RobotCode2018), [2017](https://github.com/Mechanical-Advantage/RobotCode2017)
 
 ![CHARGED UP logo](/charged-up.png)
+
+## Python Environment
+
+To set up the Python environment for formatting with [Black](https://github.com/psf/black) and running [kairos](/kairos/), follow the steps below.
+
+```bash
+python -m venv venv
+source ./venv/bin/activate
+pip install -r requirements.txt
+```

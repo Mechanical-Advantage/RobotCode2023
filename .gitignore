@@ -165,6 +165,7 @@ simgui*.json
 
 # Python files
 **/__pycache__
+**/venv
 
 # Version file
 src/main/java/org/littletonrobotics/frc2023/BuildConstants.java

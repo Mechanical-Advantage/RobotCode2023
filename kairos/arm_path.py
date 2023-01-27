@@ -1,3 +1,10 @@
+# Copyright (c) 2023 FRC 6328
+# http://github.com/Mechanical-Advantage
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file at
+# the root directory of this project.
+
 from casadi import *
 from math import pi
 import time
@@ -6,7 +13,7 @@ import matplotlib.animation
 import sys
 
 opti = Opti()
-opti.solver("ipopt", {'ipopt.print_level':0, 'print_time':0})
+opti.solver("ipopt", {"ipopt.print_level": 0, "print_time": 0})
 
 n = 25
 L_1 = 3
@@ -76,13 +83,17 @@ for i in range(n + 2):
     last_theta_2 = start_theta_2 if i == 0 else theta_2_points[i - 1]
     theta_1 = theta_1_points[i]
     theta_2 = theta_2_points[i]
-    next_theta_1 = end_theta_1 if i == len(theta_1_points) - 1 else theta_1_points[i + 1]
-    next_theta_2 = end_theta_2 if i == len(theta_1_points) - 1 else theta_2_points[i + 1]
+    next_theta_1 = (
+        end_theta_1 if i == len(theta_1_points) - 1 else theta_1_points[i + 1]
+    )
+    next_theta_2 = (
+        end_theta_2 if i == len(theta_1_points) - 1 else theta_2_points[i + 1]
+    )
     theta_1_a = (((next_theta_1 - theta_1) / dt) - ((theta_1 - last_theta_1) / dt)) / dt
     theta_2_a = (((next_theta_2 - theta_2) / dt) - ((theta_2 - last_theta_2) / dt)) / dt
     opti.subject_to(opti.bounded(-theta_1_max_a, theta_1_a, theta_1_max_a))
     opti.subject_to(opti.bounded(-theta_2_max_a, theta_2_a, theta_2_max_a))
-    
+
 
 # Solve
 opti.minimize(total_time)
@@ -107,16 +118,25 @@ print("DT =", opti.value(dt))
 animation_points = []
 current_time = 0
 for i in range(n + 1):
-    animation_points.append((current_time, opti.value(theta_1_points[i]), opti.value(theta_2_points[i])))
+    animation_points.append(
+        (current_time, opti.value(theta_1_points[i]), opti.value(theta_2_points[i]))
+    )
     current_time += opti.value(dt)
-animation_points.append((current_time, opti.value(end_theta_1), opti.value(end_theta_2)))
+animation_points.append(
+    (current_time, opti.value(end_theta_1), opti.value(end_theta_2))
+)
 
 fig, ax = plt.subplots()
 start_time = time.time() + 1
+
+
 def animate(i):
     current_time = time.time() - start_time
     next_index = 0
-    while next_index < len(animation_points) and animation_points[next_index][0] < current_time:
+    while (
+        next_index < len(animation_points)
+        and animation_points[next_index][0] < current_time
+    ):
         next_index += 1
     if next_index >= len(animation_points):
         next_index = len(animation_points) - 1
@@ -128,7 +148,7 @@ def animate(i):
     t = 0 if t < 0 else t
     theta_1 = (next_point[1] - last_point[1]) * t + last_point[1]
     theta_2 = (next_point[2] - last_point[2]) * t + last_point[2]
-    
+
     x = [0, L_1 * cos(theta_1), L_1 * cos(theta_1) + L_2 * cos(theta_1 + theta_2)]
     y = [0, L_1 * sin(theta_1), L_1 * sin(theta_1) + L_2 * sin(theta_1 + theta_2)]
     ax.clear()
@@ -137,6 +157,7 @@ def animate(i):
     ax.plot([0, 5], [-0.5, 3.5])
     ax.set_xlim([-6, 6])
     ax.set_ylim([-2, 8])
+
 
 animation = matplotlib.animation.FuncAnimation(fig, animate, interval=15)
 
