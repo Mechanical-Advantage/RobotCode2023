@@ -44,8 +44,8 @@ public class RobotContainer {
 
   // Subsystems
   private Drive drive;
-  private AprilTagVision aprilTagVision;
   private Arm arm;
+  private AprilTagVision aprilTagVision;
 
   // OI objects
   private OverrideOI overrideOI = new OverrideOI();
@@ -65,9 +65,6 @@ public class RobotContainer {
         case ROBOT_2023C:
           break;
         case ROBOT_2023P:
-          arm =
-              new Arm(
-                  new ArmIOSparkMax());
           drive =
               new Drive(
                   new GyroIOPigeon2(),
@@ -75,11 +72,9 @@ public class RobotContainer {
                   new ModuleIOSparkMax(1),
                   new ModuleIOSparkMax(2),
                   new ModuleIOSparkMax(3));
+          arm = new Arm(new ArmIOSparkMax());
           break;
         case ROBOT_SIMBOT:
-          arm =
-              new Arm(
-                  ArmIOSim());
           drive =
               new Drive(
                   new GyroIO() {},
@@ -87,6 +82,7 @@ public class RobotContainer {
                   new ModuleIOSim(),
                   new ModuleIOSim(),
                   new ModuleIOSim());
+          arm = new Arm(new ArmIOSim());
           aprilTagVision = new AprilTagVision(new AprilTagVisionIONorthstar("northstar"));
           break;
       }
@@ -94,9 +90,6 @@ public class RobotContainer {
 
     // Instantiate missing subsystems
     if (drive == null) {
-      arm =
-          new Arm(
-              new ArmIO() {});
       drive =
           new Drive(
               new GyroIO() {},
@@ -104,6 +97,9 @@ public class RobotContainer {
               new ModuleIO() {},
               new ModuleIO() {},
               new ModuleIO() {});
+    }
+    if (arm == null) {
+      arm = new Arm(new ArmIO() {});
     }
     if (aprilTagVision == null) {
       // In replay, match the number of instances for each robot
@@ -157,10 +153,6 @@ public class RobotContainer {
 
     // Instantiate OI classes and bind buttons
     updateOI();
-  }
-
-  private ArmIO ArmIOSim() {
-    return null;
   }
 
   /**

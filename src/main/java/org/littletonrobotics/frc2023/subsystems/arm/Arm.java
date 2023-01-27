@@ -7,11 +7,8 @@
 
 package org.littletonrobotics.frc2023.subsystems.arm;
 
-import edu.wpi.first.wpilibj2.command.CommandBase;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-
 import org.littletonrobotics.frc2023.Constants;
-import org.littletonrobotics.frc2023.subsystems.arm.ArmIO.ArmIOInputs;
 import org.littletonrobotics.junction.Logger;
 
 public class Arm extends SubsystemBase {
@@ -29,22 +26,14 @@ public class Arm extends SubsystemBase {
       default:
         break;
     }
-    // Use addRequirements() here to declare subsystem dependencies.
   }
 
-  public void periodic()
-  {
+  public void periodic() {
     io.updateInputs(armInputs);
     Logger.getInstance().processInputs("Arm", armInputs);
   }
 
-  public void updateInputs(ArmIOInputs inputs)
-  {
-    io.updateInputs(inputs);
-  }
-
-  public void setVoltage(double volts)
-  {
+  public void setVoltage(double volts) {
     io.setVoltage(volts);
   }
 }

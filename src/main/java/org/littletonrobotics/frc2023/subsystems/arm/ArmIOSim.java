@@ -13,7 +13,6 @@ import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import org.littletonrobotics.frc2023.Constants;
 
 public class ArmIOSim implements ArmIO {
-  private boolean invert = false;
   private double appliedVolts = 0.0;
 
   private double afterEncoderReduction = 0.0;
