@@ -17,14 +17,17 @@ import org.littletonrobotics.junction.Logger;
 
 public class Arm extends SubsystemBase {
   private final ArmIO io;
+  private final ArmSolverIO solverIo;
   private final ArmIOInputsAutoLogged inputs = new ArmIOInputsAutoLogged();
+  private final ArmSolverIOInputsAutoLogged solverInputs = new ArmSolverIOInputsAutoLogged();
 
   private static final String configFilename = "arm_config.json";
   private final String configJson;
   private final ArmConfig config;
 
-  public Arm(ArmIO io) {
+  public Arm(ArmIO io, ArmSolverIO solverIo) {
     this.io = io;
+    this.solverIo = solverIo;
     io.setBrakeMode(true, true, true);
 
     // Get config from JSON
@@ -35,10 +38,14 @@ public class Arm extends SubsystemBase {
       throw new RuntimeException("Failed to read raw arm config JSON");
     }
     config = ArmConfig.fromJson(configFile);
+    io.setConfig(config);
+    solverIo.setConfig(configJson);
   }
 
   public void periodic() {
     io.updateInputs(inputs);
+    solverIo.updateInputs(solverInputs);
     Logger.getInstance().processInputs("Arm", inputs);
+    Logger.getInstance().processInputs("Arm/Solver", solverInputs);
   }
 }

@@ -24,17 +24,25 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
-/** Represents all of the config data shared between the robot code and solver. */
+/** Represents all of the arm config data shared between the robot code and solver. */
 public record ArmConfig(
     Translation2d origin,
     JointConfig shoulder,
-    JointConfig elbow,
+    JointConfig elbow, // Mass, MOI, and CG radius should include the wrist
+    JointConfig wrist,
     SolverConfig solver,
     Map<String, Constraint> constraints) {
 
   /** Physics constants for a single joint. */
   public static record JointConfig(
-      double mass, double length, double moi, double cgRadius, double reduction, DCMotor motor) {}
+      double mass,
+      double length,
+      double moi,
+      double cgRadius,
+      double reduction,
+      DCMotor motor,
+      double minAngle,
+      double maxAngle) {}
 
   /** Config fields for solver. */
   public static record SolverConfig(int maxIterations, int interiorPoints, double maxVoltage) {}
@@ -62,7 +70,7 @@ public record ArmConfig(
     }
   }
 
-  /** Converts motor count and reduction to DCMotor instance. */
+  /** Converts motor type, count, and reduction to DCMotor instance. */
   private static class DCMotorDeserializer extends StdDeserializer<DCMotor> {
     public DCMotorDeserializer() {
       this(null);
@@ -76,9 +84,17 @@ public record ArmConfig(
     public DCMotor deserialize(JsonParser jp, DeserializationContext ctxt)
         throws IOException, JsonProcessingException {
       JsonNode node = jp.getCodec().readTree(jp);
-      int neoCount = (Integer) ((IntNode) node.get("motorCount")).numberValue();
+      String type = ((JsonNode) node.get("motorType")).toString();
+      int count = (Integer) ((IntNode) node.get("motorCount")).numberValue();
       double reduction = (Double) ((DoubleNode) node.get("reduction")).numberValue();
-      return DCMotor.getNEO(neoCount).withReduction(reduction);
+      switch (type) {
+        case "neo":
+          return DCMotor.getNEO(count).withReduction(reduction);
+        case "neo550":
+          return DCMotor.getNeo550(count).withReduction(reduction);
+        default:
+          return new DCMotor(0.0, 0.0, 0.0, 0.0, 0.0, 0);
+      }
     }
   }
 

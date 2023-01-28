@@ -17,35 +17,34 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.RobotController;
 import org.littletonrobotics.frc2023.util.SparkMaxBurnManager;
+import org.littletonrobotics.frc2023.util.arm.ArmConfig;
 
 public class ArmIOSparkMax implements ArmIO {
+  private ArmConfig config;
+
   private final CANSparkMax shoulderSparkMax;
   private final RelativeEncoder shoulderEncoder;
   private final AbsoluteEncoder shoulderAbsoluteEncoder;
-  private final double shoulderReduction;
   private final boolean isShoulderMotorInverted;
   private final Rotation2d shoulderAbsoluteEncoderOffset;
 
   private final CANSparkMax elbowSparkMax;
   private final RelativeEncoder elbowEncoder;
   private final AbsoluteEncoder elbowAbsoluteEncoder;
-  private final double elbowReduction;
   private final boolean isElbowMotorInverted;
   private final Rotation2d elbowAbsoluteEncoderOffset;
 
   private final CANSparkMax wristSparkMax;
   private final RelativeEncoder wristEncoder;
   private final AbsoluteEncoder wristAbsoluteEncoder;
-  private final double wristReduction;
   private final boolean isWristMotorInverted;
   private final Rotation2d wristAbsoluteEncoderOffset;
 
-  public ArmIOSparkMax(int index) {
+  public ArmIOSparkMax() {
     // Shoulder config
     shoulderSparkMax = new CANSparkMax(15, MotorType.kBrushless);
     shoulderEncoder = shoulderSparkMax.getEncoder();
     shoulderAbsoluteEncoder = shoulderSparkMax.getAbsoluteEncoder(Type.kDutyCycle);
-    shoulderReduction = 1.0;
     isShoulderMotorInverted = false;
     shoulderAbsoluteEncoderOffset = new Rotation2d(0.0);
 
@@ -53,7 +52,6 @@ public class ArmIOSparkMax implements ArmIO {
     elbowSparkMax = new CANSparkMax(16, MotorType.kBrushless);
     elbowEncoder = shoulderSparkMax.getEncoder();
     elbowAbsoluteEncoder = shoulderSparkMax.getAbsoluteEncoder(Type.kDutyCycle);
-    elbowReduction = 1.0;
     isElbowMotorInverted = false;
     elbowAbsoluteEncoderOffset = new Rotation2d(0.0);
 
@@ -61,7 +59,6 @@ public class ArmIOSparkMax implements ArmIO {
     wristSparkMax = new CANSparkMax(17, MotorType.kBrushless);
     wristEncoder = shoulderSparkMax.getEncoder();
     wristAbsoluteEncoder = shoulderSparkMax.getAbsoluteEncoder(Type.kDutyCycle);
-    wristReduction = 1.0;
     isWristMotorInverted = false;
     wristAbsoluteEncoderOffset = new Rotation2d(0.0);
 
@@ -99,16 +96,20 @@ public class ArmIOSparkMax implements ArmIO {
     }
   }
 
+  public void setConfig(ArmConfig config) {
+    this.config = config;
+  }
+
   public void updateInputs(ArmIOInputs inputs) {
     inputs.shoulderAbsolutePositionRad =
         new Rotation2d(shoulderAbsoluteEncoder.getPosition())
             .minus(shoulderAbsoluteEncoderOffset)
             .getRadians();
     inputs.shoulderPositionRad =
-        Units.rotationsToRadians(shoulderEncoder.getPosition()) / shoulderReduction;
+        Units.rotationsToRadians(shoulderEncoder.getPosition()) / config.shoulder().reduction();
     inputs.shoulderVelocityRadPerSec =
         Units.rotationsPerMinuteToRadiansPerSecond(shoulderEncoder.getVelocity())
-            / shoulderReduction;
+            / config.shoulder().reduction();
     inputs.shoulderAppliedVolts =
         shoulderSparkMax.getAppliedOutput() * RobotController.getBatteryVoltage();
     inputs.shoulderCurrentAmps = new double[] {shoulderSparkMax.getOutputCurrent()};
@@ -118,9 +119,11 @@ public class ArmIOSparkMax implements ArmIO {
         new Rotation2d(elbowAbsoluteEncoder.getPosition())
             .minus(elbowAbsoluteEncoderOffset)
             .getRadians();
-    inputs.elbowPositionRad = Units.rotationsToRadians(elbowEncoder.getPosition()) / elbowReduction;
+    inputs.elbowPositionRad =
+        Units.rotationsToRadians(elbowEncoder.getPosition()) / config.elbow().reduction();
     inputs.elbowVelocityRadPerSec =
-        Units.rotationsPerMinuteToRadiansPerSecond(elbowEncoder.getVelocity()) / elbowReduction;
+        Units.rotationsPerMinuteToRadiansPerSecond(elbowEncoder.getVelocity())
+            / config.elbow().reduction();
     inputs.elbowAppliedVolts =
         elbowSparkMax.getAppliedOutput() * RobotController.getBatteryVoltage();
     inputs.elbowCurrentAmps = new double[] {elbowSparkMax.getOutputCurrent()};
@@ -130,9 +133,11 @@ public class ArmIOSparkMax implements ArmIO {
         new Rotation2d(wristAbsoluteEncoder.getPosition())
             .minus(wristAbsoluteEncoderOffset)
             .getRadians();
-    inputs.wristPositionRad = Units.rotationsToRadians(wristEncoder.getPosition()) / wristReduction;
+    inputs.wristPositionRad =
+        Units.rotationsToRadians(wristEncoder.getPosition()) / config.wrist().reduction();
     inputs.wristVelocityRadPerSec =
-        Units.rotationsPerMinuteToRadiansPerSecond(wristEncoder.getVelocity()) / wristReduction;
+        Units.rotationsPerMinuteToRadiansPerSecond(wristEncoder.getVelocity())
+            / config.wrist().reduction();
     inputs.wristAppliedVolts =
         wristSparkMax.getAppliedOutput() * RobotController.getBatteryVoltage();
     inputs.wristCurrentAmps = new double[] {wristSparkMax.getOutputCurrent()};

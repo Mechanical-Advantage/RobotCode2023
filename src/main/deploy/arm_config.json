@@ -8,16 +8,33 @@
     "length": 0.0,
     "moi": 0.0,
     "cgRadius": 0.0,
+    "motorType": "neo",
     "motorCount": 0,
-    "reduction": 0.0
+    "reduction": 0.0,
+    "minAngle": 0.7853981634,
+    "maxAngle": 2.3561944902
   },
   "elbow": {
     "mass": 0.0,
     "length": 0.0,
     "moi": 0.0,
     "cgRadius": 0.0,
+    "motorType": "neo",
     "motorCount": 0,
-    "reduction": 0.0
+    "reduction": 0.0,
+    "minAngle": 0.5235987756,
+    "maxAngle": 5.7595865316
+  },
+  "wrist": {
+    "mass": 0.0,
+    "length": 0.0,
+    "moi": 0.0,
+    "cgRadius": 0.0,
+    "motorType": "neo550",
+    "motorCount": 0,
+    "reduction": 0.0,
+    "minAngle": -1.5707963268,
+    "maxAngle": 1.5707963268
   },
   "solver": {
     "maxIterations": 500,
@@ -31,6 +48,15 @@
         0.5,
         0.0,
         0.1
+      ]
+    },
+    "testRectangleFront": {
+      "type": "rectangle",
+      "args": [
+        0.25,
+        0.0,
+        0.75,
+        0.25
       ]
     },
     "testCircleBack": {

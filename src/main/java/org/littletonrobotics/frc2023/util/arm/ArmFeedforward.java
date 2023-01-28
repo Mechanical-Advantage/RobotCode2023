@@ -12,6 +12,7 @@ import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N2;
+import edu.wpi.first.math.numbers.N3;
 
 /**
  * Calculates feedforward voltages for a double jointed arm.
@@ -20,17 +21,31 @@ import edu.wpi.first.math.numbers.N2;
  */
 public class ArmFeedforward {
   private static final double g = 9.80665;
-
   private final ArmConfig config;
 
   public ArmFeedforward(ArmConfig config) {
     this.config = config;
   }
 
+  /** Calculates the joint voltages based on the joint positions. */
   public Vector<N2> calculate(Vector<N2> position) {
-    return calculate(position, VecBuilder.fill(0.0, 0.0), VecBuilder.fill(0.0, 0.0));
+    return calculate(position, VecBuilder.fill(0.0, 0.0));
   }
 
+  /** Calculates the joint voltages based on the joint positions and velocities. */
+  public Vector<N2> calculate(Vector<N2> position, Vector<N2> velocity) {
+    return calculate(position, velocity, VecBuilder.fill(0.0, 0.0));
+  }
+
+  /** Calculates the joint voltages based on the full joint states as a matrix. */
+  public Vector<N2> calculate(Matrix<N2, N3> state) {
+    return calculate(
+        new Vector<>(state.extractColumnVector(0)),
+        new Vector<>(state.extractColumnVector(1)),
+        new Vector<>(state.extractColumnVector(2)));
+  }
+
+  /** Calculates the joint voltages based on the full joint states as vectors. */
   public Vector<N2> calculate(Vector<N2> position, Vector<N2> velocity, Vector<N2> acceleration) {
     var M = new Matrix<>(N2.instance, N2.instance);
     var C = new Matrix<>(N2.instance, N2.instance);

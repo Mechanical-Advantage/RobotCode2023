@@ -7,6 +7,7 @@
 
 package org.littletonrobotics.frc2023.subsystems.arm;
 
+import org.littletonrobotics.frc2023.util.arm.ArmConfig;
 import org.littletonrobotics.junction.AutoLog;
 
 public interface ArmIO {
@@ -33,6 +34,9 @@ public interface ArmIO {
     public double[] wristCurrentAmps = new double[] {};
     public double[] wristTempCelcius = new double[] {};
   }
+
+  /** Sets the arm config, must be called before other methods. */
+  public default void setConfig(ArmConfig config) {}
 
   /** Updates the set of loggable inputs. */
   public default void updateInputs(ArmIOInputs inputs) {}
