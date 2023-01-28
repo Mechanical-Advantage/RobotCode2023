@@ -13,6 +13,10 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 public class HandheldOI {
   protected static final Trigger dummyTrigger = new Trigger(() -> false);
 
+  public double getArmAxis() {
+    return 0.0;
+  }
+
   public double getLeftDriveX() {
     return 0.0;
   }

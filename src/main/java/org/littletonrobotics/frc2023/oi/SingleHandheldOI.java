@@ -19,6 +19,11 @@ public class SingleHandheldOI extends HandheldOI {
   }
 
   @Override
+  public double getArmAxis() {
+    return controller.getLeftTriggerAxis() - controller.getRightTriggerAxis();
+  }
+
+  @Override
   public double getLeftDriveX() {
     return -controller.getLeftY();
   }

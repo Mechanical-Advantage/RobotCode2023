@@ -21,6 +21,11 @@ public class DualHandheldOI extends HandheldOI {
   }
 
   @Override
+  public double getArmAxis() {
+    return driverController.getLeftTriggerAxis() - driverController.getRightTriggerAxis();
+  }
+
+  @Override
   public double getLeftDriveX() {
     return -driverController.getLeftY();
   }

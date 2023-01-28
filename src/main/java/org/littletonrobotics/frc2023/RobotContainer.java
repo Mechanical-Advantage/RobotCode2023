@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import java.util.List;
 import org.littletonrobotics.frc2023.Constants.Mode;
+import org.littletonrobotics.frc2023.commands.DriveArmWithJoysticks;
 import org.littletonrobotics.frc2023.commands.DriveTrajectory;
 import org.littletonrobotics.frc2023.commands.DriveWithJoysticks;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization;
@@ -122,6 +123,8 @@ public class RobotContainer {
             () -> handheldOI.getRightDriveY(),
             () -> overrideOI.getRobotRelative()));
     aprilTagVision.setDataInterfaces(drive::getPose, drive::addVisionData);
+
+    arm.setDefaultCommand(new DriveArmWithJoysticks(arm, () -> handheldOI.getArmAxis()));
 
     // Set up auto routines
     autoChooser.addDefaultOption("Do Nothing", null);

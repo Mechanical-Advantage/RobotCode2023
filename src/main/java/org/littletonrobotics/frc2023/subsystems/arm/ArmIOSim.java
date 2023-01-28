@@ -15,12 +15,12 @@ import org.littletonrobotics.frc2023.Constants;
 public class ArmIOSim implements ArmIO {
   private double appliedVolts = 0.0;
 
-  private double afterEncoderReduction = 0.0;
-  private double jKGMetersSquared = 0.0;
-  private double armLengthMeters = 0.0;
+  private double afterEncoderReduction = 100.0;
+  private double jKGMetersSquared = 1.0;
+  private double armLengthMeters = 1.0;
   private double minAngleRads = -Math.PI / 5;
   private double maxAngleRads = Math.PI / 2;
-  private double armMassKG = 0.0;
+  private double armMassKG = 1.0;
   private boolean simulateGravity = false;
 
   private DCMotor singleJointedArmMotor = DCMotor.getNEO(1);
