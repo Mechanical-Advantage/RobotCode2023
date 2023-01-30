@@ -21,7 +21,7 @@ class JointConfig:
     motor: DCMotor
 
 
-class DoubleJointedArmFeedforward:
+class ArmFeedforward:
     _g = 9.80665
     _joint_1: JointConfig
     _joint_2: JointConfig

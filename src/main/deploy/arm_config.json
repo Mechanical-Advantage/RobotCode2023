@@ -1,70 +1,67 @@
 {
   "origin": [
     0.0,
-    0.2
+    0.3
   ],
   "shoulder": {
-    "mass": 0.0,
-    "length": 0.0,
-    "moi": 0.0,
-    "cgRadius": 0.0,
-    "motorType": "neo",
-    "motorCount": 0,
-    "reduction": 0.0,
+    "mass": 15,
+    "length": 0.85,
+    "moi": 1,
+    "cgRadius": 0.425,
     "minAngle": 0.7853981634,
-    "maxAngle": 2.3561944902
+    "maxAngle": 2.3561944902,
+    "motor": {
+      "type": "neo",
+      "count": 2,
+      "reduction": 130.0
+    }
   },
   "elbow": {
-    "mass": 0.0,
-    "length": 0.0,
-    "moi": 0.0,
-    "cgRadius": 0.0,
-    "motorType": "neo",
-    "motorCount": 0,
-    "reduction": 0.0,
+    "mass": 10,
+    "length": 0.75,
+    "moi": 1,
+    "cgRadius": 0.375,
     "minAngle": 0.5235987756,
-    "maxAngle": 5.7595865316
+    "maxAngle": 5.7595865316,
+    "motor": {
+      "type": "neo",
+      "count": 1,
+      "reduction": 100.0
+    }
   },
   "wrist": {
-    "mass": 0.0,
-    "length": 0.0,
-    "moi": 0.0,
-    "cgRadius": 0.0,
-    "motorType": "neo550",
-    "motorCount": 0,
-    "reduction": 0.0,
+    "mass": 5,
+    "length": 0.2,
+    "moi": 0.25,
+    "cgRadius": 0.1,
     "minAngle": -1.5707963268,
-    "maxAngle": 1.5707963268
+    "maxAngle": 1.5707963268,
+    "motor": {
+      "type": "neo550",
+      "count": 1,
+      "reduction": 80.0
+    }
   },
   "solver": {
-    "maxIterations": 500,
     "interiorPoints": 25,
     "maxVoltage": 8
   },
   "constraints": {
-    "testCircleFront": {
+    "testCircle": {
       "type": "circle",
       "args": [
-        0.5,
+        -0.25,
         0.0,
-        0.1
+        0.4
       ]
     },
-    "testRectangleFront": {
+    "testRectangle": {
       "type": "rectangle",
       "args": [
-        0.25,
-        0.0,
-        0.75,
+        -1,
+        0,
+        0,
         0.25
-      ]
-    },
-    "testCircleBack": {
-      "type": "circle",
-      "args": [
-        -0.5,
-        0.0,
-        0.1
       ]
     }
   }

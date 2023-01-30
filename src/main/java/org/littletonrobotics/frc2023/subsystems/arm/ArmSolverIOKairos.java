@@ -17,7 +17,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import org.littletonrobotics.frc2023.util.arm.ArmTrajectory;
 
 public class ArmSolverIOKairos implements ArmSolverIO {
   private final StringPublisher configPublisher;
@@ -31,11 +30,11 @@ public class ArmSolverIOKairos implements ArmSolverIO {
     // Create NT publishers and subscribers
     var kairosTable = NetworkTableInstance.getDefault().getTable("kairos");
     configPublisher =
-        kairosTable.getStringTopic("config").publishEx("json", "", PubSubOption.periodic(0.0));
+        kairosTable.getStringTopic("config").publishEx("json", "{}", PubSubOption.periodic(0.0));
     requestPublisher =
         kairosTable
             .getStringTopic("request")
-            .publishEx("json", "", PubSubOption.periodic(0.0), PubSubOption.keepDuplicates(true));
+            .publishEx("json", "{}", PubSubOption.periodic(0.0), PubSubOption.keepDuplicates(true));
     for (int i = 0; i < instanceCount; i++) {
       resultSubscribers.add(
           kairosTable

@@ -5,7 +5,7 @@
 // license that can be found in the LICENSE file at
 // the root directory of this project.
 
-package org.littletonrobotics.frc2023.util.arm;
+package org.littletonrobotics.frc2023.subsystems.arm;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -40,12 +40,12 @@ public record ArmConfig(
       double moi,
       double cgRadius,
       double reduction,
-      DCMotor motor,
       double minAngle,
-      double maxAngle) {}
+      double maxAngle,
+      DCMotor motor) {}
 
   /** Config fields for solver. */
-  public static record SolverConfig(int maxIterations, int interiorPoints, double maxVoltage) {}
+  public static record SolverConfig(int interiorPoints, double maxVoltage) {}
 
   /** Arbitrary solver constraint. */
   public static record Constraint(String type, double[] args) {}
@@ -84,16 +84,17 @@ public record ArmConfig(
     public DCMotor deserialize(JsonParser jp, DeserializationContext ctxt)
         throws IOException, JsonProcessingException {
       JsonNode node = jp.getCodec().readTree(jp);
-      String type = ((JsonNode) node.get("motorType")).toString();
-      int count = (Integer) ((IntNode) node.get("motorCount")).numberValue();
+      String type = node.get("type").asText();
+      int count = (Integer) ((IntNode) node.get("count")).numberValue();
       double reduction = (Double) ((DoubleNode) node.get("reduction")).numberValue();
+
       switch (type) {
         case "neo":
           return DCMotor.getNEO(count).withReduction(reduction);
         case "neo550":
           return DCMotor.getNeo550(count).withReduction(reduction);
         default:
-          return new DCMotor(0.0, 0.0, 0.0, 0.0, 0.0, 0);
+          return null;
       }
     }
   }

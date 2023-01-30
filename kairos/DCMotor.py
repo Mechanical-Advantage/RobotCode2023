@@ -6,6 +6,7 @@
 # the root directory of this project.
 
 import math
+
 from casadi import *
 
 
@@ -60,3 +61,8 @@ class DCMotor:
     def getNEO(self, numMotors):
         rpm = 5676
         return DCMotor(12, 2.6, 105, 1.8, rpm * math.pi / (60.0 / 2.0), numMotors)
+
+    @classmethod
+    def getNEO550(self, numMotors):
+        rpm = 11000
+        return DCMotor(12, 0.97, 100, 1.4, rpm * math.pi / (60.0 / 2.0), numMotors)

@@ -7,7 +7,6 @@
 
 package org.littletonrobotics.frc2023.subsystems.arm;
 
-import org.littletonrobotics.frc2023.util.arm.ArmConfig;
 import org.littletonrobotics.junction.AutoLog;
 
 public interface ArmIO {
@@ -41,8 +40,14 @@ public interface ArmIO {
   /** Updates the set of loggable inputs. */
   public default void updateInputs(ArmIOInputs inputs) {}
 
-  /** Run the motors at the specified voltages. */
-  public default void setVoltage(double shoulderVolts, double elbowVolts, double wristVolts) {}
+  /** Run the shoulder motor(s) at the specified voltages. */
+  public default void setShoulderVoltage(double volts) {}
+
+  /** Run the elbow motor(s) at the specified voltages. */
+  public default void setElbowVoltage(double volts) {}
+
+  /** Run the wrist motor(s) at the specified voltages. */
+  public default void setWristVoltage(double volts) {}
 
   /** Enable or disable brake mode on the motors. */
   public default void setBrakeMode(boolean shoulderBrake, boolean elbowBrake, boolean wristBrake) {}

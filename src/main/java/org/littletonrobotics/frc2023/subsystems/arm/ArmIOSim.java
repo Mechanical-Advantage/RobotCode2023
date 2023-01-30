@@ -7,10 +7,10 @@
 
 package org.littletonrobotics.frc2023.subsystems.arm;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import org.littletonrobotics.frc2023.Constants;
-import org.littletonrobotics.frc2023.util.arm.ArmConfig;
 
 public class ArmIOSim implements ArmIO {
   private SingleJointedArmSim shoulderSim;
@@ -32,7 +32,7 @@ public class ArmIOSim implements ArmIO {
             config.shoulder().length(),
             config.shoulder().minAngle(),
             config.shoulder().maxAngle(),
-            config.shoulder().mass(),
+            config.shoulder().mass() + config.elbow().mass(),
             true);
     elbowSim =
         new SingleJointedArmSim(
@@ -58,7 +58,9 @@ public class ArmIOSim implements ArmIO {
 
   public void updateInputs(ArmIOInputs inputs) {
     if (DriverStation.isDisabled()) {
-      setVoltage(0.0, 0.0, 0.0);
+      setShoulderVoltage(0.0);
+      setElbowVoltage(0.0);
+      setWristVoltage(0.0);
     }
 
     shoulderSim.update(Constants.loopPeriodSecs);
@@ -87,12 +89,18 @@ public class ArmIOSim implements ArmIO {
     inputs.wristTempCelcius = new double[] {};
   }
 
-  public void setVoltage(double shoulderVolts, double elbowVolts, double wristVolts) {
-    shoulderSim.setInputVoltage(shoulderVolts);
-    elbowSim.setInputVoltage(elbowVolts);
-    wristSim.setInputVoltage(wristVolts);
-    shoulderAppliedVolts = shoulderVolts;
-    elbowAppliedVolts = elbowVolts;
-    wristAppliedVolts = wristVolts;
+  public void setShoulderVoltage(double volts) {
+    shoulderAppliedVolts = MathUtil.clamp(volts, -12, 12);
+    shoulderSim.setInputVoltage(shoulderAppliedVolts);
+  }
+
+  public void setElbowVoltage(double volts) {
+    elbowAppliedVolts = MathUtil.clamp(volts, -12, 12);
+    elbowSim.setInputVoltage(elbowAppliedVolts);
+  }
+
+  public void setWristVoltage(double volts) {
+    wristAppliedVolts = MathUtil.clamp(volts, -12, 12);
+    wristSim.setInputVoltage(wristAppliedVolts);
   }
 }

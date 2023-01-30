@@ -17,7 +17,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.RobotController;
 import org.littletonrobotics.frc2023.util.SparkMaxBurnManager;
-import org.littletonrobotics.frc2023.util.arm.ArmConfig;
 
 public class ArmIOSparkMax implements ArmIO {
   private ArmConfig config;
@@ -144,10 +143,16 @@ public class ArmIOSparkMax implements ArmIO {
     inputs.wristTempCelcius = new double[] {wristSparkMax.getMotorTemperature()};
   }
 
-  public void setVoltage(double shoulderVolts, double elbowVolts, double wristVolts) {
-    shoulderSparkMax.setVoltage(shoulderVolts);
-    elbowSparkMax.setVoltage(elbowVolts);
-    wristSparkMax.setVoltage(wristVolts);
+  public void setShoulderVoltage(double volts) {
+    shoulderSparkMax.setVoltage(volts);
+  }
+
+  public void setElbowVoltage(double volts) {
+    elbowSparkMax.setVoltage(volts);
+  }
+
+  public void setWristVoltage(double volts) {
+    wristSparkMax.setVoltage(volts);
   }
 
   public void setBrakeMode(boolean shoulderBrake, boolean elbowBrake, boolean wristBrake) {

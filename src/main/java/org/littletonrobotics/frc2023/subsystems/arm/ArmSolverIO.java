@@ -7,7 +7,6 @@
 
 package org.littletonrobotics.frc2023.subsystems.arm;
 
-import org.littletonrobotics.frc2023.util.arm.ArmTrajectory;
 import org.littletonrobotics.junction.AutoLog;
 
 public interface ArmSolverIO {
