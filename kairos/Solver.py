@@ -183,13 +183,37 @@ class Solver:
         )
         opti.set_value(self._final_velocity_0, parameters["finalJointVelocities"][0])
         opti.set_value(self._final_velocity_1, parameters["finalJointVelocities"][1])
-        opti.set_value(theta_points[0][0], parameters["initialJointPositions"][0])
-        opti.set_value(theta_points[0][1], parameters["initialJointPositions"][1])
         opti.set_value(
-            theta_points[len(theta_points) - 1][0], parameters["finalJointPositions"][0]
+            theta_points[0][0],
+            self._clamp(
+                parameters["initialJointPositions"][0],
+                self._config["shoulder"]["minAngle"],
+                self._config["shoulder"]["maxAngle"],
+            ),
         )
         opti.set_value(
-            theta_points[len(theta_points) - 1][1], parameters["finalJointPositions"][1]
+            theta_points[0][1],
+            self._clamp(
+                parameters["initialJointPositions"][1],
+                self._config["elbow"]["minAngle"],
+                self._config["elbow"]["maxAngle"],
+            ),
+        )
+        opti.set_value(
+            theta_points[len(theta_points) - 1][0],
+            self._clamp(
+                parameters["finalJointPositions"][0],
+                self._config["shoulder"]["minAngle"],
+                self._config["shoulder"]["maxAngle"],
+            ),
+        )
+        opti.set_value(
+            theta_points[len(theta_points) - 1][1],
+            self._clamp(
+                parameters["finalJointPositions"][1],
+                self._config["elbow"]["minAngle"],
+                self._config["elbow"]["maxAngle"],
+            ),
         )
 
         # Set initial values
@@ -236,3 +260,6 @@ class Solver:
             result[1].append(opti.value(theta[0]))
             result[2].append(opti.value(theta[1]))
         return result
+
+    def _clamp(self, value, min_value, max_value):
+        return max(min_value, min(max_value, value))

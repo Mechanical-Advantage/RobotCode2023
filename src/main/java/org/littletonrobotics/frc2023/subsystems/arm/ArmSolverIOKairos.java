@@ -29,12 +29,11 @@ public class ArmSolverIOKairos implements ArmSolverIO {
   public ArmSolverIOKairos(int instanceCount) {
     // Create NT publishers and subscribers
     var kairosTable = NetworkTableInstance.getDefault().getTable("kairos");
-    configPublisher =
-        kairosTable.getStringTopic("config").publishEx("json", "{}", PubSubOption.periodic(0.0));
+    configPublisher = kairosTable.getStringTopic("config").publish(PubSubOption.periodic(0.0));
     requestPublisher =
         kairosTable
             .getStringTopic("request")
-            .publishEx("json", "{}", PubSubOption.periodic(0.0), PubSubOption.keepDuplicates(true));
+            .publish(PubSubOption.periodic(0.0), PubSubOption.keepDuplicates(true));
     for (int i = 0; i < instanceCount; i++) {
       resultSubscribers.add(
           kairosTable

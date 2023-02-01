@@ -58,11 +58,11 @@ if __name__ == "__main__":
     nt_inst.startClient4("kairos_" + str(DEVICE_ID))
 
     # Create subscribers and publisher
-    config_sub = nt_inst.getStringTopic("/kairos/config").subscribeEx(
-        "json", "", ntcore.PubSubOptions(periodic=0)
+    config_sub = nt_inst.getStringTopic("/kairos/config").subscribe(
+        "", ntcore.PubSubOptions(periodic=0)
     )
-    request_sub = nt_inst.getStringTopic("/kairos/request").subscribeEx(
-        "json", "", ntcore.PubSubOptions(periodic=0)
+    request_sub = nt_inst.getStringTopic("/kairos/request").subscribe(
+        "", ntcore.PubSubOptions(periodic=0)
     )
     result_sub = nt_inst.getDoubleArrayTopic(
         "/kairos/result/" + str(DEVICE_ID)

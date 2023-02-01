@@ -49,8 +49,8 @@ public class Arm extends SubsystemBase {
   private final ArmFeedforward ffModel;
   private final ArmKinematics kinematics;
 
-  private final ArmMechanism2d mechanismMeasured;
-  private final ArmMechanism2d mechanismSetpoint;
+  private final ArmVisualizer visualizerMeasured;
+  private final ArmVisualizer visualizerSetpoint;
 
   private boolean isZeroed = false;
   private double shoulderAngleOffset = 0.0;
@@ -62,9 +62,10 @@ public class Arm extends SubsystemBase {
 
   private final Map<Integer, ArmTrajectory> allTrajectories = new HashMap<>();
   private ArmTrajectory currentTrajectory = null;
-  private ArmPose setpointPose = null;
-  private ArmPose queuedPose = null;
+  private ArmPose setpointPose = null; // Pose to revert to when not following trajectory
+  private ArmPose queuedPose = null; // Use as setpoint once trajectory is completed
   private Timer trajectoryTimer = new Timer();
+  private final ArmPose homedPose;
 
   private PIDController shoulderFeedback =
       new PIDController(0.0, 0.0, 0.0, Constants.loopPeriodSecs);
@@ -86,14 +87,14 @@ public class Arm extends SubsystemBase {
   static {
     switch (Constants.getRobot()) {
       case ROBOT_SIMBOT:
-        shoulderKp.initDefault(0.0);
+        shoulderKp.initDefault(100.0);
         shoulderKd.initDefault(0.0);
-        elbowKp.initDefault(0.0);
+        elbowKp.initDefault(100.0);
         elbowKd.initDefault(0.0);
-        wristKp.initDefault(0.0);
+        wristKp.initDefault(30.0);
         wristKd.initDefault(0.0);
-        wristMaxVelocity.initDefault(0.0);
-        wristMaxAcceleration.initDefault(0.0);
+        wristMaxVelocity.initDefault(10.0);
+        wristMaxAcceleration.initDefault(50.0);
         break;
       default:
         break;
@@ -118,9 +119,17 @@ public class Arm extends SubsystemBase {
     ffModel = new ArmFeedforward(config);
     kinematics = new ArmKinematics(config);
 
-    // Create mechanisms
-    mechanismMeasured = new ArmMechanism2d(config, "Measured", null);
-    mechanismSetpoint = new ArmMechanism2d(config, "Setpoint", new Color8Bit(Color.kOrange));
+    // Calculate homed pose
+    homedPose =
+        new ArmPose(
+            new Translation2d(
+                config.origin().getX(),
+                config.origin().getY() + config.shoulder().length() - config.elbow().length()),
+            new Rotation2d(-Math.PI / 2));
+
+    // Create visualizers
+    visualizerMeasured = new ArmVisualizer(config, "Measured", null);
+    visualizerSetpoint = new ArmVisualizer(config, "Setpoint", new Color8Bit(Color.kOrange));
   }
 
   public void periodic() {
@@ -165,7 +174,7 @@ public class Arm extends SubsystemBase {
     shoulderAngle = inputs.shoulderPositionRad + shoulderAngleOffset;
     elbowAngle = inputs.elbowPositionRad + elbowAngleOffset;
     wristAngle = inputs.wristPositionRad + wristAngleOffset;
-    mechanismMeasured.update(shoulderAngle, elbowAngle, wristAngle);
+    visualizerMeasured.update(shoulderAngle, elbowAngle, wristAngle);
 
     // Get new trajectory from solver if available
     if (solverInputs.parameterHash != 0
@@ -180,15 +189,33 @@ public class Arm extends SubsystemBase {
       }
     }
 
+    // Set setpoint to current position when disabled (don't move when enabling)
+    if (DriverStation.isDisabled()) {
+      setpointPose =
+          new ArmPose(
+              kinematics.forward(VecBuilder.fill(shoulderAngle, elbowAngle)),
+              new Rotation2d(shoulderAngle + elbowAngle + wristAngle));
+      currentTrajectory = null;
+      queuedPose = null;
+    }
+
     // Check if trajectory is finished
-    if (trajectoryTimer.hasElapsed(currentTrajectory.getTotalTime())) {
+    if (currentTrajectory != null
+        && currentTrajectory.isGenerated()
+        && trajectoryTimer.hasElapsed(currentTrajectory.getTotalTime())) {
       trajectoryTimer.stop();
       trajectoryTimer.reset();
       currentTrajectory = null;
       setpointPose = queuedPose;
     }
 
+    // Values to be logged at the end of the cycle
+    double loggedShoulderSetpoint = Math.PI / 2.0;
+    double loggedElbowSetpoint = Math.PI;
+    double loggedWristSetpoint = 0.0;
+
     // Run shoulder and elbow
+    ArmPose wristEffectiveArmPose = null; // The arm pose to use for wrist calculations
     if (DriverStation.isDisabled()) {
       // Stop moving when disabled
       io.setShoulderVoltage(0.0);
@@ -204,32 +231,86 @@ public class Arm extends SubsystemBase {
       io.setShoulderVoltage(
           voltages.get(0, 0) + shoulderFeedback.calculate(shoulderAngle, state.get(0, 0)));
       io.setElbowVoltage(voltages.get(1, 0) + elbowFeedback.calculate(elbowAngle, state.get(1, 0)));
-      setpointPose =
+      setpointPose = // If trajectory is interrupted, go to last setpoint
           new ArmPose(
               kinematics.forward(new Vector<>(state.extractColumnVector(0))),
               queuedPose.globalWristAngle());
+      wristEffectiveArmPose = queuedPose; // Move wrist based on trajectory endpoint
+      loggedShoulderSetpoint = state.get(0, 0);
+      loggedElbowSetpoint = state.get(1, 0);
 
     } else {
       // Go to setpoint
       Optional<Vector<N2>> angles = kinematics.inverse(setpointPose.endEffectorPosition());
       if (angles.isPresent()) {
-        io.setShoulderVoltage(shoulderFeedback.calculate(shoulderAngle, angles.get().get(0, 0)));
-        io.setElbowVoltage(elbowFeedback.calculate(elbowAngle, angles.get().get(1, 0)));
+        var voltages = ffModel.calculate(angles.get());
+        io.setShoulderVoltage(
+            voltages.get(0, 0) + shoulderFeedback.calculate(shoulderAngle, angles.get().get(0, 0)));
+        io.setElbowVoltage(
+            voltages.get(1, 0) + elbowFeedback.calculate(elbowAngle, angles.get().get(1, 0)));
+        loggedShoulderSetpoint = angles.get().get(0, 0);
+        loggedElbowSetpoint = angles.get().get(1, 0);
+      } else {
+        io.setShoulderVoltage(0.0);
+        io.setElbowVoltage(0.0);
+      }
+      wristEffectiveArmPose = setpointPose; // Move wrist based on current setpoint
+    }
+
+    // Run wrist
+    if (DriverStation.isDisabled() || wristEffectiveArmPose == null) {
+      // Stop moving when disabled
+      io.setWristVoltage(0.0);
+      wristFeedback.reset(wristAngle);
+
+    } else {
+      // Go to setpoint
+      Optional<Vector<N2>> shoulderElbowAngles =
+          kinematics.inverse(wristEffectiveArmPose.endEffectorPosition());
+      if (shoulderElbowAngles.isPresent()) {
+        double wristSetpoint =
+            wristEffectiveArmPose
+                .globalWristAngle()
+                .minus(
+                    new Rotation2d(
+                        shoulderElbowAngles.get().get(0, 0) + shoulderElbowAngles.get().get(1, 0)))
+                .getRadians();
+        wristSetpoint = MathUtil.angleModulus(wristSetpoint);
+        wristSetpoint =
+            MathUtil.clamp(wristSetpoint, config.wrist().minAngle(), config.wrist().maxAngle());
+        io.setWristVoltage(wristFeedback.calculate(wristAngle, wristSetpoint));
+        loggedWristSetpoint = wristFeedback.getSetpoint().position;
       }
     }
+
+    // Log setpoints
+    visualizerSetpoint.update(loggedShoulderSetpoint, loggedElbowSetpoint, loggedWristSetpoint);
   }
 
-  public void setTarget(ArmPose pose) {
-    // Get parameters
-    Optional<Vector<N2>> angles = kinematics.inverse(pose.endEffectorPosition());
-    if (angles.isEmpty()) {
+  public void setPose(ArmPose pose) {
+    // Get current and target angles
+    Optional<Vector<N2>> currentAngles = kinematics.inverse(setpointPose.endEffectorPosition());
+    Optional<Vector<N2>> targetAngles = kinematics.inverse(pose.endEffectorPosition());
+    if (currentAngles.isEmpty() || targetAngles.isEmpty()) {
       return;
     }
+
+    // Exit if already at setpoint
+    if (Math.abs(currentAngles.get().get(0, 0) - targetAngles.get().get(0, 0))
+            < trajectoryCacheMarginRadians
+        && Math.abs(currentAngles.get().get(1, 0) - targetAngles.get().get(1, 0))
+            < trajectoryCacheMarginRadians) {
+      currentTrajectory = null;
+      setpointPose = pose;
+      return;
+    }
+
+    // Create parameters
     var parameters =
         new ArmTrajectory.Parameters(
-            VecBuilder.fill(shoulderAngle, elbowAngle),
-            angles.get(),
-            VecBuilder.fill(inputs.shoulderVelocityRadPerSec, inputs.elbowVelocityRadPerSec),
+            currentAngles.get(),
+            targetAngles.get(),
+            VecBuilder.fill(0.0, 0.0),
             VecBuilder.fill(0.0, 0.0),
             Set.of());
 
@@ -249,7 +330,8 @@ public class Arm extends SubsystemBase {
       if (Math.abs(initialDiff.get(0, 0)) < trajectoryCacheMarginRadians
           && Math.abs(initialDiff.get(1, 0)) < trajectoryCacheMarginRadians
           && Math.abs(finalDiff.get(0, 0)) < trajectoryCacheMarginRadians
-          && Math.abs(finalDiff.get(1, 0)) < trajectoryCacheMarginRadians) {
+          && Math.abs(finalDiff.get(1, 0)) < trajectoryCacheMarginRadians
+          && trajectory.isGenerated()) { // If not generated, try again
         currentTrajectory = trajectory;
         queuedPose = pose;
         return;
@@ -262,6 +344,21 @@ public class Arm extends SubsystemBase {
     currentTrajectory = trajectory;
     queuedPose = pose;
     solverIo.request(parameters);
+  }
+
+  public void setPoseHomed() {
+    setPose(homedPose);
+  }
+
+  public void shiftPose(Translation2d shift) {
+    if (shift.getNorm() > 0.0) {
+      var newTranslation = setpointPose.endEffectorPosition().plus(shift);
+      var angles = kinematics.inverse(newTranslation);
+      if (angles.isPresent()) {
+        currentTrajectory = null;
+        setpointPose = new ArmPose(newTranslation, setpointPose.globalWristAngle());
+      }
+    }
   }
 
   /** Represents a target position for the arm. */

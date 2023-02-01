@@ -8,6 +8,7 @@
 package org.littletonrobotics.frc2023.subsystems.arm;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import org.littletonrobotics.frc2023.Constants;
@@ -34,6 +35,7 @@ public class ArmIOSim implements ArmIO {
             config.shoulder().maxAngle(),
             config.shoulder().mass() + config.elbow().mass(),
             true);
+    shoulderSim.setState(VecBuilder.fill(Math.PI / 2.0, 0.0));
     elbowSim =
         new SingleJointedArmSim(
             config.elbow().motor(),
@@ -44,6 +46,7 @@ public class ArmIOSim implements ArmIO {
             config.elbow().maxAngle(),
             config.elbow().mass(),
             false);
+    elbowSim.setState(VecBuilder.fill(Math.PI, 0.0));
     wristSim =
         new SingleJointedArmSim(
             config.wrist().motor(),
@@ -54,6 +57,7 @@ public class ArmIOSim implements ArmIO {
             config.wrist().maxAngle(),
             config.wrist().mass(),
             false);
+    wristSim.setState(VecBuilder.fill(0.0, 0.0));
   }
 
   public void updateInputs(ArmIOInputs inputs) {

@@ -7,6 +7,10 @@
 
 package org.littletonrobotics.frc2023.subsystems.arm;
 
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
@@ -15,8 +19,9 @@ import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
 import org.littletonrobotics.junction.Logger;
 
-/** Helper class for creating a {@link Mechanism2d} representation of an arm. */
-public class ArmMechanism2d {
+/** Helper class for creating a {@link Mechanism2d} and 3D component representation of an arm. */
+public class ArmVisualizer {
+  private final ArmConfig config;
   private final String logKey;
 
   private final Mechanism2d mechanism;
@@ -26,18 +31,15 @@ public class ArmMechanism2d {
   private final MechanismLigament2d elbowLigament;
   private final MechanismLigament2d wristLigament;
 
-  public ArmMechanism2d(ArmConfig config, String logKey, Color8Bit colorOverride) {
+  public ArmVisualizer(ArmConfig config, String logKey, Color8Bit colorOverride) {
+    this.config = config;
     this.logKey = logKey;
     mechanism = new Mechanism2d(4, 3, new Color8Bit(Color.kGray));
     mechanismRoot = mechanism.getRoot("Arm", 2 + config.origin().getX(), 0);
     fixedLigament =
         mechanismRoot.append(
             new MechanismLigament2d(
-                "Fixed",
-                config.origin().getY(),
-                90,
-                6,
-                colorOverride != null ? colorOverride : new Color8Bit(Color.kBlack)));
+                "Fixed", config.origin().getY(), 90, 6, new Color8Bit(Color.kBlack)));
     shoulderLigament =
         fixedLigament.append(
             new MechanismLigament2d(
@@ -68,6 +70,24 @@ public class ArmMechanism2d {
     shoulderLigament.setAngle(Units.radiansToDegrees(shoulderAngle) - 90.0);
     elbowLigament.setAngle(Units.radiansToDegrees(elbowAngle));
     wristLigament.setAngle(Units.radiansToDegrees(wristAngle));
-    Logger.getInstance().recordOutput("Mechanisms/" + logKey, mechanism);
+    Logger.getInstance().recordOutput("Mechanisms2d/" + logKey, mechanism);
+
+    var shoulderPose =
+        new Pose3d(
+            config.origin().getX(),
+            0.0,
+            config.origin().getY(),
+            new Rotation3d(0.0, -shoulderAngle, 0.0));
+    var elbowPose =
+        shoulderPose.transformBy(
+            new Transform3d(
+                new Translation3d(config.shoulder().length(), 0.0, 0.0),
+                new Rotation3d(0.0, -elbowAngle, 0.0)));
+    var wristPose =
+        elbowPose.transformBy(
+            new Transform3d(
+                new Translation3d(config.elbow().length(), 0.0, 0.0),
+                new Rotation3d(0.0, -wristAngle, 0.0)));
+    Logger.getInstance().recordOutput("Mechanisms3d/" + logKey, shoulderPose, elbowPose, wristPose);
   }
 }

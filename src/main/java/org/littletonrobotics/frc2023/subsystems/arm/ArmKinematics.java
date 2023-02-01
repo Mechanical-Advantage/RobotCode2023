@@ -66,8 +66,9 @@ public class ArmKinematics {
                         + config.elbow().length() * Math.cos(elbowAngle)));
 
     // Invert shoulder angle if invalid
-    Translation2d testPosition = forward(VecBuilder.fill(shoulderAngle, elbowAngle));
-    if (testPosition.getDistance(position) > 1e-3) {
+    Translation2d testPosition =
+        forward(VecBuilder.fill(shoulderAngle, elbowAngle)).minus(config.origin());
+    if (testPosition.getDistance(relativePosition) > 1e-3) {
       shoulderAngle += Math.PI;
     }
 
@@ -79,7 +80,15 @@ public class ArmKinematics {
 
     // Wrap angles to correct ranges
     shoulderAngle = MathUtil.inputModulus(shoulderAngle, -Math.PI, Math.PI);
-    elbowAngle = MathUtil.inputModulus(shoulderAngle, 0.0, Math.PI * 2.0);
+    elbowAngle = MathUtil.inputModulus(elbowAngle, 0.0, Math.PI * 2.0);
+
+    // Exit if outside valid ranges for the joints
+    if (shoulderAngle < config.shoulder().minAngle()
+        || shoulderAngle > config.shoulder().maxAngle()
+        || elbowAngle < config.elbow().minAngle()
+        || elbowAngle > config.elbow().maxAngle()) {
+      return Optional.empty();
+    }
 
     // Return result
     return Optional.of(VecBuilder.fill(shoulderAngle, elbowAngle));
