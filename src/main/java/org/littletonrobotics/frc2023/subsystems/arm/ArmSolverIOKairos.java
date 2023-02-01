@@ -72,6 +72,8 @@ public class ArmSolverIOKairos implements ArmSolverIO {
   }
 
   public void request(ArmTrajectory.Parameters parameters) {
+    if (parameters.hashCode() == parameterHash) return;
+
     // Create JSON
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     JsonGenerator generator;
@@ -80,28 +82,18 @@ public class ArmSolverIOKairos implements ArmSolverIO {
       generator.writeStartObject();
       generator.writeNumberField("hash", parameters.hashCode());
 
-      generator.writeArrayFieldStart("initialJointPositions");
+      generator.writeArrayFieldStart("initial");
       generator.writeNumber(parameters.initialJointPositions().get(0, 0));
       generator.writeNumber(parameters.initialJointPositions().get(1, 0));
       generator.writeEndArray();
 
-      generator.writeArrayFieldStart("finalJointPositions");
+      generator.writeArrayFieldStart("final");
       generator.writeNumber(parameters.finalJointPositions().get(0, 0));
       generator.writeNumber(parameters.finalJointPositions().get(1, 0));
       generator.writeEndArray();
 
-      generator.writeArrayFieldStart("initialJointVelocities");
-      generator.writeNumber(parameters.initialJointVelocities().get(0, 0));
-      generator.writeNumber(parameters.initialJointVelocities().get(1, 0));
-      generator.writeEndArray();
-
-      generator.writeArrayFieldStart("finalJointVelocities");
-      generator.writeNumber(parameters.finalJointVelocities().get(0, 0));
-      generator.writeNumber(parameters.finalJointVelocities().get(1, 0));
-      generator.writeEndArray();
-
-      generator.writeArrayFieldStart("constraintKeys");
-      for (var constraintKey : parameters.constraintKeys()) {
+      generator.writeArrayFieldStart("constraintOverrides");
+      for (var constraintKey : parameters.constraintOverrides()) {
         generator.writeString(constraintKey);
       }
       generator.writeEndArray();

@@ -30,7 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import org.littletonrobotics.frc2023.Constants;
 import org.littletonrobotics.frc2023.util.LoggedTunableNumber;
 import org.littletonrobotics.junction.Logger;
@@ -65,7 +64,7 @@ public class Arm extends SubsystemBase {
   private ArmPose setpointPose = null; // Pose to revert to when not following trajectory
   private ArmPose queuedPose = null; // Use as setpoint once trajectory is completed
   private Timer trajectoryTimer = new Timer();
-  private final ArmPose homedPose;
+  private boolean presetMessagePrinted = false;
 
   private PIDController shoulderFeedback =
       new PIDController(0.0, 0.0, 0.0, Constants.loopPeriodSecs);
@@ -101,6 +100,31 @@ public class Arm extends SubsystemBase {
     }
   }
 
+  /** Represents a target position for the arm. */
+  public static record ArmPose(Translation2d endEffectorPosition, Rotation2d globalWristAngle) {
+    public static enum Preset {
+      HOMED(null),
+      FORWARD(new ArmPose(new Translation2d(1.0, 1.0), new Rotation2d(-Math.PI / 3))),
+      BACKWARD(new ArmPose(new Translation2d(-1.0, 1.0), new Rotation2d(-2 * Math.PI / 3))),
+      FORWARD_UP(new ArmPose(new Translation2d(0.5, 1.5), new Rotation2d())),
+      BACKWARD_UP(new ArmPose(new Translation2d(-0.5, 1.5), new Rotation2d(Math.PI)));
+
+      private ArmPose pose;
+
+      private Preset(ArmPose pose) {
+        this.pose = pose;
+      }
+
+      private void setPose(ArmPose pose) {
+        this.pose = pose;
+      }
+
+      public ArmPose getPose() {
+        return pose;
+      }
+    }
+  }
+
   public Arm(ArmIO io, ArmSolverIO solverIo) {
     this.io = io;
     this.solverIo = solverIo;
@@ -120,16 +144,45 @@ public class Arm extends SubsystemBase {
     kinematics = new ArmKinematics(config);
 
     // Calculate homed pose
-    homedPose =
+    ArmPose.Preset.HOMED.setPose(
         new ArmPose(
             new Translation2d(
                 config.origin().getX(),
                 config.origin().getY() + config.shoulder().length() - config.elbow().length()),
-            new Rotation2d(-Math.PI / 2));
+            new Rotation2d(-Math.PI / 2)));
 
     // Create visualizers
     visualizerMeasured = new ArmVisualizer(config, "Measured", null);
     visualizerSetpoint = new ArmVisualizer(config, "Setpoint", new Color8Bit(Color.kOrange));
+
+    // Add preset trajectories to queue
+    for (var preset0 : ArmPose.Preset.values()) {
+      for (var preset1 : ArmPose.Preset.values()) {
+        if (!preset0.equals(preset1)) {
+          Optional<Vector<N2>> preset0Angles =
+              kinematics.inverse(preset0.getPose().endEffectorPosition());
+          Optional<Vector<N2>> preset1Angles =
+              kinematics.inverse(preset1.getPose().endEffectorPosition());
+          if (preset0Angles.isPresent() && preset1Angles.isPresent()) {
+            var parameters = new ArmTrajectory.Parameters(preset0Angles.get(), preset1Angles.get());
+            allTrajectories.put(parameters.hashCode(), new ArmTrajectory(parameters));
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Finds the next ungenerated trajectory and request it from the solver. If that trajectory is
+   * already being generated this will have no effect.
+   */
+  private void updateTrajectoryRequest() {
+    for (var trajectory : allTrajectories.values()) {
+      if (!trajectory.isGenerated()) {
+        solverIo.request(trajectory.getParameters());
+        break;
+      }
+    }
   }
 
   public void periodic() {
@@ -186,6 +239,25 @@ public class Arm extends SubsystemBase {
           points.add(VecBuilder.fill(solverInputs.shoulderPoints[i], solverInputs.elbowPoints[i]));
         }
         trajectory.setPoints(solverInputs.totalTime, points);
+      }
+    }
+
+    // Request next trajectory from solver
+    updateTrajectoryRequest();
+
+    // Log status of cached trajectories
+    int trajectoryCount = allTrajectories.size();
+    int trajectoryCountGenerated = 0;
+    for (var trajectory : allTrajectories.values()) {
+      if (trajectory.isGenerated()) trajectoryCountGenerated++;
+    }
+    Logger.getInstance().recordOutput("Arm/TrajectoryCount", trajectoryCount);
+    Logger.getInstance().recordOutput("Arm/TrajectoryCountGenerated", trajectoryCountGenerated);
+    if (trajectoryCountGenerated
+        >= ArmPose.Preset.values().length * (ArmPose.Preset.values().length - 1)) {
+      if (!presetMessagePrinted) {
+        System.out.println("All preset arm trajectories ready!");
+        presetMessagePrinted = true;
       }
     }
 
@@ -287,6 +359,10 @@ public class Arm extends SubsystemBase {
     visualizerSetpoint.update(loggedShoulderSetpoint, loggedElbowSetpoint, loggedWristSetpoint);
   }
 
+  public void setPose(ArmPose.Preset preset) {
+    setPose(preset.getPose());
+  }
+
   public void setPose(ArmPose pose) {
     // Get current and target angles
     Optional<Vector<N2>> currentAngles = kinematics.inverse(setpointPose.endEffectorPosition());
@@ -306,13 +382,7 @@ public class Arm extends SubsystemBase {
     }
 
     // Create parameters
-    var parameters =
-        new ArmTrajectory.Parameters(
-            currentAngles.get(),
-            targetAngles.get(),
-            VecBuilder.fill(0.0, 0.0),
-            VecBuilder.fill(0.0, 0.0),
-            Set.of());
+    var parameters = new ArmTrajectory.Parameters(currentAngles.get(), targetAngles.get());
 
     // Reset current trajectory
     trajectoryTimer.stop();
@@ -343,11 +413,7 @@ public class Arm extends SubsystemBase {
     allTrajectories.put(parameters.hashCode(), trajectory);
     currentTrajectory = trajectory;
     queuedPose = pose;
-    solverIo.request(parameters);
-  }
-
-  public void setPoseHomed() {
-    setPose(homedPose);
+    updateTrajectoryRequest(); // Start solving immediately if nothing else in queue
   }
 
   public void shiftPose(Translation2d shift) {
@@ -360,7 +426,4 @@ public class Arm extends SubsystemBase {
       }
     }
   }
-
-  /** Represents a target position for the arm. */
-  public static record ArmPose(Translation2d endEffectorPosition, Rotation2d globalWristAngle) {}
 }

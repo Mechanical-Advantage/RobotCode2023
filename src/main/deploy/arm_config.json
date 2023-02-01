@@ -47,21 +47,10 @@
     "maxVoltage": 8
   },
   "constraints": {
-    "testCircle": {
-      "type": "circle",
+    "floor": {
+      "type": "minY",
       "args": [
-        -0.25,
-        0.0,
-        0.4
-      ]
-    },
-    "testRectangle": {
-      "type": "rectangle",
-      "args": [
-        -1,
-        0,
-        0,
-        0.25
+        0.0
       ]
     }
   }

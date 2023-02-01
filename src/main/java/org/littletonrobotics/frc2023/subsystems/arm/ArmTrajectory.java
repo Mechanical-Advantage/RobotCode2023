@@ -28,9 +28,13 @@ public class ArmTrajectory {
   public static record Parameters(
       Vector<N2> initialJointPositions,
       Vector<N2> finalJointPositions,
-      Vector<N2> initialJointVelocities,
-      Vector<N2> finalJointVelocities,
-      Set<String> constraintKeys) {}
+      Set<String> constraintOverrides) {
+
+    /** Creates a new Parameters object with no constraint overrides. */
+    public Parameters(Vector<N2> initialJointPositions, Vector<N2> finalJointPositions) {
+      this(initialJointPositions, finalJointPositions, Set.of());
+    }
+  }
 
   /** Creates an arm trajectory with the given parameters. */
   public ArmTrajectory(Parameters parameters) {
