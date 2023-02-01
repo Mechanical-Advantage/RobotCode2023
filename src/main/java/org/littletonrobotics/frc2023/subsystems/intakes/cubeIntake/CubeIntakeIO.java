@@ -10,23 +10,21 @@ import org.littletonrobotics.junction.AutoLog;
 public interface CubeIntakeIO {
   @AutoLog
   public static class CubeIntakeIOInputs {
+    public double armAbsolutePosition = 0.0;
     public double armPositionRad = 0.0;
     public double armVelocityRadPerSec = 0.0;
     public double armAppliedVolts = 0.0;
-
     public double[] armCurrentAmps = new double[] {};
     public double[] armTempCelcius = new double[] {};
 
     public double intakePositionRad = 0.0;
     public double inakeVelocityRadPerSec = 0.0;
     public double intakeAppliedVolts = 0.0;
-
     public double[] intakeCurrentAmps = new double[] {};
     public double[] intakeTempCelcius = new double[] {};
   }
   /** Updates the set of loggable inputs. */
-  public default void updateInputs(CubeIntakeIOInputs inputs) {
-  }
+  public default void updateInputs(CubeIntakeIOInputs inputs) {}
   
   /** Set the intake roller voltage */
   public default void setIntakeVoltage(double volts) {}
