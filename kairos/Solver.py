@@ -9,6 +9,7 @@ from casadi import *
 
 from ArmFeedforward import ArmFeedforward, JointConfig
 from DCMotor import DCMotor
+import math
 
 
 class Solver:
@@ -23,6 +24,17 @@ class Solver:
         # Get constants from config
         n = config["solver"]["interiorPoints"]
         max_voltage = config["solver"]["maxVoltage"]
+        elbow_cg_radius = (
+            config["elbow"]["cgRadius"] * config["elbow"]["mass"]
+            + (config["elbow"]["length"] + config["wrist"]["cgRadius"])
+            * config["wrist"]["mass"]
+        ) / (config["elbow"]["mass"] + config["wrist"]["mass"])
+        elbow_moi = config["elbow"]["mass"] * math.pow(
+            config["elbow"]["cgRadius"] - elbow_cg_radius, 2.0
+        ) + config["wrist"]["mass"] * math.pow(
+            config["elbow"]["length"] + config["wrist"]["cgRadius"] - elbow_cg_radius,
+            2.0,
+        )
         ff_model = ArmFeedforward(
             JointConfig(
                 config["shoulder"]["mass"],
@@ -32,10 +44,10 @@ class Solver:
                 self._get_motor(config["shoulder"]["motor"]),
             ),
             JointConfig(
-                config["elbow"]["mass"],
-                config["elbow"]["length"],
-                config["elbow"]["moi"],
-                config["elbow"]["cgRadius"],
+                config["elbow"]["mass"] + config["wrist"]["mass"],
+                config["elbow"]["length"] + config["wrist"]["length"],
+                elbow_moi,
+                elbow_cg_radius,
                 self._get_motor(config["elbow"]["motor"]),
             ),
         )

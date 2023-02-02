@@ -39,9 +39,9 @@ public record ArmConfig(
       double length,
       double moi,
       double cgRadius,
-      double reduction,
       double minAngle,
       double maxAngle,
+      double reduction,
       DCMotor motor) {}
 
   /** Config fields for solver. */

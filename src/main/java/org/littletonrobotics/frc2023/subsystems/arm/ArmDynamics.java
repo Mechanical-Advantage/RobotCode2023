@@ -27,10 +27,32 @@ import edu.wpi.first.math.system.NumericalIntegration;
  */
 public class ArmDynamics {
   private static final double g = 9.80665;
-  private final ArmConfig config;
+  private final ArmConfig.JointConfig shoulder;
+  private final ArmConfig.JointConfig elbow;
 
   public ArmDynamics(ArmConfig config) {
-    this.config = config;
+    shoulder = config.shoulder();
+
+    // Combine elbow and wrist constants
+    var elbowCgRadius =
+        (config.elbow().cgRadius() * config.elbow().mass()
+                + (config.elbow().length() + config.wrist().cgRadius()) * config.wrist().mass())
+            / (config.elbow().mass() + config.wrist().mass());
+    var elbowMoi =
+        config.elbow().mass() * Math.pow(config.elbow().cgRadius() - elbowCgRadius, 2.0)
+            + config.wrist().mass()
+                * Math.pow(
+                    config.elbow().length() + config.wrist().cgRadius() - elbowCgRadius, 2.0);
+    elbow =
+        new ArmConfig.JointConfig(
+            config.elbow().mass() + config.wrist().mass(),
+            config.elbow().length() + config.wrist().length(),
+            elbowMoi,
+            elbowCgRadius,
+            config.elbow().minAngle(),
+            config.elbow().maxAngle(),
+            config.elbow().reduction(),
+            config.elbow().motor());
   }
 
   /** Calculates the joint voltages based on the joint positions (feedforward). */
@@ -57,8 +79,8 @@ public class ArmDynamics {
             .plus(C(position, velocity).times(velocity))
             .plus(Tg(position));
     return VecBuilder.fill(
-        config.shoulder().motor().getVoltage(torque.get(0, 0), velocity.get(0, 0)),
-        config.elbow().motor().getVoltage(torque.get(1, 0), velocity.get(1, 0)));
+        shoulder.motor().getVoltage(torque.get(0, 0), velocity.get(0, 0)),
+        elbow.motor().getVoltage(torque.get(1, 0), velocity.get(1, 0)));
   }
 
   /**
@@ -81,22 +103,18 @@ public class ArmDynamics {
 
               // Calculate torque
               var shoulderTorque =
-                  config
-                      .shoulder()
+                  shoulder
                       .motor()
-                      .getTorque(
-                          config.shoulder().motor().getCurrent(velocity.get(0, 0), u.get(0, 0)));
+                      .getTorque(shoulder.motor().getCurrent(velocity.get(0, 0), u.get(0, 0)));
               var elbowTorque =
-                  config
-                      .elbow()
+                  elbow
                       .motor()
-                      .getTorque(
-                          config.elbow().motor().getCurrent(velocity.get(1, 0), u.get(1, 0)));
+                      .getTorque(elbow.motor().getCurrent(velocity.get(1, 0), u.get(1, 0)));
               var torque = VecBuilder.fill(shoulderTorque, elbowTorque);
 
               // Apply limits
-              if (position.get(0, 0) < config.shoulder().minAngle()) {
-                position.set(0, 0, config.shoulder().minAngle());
+              if (position.get(0, 0) < shoulder.minAngle()) {
+                position.set(0, 0, shoulder.minAngle());
                 if (velocity.get(0, 0) < 0.0) {
                   velocity.set(0, 0, 0.0);
                 }
@@ -104,8 +122,8 @@ public class ArmDynamics {
                   torque.set(0, 0, 0.0);
                 }
               }
-              if (position.get(0, 0) > config.shoulder().maxAngle()) {
-                position.set(0, 0, config.shoulder().maxAngle());
+              if (position.get(0, 0) > shoulder.maxAngle()) {
+                position.set(0, 0, shoulder.maxAngle());
                 if (velocity.get(0, 0) > 0.0) {
                   velocity.set(0, 0, 0.0);
                 }
@@ -113,8 +131,8 @@ public class ArmDynamics {
                   torque.set(0, 0, 0.0);
                 }
               }
-              if (position.get(1, 0) < config.elbow().minAngle()) {
-                position.set(1, 0, config.elbow().minAngle());
+              if (position.get(1, 0) < elbow.minAngle()) {
+                position.set(1, 0, elbow.minAngle());
                 if (velocity.get(1, 0) < 0.0) {
                   velocity.set(1, 0, 0.0);
                 }
@@ -122,8 +140,8 @@ public class ArmDynamics {
                   torque.set(1, 0, 0.0);
                 }
               }
-              if (position.get(1, 0) > config.elbow().maxAngle()) {
-                position.set(1, 0, config.elbow().maxAngle());
+              if (position.get(1, 0) > elbow.maxAngle()) {
+                position.set(1, 0, elbow.maxAngle());
                 if (velocity.get(1, 0) > 0.0) {
                   velocity.set(1, 0, 0.0);
                 }
@@ -157,39 +175,28 @@ public class ArmDynamics {
     M.set(
         0,
         0,
-        config.shoulder().mass() * Math.pow(config.shoulder().cgRadius(), 2.0)
-            + config.elbow().mass()
-                * (Math.pow(config.shoulder().length(), 2.0)
-                    + Math.pow(config.elbow().cgRadius(), 2.0))
-            + config.shoulder().moi()
-            + config.elbow().moi()
+        shoulder.mass() * Math.pow(shoulder.cgRadius(), 2.0)
+            + elbow.mass() * (Math.pow(shoulder.length(), 2.0) + Math.pow(elbow.cgRadius(), 2.0))
+            + shoulder.moi()
+            + elbow.moi()
             + 2
-                * config.elbow().mass()
-                * config.shoulder().length()
-                * config.elbow().cgRadius()
+                * elbow.mass()
+                * shoulder.length()
+                * elbow.cgRadius()
                 * Math.cos(position.get(1, 0)));
     M.set(
         1,
         0,
-        config.elbow().mass() * Math.pow(config.elbow().cgRadius(), 2.0)
-            + config.elbow().moi()
-            + config.elbow().mass()
-                * config.shoulder().length()
-                * config.elbow().cgRadius()
-                * Math.cos(position.get(1, 0)));
+        elbow.mass() * Math.pow(elbow.cgRadius(), 2.0)
+            + elbow.moi()
+            + elbow.mass() * shoulder.length() * elbow.cgRadius() * Math.cos(position.get(1, 0)));
     M.set(
         0,
         1,
-        config.elbow().mass() * Math.pow(config.elbow().cgRadius(), 2.0)
-            + config.elbow().moi()
-            + config.elbow().mass()
-                * config.shoulder().length()
-                * config.elbow().cgRadius()
-                * Math.cos(position.get(1, 0)));
-    M.set(
-        1,
-        1,
-        config.elbow().mass() * Math.pow(config.elbow().cgRadius(), 2.0) + config.elbow().moi());
+        elbow.mass() * Math.pow(elbow.cgRadius(), 2.0)
+            + elbow.moi()
+            + elbow.mass() * shoulder.length() * elbow.cgRadius() * Math.cos(position.get(1, 0)));
+    M.set(1, 1, elbow.mass() * Math.pow(elbow.cgRadius(), 2.0) + elbow.moi());
     return M;
   }
 
@@ -198,25 +205,25 @@ public class ArmDynamics {
     C.set(
         0,
         0,
-        -config.elbow().mass()
-            * config.shoulder().length()
-            * config.elbow().cgRadius()
+        -elbow.mass()
+            * shoulder.length()
+            * elbow.cgRadius()
             * Math.sin(position.get(1, 0))
             * velocity.get(1, 0));
     C.set(
         1,
         0,
-        config.elbow().mass()
-            * config.shoulder().length()
-            * config.elbow().cgRadius()
+        elbow.mass()
+            * shoulder.length()
+            * elbow.cgRadius()
             * Math.sin(position.get(1, 0))
             * velocity.get(0, 0));
     C.set(
         0,
         1,
-        -config.elbow().mass()
-            * config.shoulder().length()
-            * config.elbow().cgRadius()
+        -elbow.mass()
+            * shoulder.length()
+            * elbow.cgRadius()
             * Math.sin(position.get(1, 0))
             * (velocity.get(0, 0) + velocity.get(1, 0)));
     return C;
@@ -227,21 +234,17 @@ public class ArmDynamics {
     Tg.set(
         0,
         0,
-        (config.shoulder().mass() * config.shoulder().cgRadius()
-                    + config.elbow().mass() * config.shoulder().length())
+        (shoulder.mass() * shoulder.cgRadius() + elbow.mass() * shoulder.length())
                 * g
                 * Math.cos(position.get(0, 0))
-            + config.elbow().mass()
-                * config.elbow().cgRadius()
+            + elbow.mass()
+                * elbow.cgRadius()
                 * g
                 * Math.cos(position.get(0, 0) + position.get(1, 0)));
     Tg.set(
         1,
         0,
-        config.elbow().mass()
-            * config.elbow().cgRadius()
-            * g
-            * Math.cos(position.get(0, 0) + position.get(1, 0)));
+        elbow.mass() * elbow.cgRadius() * g * Math.cos(position.get(0, 0) + position.get(1, 0)));
     return Tg;
   }
 }

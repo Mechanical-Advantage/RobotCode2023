@@ -33,7 +33,7 @@ public class ArmIOSim implements ArmIO {
     wristSim =
         new SingleJointedArmSim(
             config.wrist().motor(),
-            1.0,
+            1.0, // Reduction is included in the motor
             config.wrist().moi(),
             config.wrist().length(),
             config.wrist().minAngle(),
