@@ -9,13 +9,16 @@ package org.littletonrobotics.frc2023.subsystems.arm;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.Vector;
+import edu.wpi.first.math.numbers.N4;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import org.littletonrobotics.frc2023.Constants;
 
 public class ArmIOSim implements ArmIO {
-  private SingleJointedArmSim shoulderSim;
-  private SingleJointedArmSim elbowSim;
+  private ArmConfig config;
+  private ArmDynamics dynamics;
+  private Vector<N4> shoulderElbowStates = VecBuilder.fill(Math.PI / 2.0, Math.PI, 0.0, 0.0);
   private SingleJointedArmSim wristSim;
 
   private double shoulderAppliedVolts = 0.0;
@@ -25,28 +28,8 @@ public class ArmIOSim implements ArmIO {
   public ArmIOSim() {}
 
   public void setConfig(ArmConfig config) {
-    shoulderSim =
-        new SingleJointedArmSim(
-            config.shoulder().motor(),
-            1.0,
-            config.shoulder().moi(),
-            config.shoulder().length(),
-            config.shoulder().minAngle(),
-            config.shoulder().maxAngle(),
-            config.shoulder().mass() + config.elbow().mass(),
-            true);
-    shoulderSim.setState(VecBuilder.fill(Math.PI / 2.0, 0.0));
-    elbowSim =
-        new SingleJointedArmSim(
-            config.elbow().motor(),
-            1.0,
-            config.elbow().moi(),
-            config.elbow().length(),
-            config.elbow().minAngle(),
-            config.elbow().maxAngle(),
-            config.elbow().mass(),
-            false);
-    elbowSim.setState(VecBuilder.fill(Math.PI, 0.0));
+    this.config = config;
+    dynamics = new ArmDynamics(config);
     wristSim =
         new SingleJointedArmSim(
             config.wrist().motor(),
@@ -67,22 +50,31 @@ public class ArmIOSim implements ArmIO {
       setWristVoltage(0.0);
     }
 
-    shoulderSim.update(Constants.loopPeriodSecs);
-    elbowSim.update(Constants.loopPeriodSecs);
+    shoulderElbowStates =
+        dynamics.simulate(
+            shoulderElbowStates,
+            VecBuilder.fill(shoulderAppliedVolts, elbowAppliedVolts),
+            Constants.loopPeriodSecs);
     wristSim.update(Constants.loopPeriodSecs);
 
-    inputs.shoulderAbsolutePositionRad = shoulderSim.getAngleRads();
-    inputs.shoulderPositionRad = shoulderSim.getAngleRads();
-    inputs.shoulderVelocityRadPerSec = shoulderSim.getVelocityRadPerSec();
+    inputs.shoulderAbsolutePositionRad = shoulderElbowStates.get(0, 0);
+    inputs.shoulderPositionRad = shoulderElbowStates.get(0, 0);
+    inputs.shoulderVelocityRadPerSec = shoulderElbowStates.get(2, 0);
     inputs.shoulderAppliedVolts = shoulderAppliedVolts;
-    inputs.shoulderCurrentAmps = new double[] {shoulderSim.getCurrentDrawAmps()};
+    inputs.shoulderCurrentAmps =
+        new double[] {
+          config.shoulder().motor().getCurrent(shoulderElbowStates.get(2, 0), shoulderAppliedVolts)
+        };
     inputs.shoulderTempCelcius = new double[] {};
 
-    inputs.elbowAbsolutePositionRad = elbowSim.getAngleRads();
-    inputs.elbowPositionRad = elbowSim.getAngleRads();
-    inputs.elbowVelocityRadPerSec = elbowSim.getVelocityRadPerSec();
+    inputs.elbowAbsolutePositionRad = shoulderElbowStates.get(1, 0);
+    inputs.elbowPositionRad = shoulderElbowStates.get(1, 0);
+    inputs.elbowVelocityRadPerSec = shoulderElbowStates.get(3, 0);
     inputs.elbowAppliedVolts = elbowAppliedVolts;
-    inputs.elbowCurrentAmps = new double[] {elbowSim.getCurrentDrawAmps()};
+    inputs.elbowCurrentAmps =
+        new double[] {
+          config.elbow().motor().getCurrent(shoulderElbowStates.get(3, 0), elbowAppliedVolts)
+        };
     inputs.elbowTempCelcius = new double[] {};
 
     inputs.wristAbsolutePositionRad = wristSim.getAngleRads();
@@ -95,12 +87,10 @@ public class ArmIOSim implements ArmIO {
 
   public void setShoulderVoltage(double volts) {
     shoulderAppliedVolts = MathUtil.clamp(volts, -12, 12);
-    shoulderSim.setInputVoltage(shoulderAppliedVolts);
   }
 
   public void setElbowVoltage(double volts) {
     elbowAppliedVolts = MathUtil.clamp(volts, -12, 12);
-    elbowSim.setInputVoltage(elbowAppliedVolts);
   }
 
   public void setWristVoltage(double volts) {

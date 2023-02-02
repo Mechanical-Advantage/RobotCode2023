@@ -28,7 +28,7 @@ import java.util.Map;
 public record ArmConfig(
     Translation2d origin,
     JointConfig shoulder,
-    JointConfig elbow, // Mass, MOI, and CG radius should include the wrist
+    JointConfig elbow,
     JointConfig wrist,
     SolverConfig solver,
     Map<String, Constraint> constraints) {
@@ -100,7 +100,7 @@ public record ArmConfig(
   }
 
   /** Generates a config instance by reading from a JSON file. */
-  public static ArmConfig fromJson(File source) {
+  public static ArmConfig loadJson(File source) {
     // Set up object mapper
     ObjectMapper mapper = new ObjectMapper();
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);

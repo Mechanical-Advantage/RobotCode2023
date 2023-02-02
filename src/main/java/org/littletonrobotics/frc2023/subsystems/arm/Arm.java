@@ -45,8 +45,8 @@ public class Arm extends SubsystemBase {
   private static final String configFilename = "arm_config.json";
   private final String configJson;
   private final ArmConfig config;
-  private final ArmFeedforward ffModel;
   private final ArmKinematics kinematics;
+  private final ArmDynamics dynamics;
 
   private final ArmVisualizer visualizerMeasured;
   private final ArmVisualizer visualizerSetpoint;
@@ -86,9 +86,9 @@ public class Arm extends SubsystemBase {
   static {
     switch (Constants.getRobot()) {
       case ROBOT_SIMBOT:
-        shoulderKp.initDefault(100.0);
+        shoulderKp.initDefault(10.0);
         shoulderKd.initDefault(0.0);
-        elbowKp.initDefault(100.0);
+        elbowKp.initDefault(10.0);
         elbowKd.initDefault(0.0);
         wristKp.initDefault(30.0);
         wristKd.initDefault(0.0);
@@ -137,11 +137,11 @@ public class Arm extends SubsystemBase {
     } catch (IOException e) {
       throw new RuntimeException("Failed to read raw arm config JSON");
     }
-    config = ArmConfig.fromJson(configFile);
+    config = ArmConfig.loadJson(configFile);
     io.setConfig(config);
     solverIo.setConfig(configJson);
-    ffModel = new ArmFeedforward(config);
     kinematics = new ArmKinematics(config);
+    dynamics = new ArmDynamics(config);
 
     // Calculate homed pose
     ArmPose.Preset.HOMED.setPose(
@@ -299,7 +299,7 @@ public class Arm extends SubsystemBase {
       // Follow trajectory
       trajectoryTimer.start();
       var state = currentTrajectory.sample(trajectoryTimer.get());
-      var voltages = ffModel.calculate(state);
+      var voltages = dynamics.feedforward(state);
       io.setShoulderVoltage(
           voltages.get(0, 0) + shoulderFeedback.calculate(shoulderAngle, state.get(0, 0)));
       io.setElbowVoltage(voltages.get(1, 0) + elbowFeedback.calculate(elbowAngle, state.get(1, 0)));
@@ -315,7 +315,7 @@ public class Arm extends SubsystemBase {
       // Go to setpoint
       Optional<Vector<N2>> angles = kinematics.inverse(setpointPose.endEffectorPosition());
       if (angles.isPresent()) {
-        var voltages = ffModel.calculate(angles.get());
+        var voltages = dynamics.feedforward(angles.get());
         io.setShoulderVoltage(
             voltages.get(0, 0) + shoulderFeedback.calculate(shoulderAngle, angles.get().get(0, 0)));
         io.setElbowVoltage(
