@@ -86,9 +86,9 @@ public class Arm extends SubsystemBase {
   static {
     switch (Constants.getRobot()) {
       case ROBOT_SIMBOT:
-        shoulderKp.initDefault(80.0);
-        shoulderKd.initDefault(3.0);
-        elbowKp.initDefault(10.0);
+        shoulderKp.initDefault(50.0);
+        shoulderKd.initDefault(0.0);
+        elbowKp.initDefault(50.0);
         elbowKd.initDefault(0.0);
         wristKp.initDefault(30.0);
         wristKd.initDefault(2.0);

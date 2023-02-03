@@ -4,53 +4,54 @@
     0.654
   ],
   "shoulder": {
-    "mass": 15,
+    "mass": 1.036005,
     "length": 0.686,
-    "moi": 1,
-    "cgRadius": 0.425,
+    "moi": 0.08,
+    "cgRadius": 0.4318,
     "minAngle": 0.0,
     "maxAngle": 3.1415926536,
     "motor": {
       "type": "neo",
       "count": 2,
-      "reduction": 130.0
+      "reduction": 197.0
     }
   },
   "elbow": {
-    "mass": 10,
+    "mass": 1.036005,
     "length": 0.8,
-    "moi": 1,
-    "cgRadius": 0.375,
+    "moi": 0.08,
+    "cgRadius": 0.4318,
     "minAngle": 0.5235987756,
     "maxAngle": 5.7595865316,
     "motor": {
       "type": "neo",
       "count": 1,
-      "reduction": 100.0
+      "reduction": 200.0
     }
   },
   "wrist": {
-    "mass": 5,
-    "length": 0.2,
-    "moi": 0.25,
-    "cgRadius": 0.1,
+    "mass": 2.721554,
+    "length": 0.261,
+    "moi": 0.039538,
+    "cgRadius": 0.0574802,
     "minAngle": -1.5707963268,
     "maxAngle": 1.5707963268,
     "motor": {
-      "type": "neo550",
+      "type": "neo",
       "count": 1,
-      "reduction": 80.0
+      "reduction": 120.0
     }
   },
   "solver": {
     "interiorPoints": 25,
-    "maxVoltage": 8
+    "maxVoltage": 8,
+    "maxJerk": 30
   },
   "constraints": {
     "floor": {
       "type": "minY",
       "args": [
-        0.0
+        0.5
       ]
     }
   }
