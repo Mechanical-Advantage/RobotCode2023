@@ -47,6 +47,11 @@ public class DualHandheldOI extends HandheldOI {
   }
 
   @Override
+  public Trigger getResetGyro() {
+    return driverController.start().or(driverController.back());
+  }
+
+  @Override
   public void setDriverRumble(double percent) {
     driverController.getHID().setRumble(RumbleType.kRightRumble, percent);
   }

@@ -33,6 +33,10 @@ public class HandheldOI {
     return dummyTrigger;
   }
 
+  public Trigger getResetGyro() {
+    return dummyTrigger;
+  }
+
   public void setDriverRumble(double percent) {}
 
   public void setOperatorRumble(double percent) {}

@@ -35,6 +35,7 @@ import org.littletonrobotics.frc2023.subsystems.drive.ModuleIOSim;
 import org.littletonrobotics.frc2023.subsystems.drive.ModuleIOSparkMax;
 import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
+import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
 import org.littletonrobotics.frc2023.util.SparkMaxBurnManager;
 import org.littletonrobotics.frc2023.util.trajectory.Waypoint;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
@@ -162,6 +163,16 @@ public class RobotContainer {
     handheldOI = OISelector.findHandheldOI();
 
     // *** DRIVER CONTROLS ***
+    handheldOI
+        .getResetGyro()
+        .onTrue(
+            new InstantCommand(
+                () -> {
+                  drive.setPose(
+                      new Pose2d(
+                          drive.getPose().getTranslation(),
+                          AllianceFlipUtil.apply(new Rotation2d())));
+                }));
     var target =
         FieldConstants.aprilTags
             .get(2)
