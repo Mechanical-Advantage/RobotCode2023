@@ -24,6 +24,7 @@ class Solver:
         # Get constants from config
         n = config["solver"]["interiorPoints"]
         max_voltage = config["solver"]["maxVoltage"]
+        max_jerk = config["solver"]["maxJerk"]
         elbow_cg_radius = (
             config["elbow"]["cgRadius"] * config["elbow"]["mass"]
             + (config["elbow"]["length"] + config["wrist"]["cgRadius"])
@@ -83,17 +84,22 @@ class Solver:
 
         # Create constraint parameters (0 = disabled, 1 = enabled)
         self._constraint_parameters = {}
-        for constraint in config["constraints"].items():
-            self._constraint_parameters[constraint[0]] = opti.parameter()
+        for (constraint_key, constraint) in config["constraints"].items():
+            self._constraint_parameters[constraint_key] = opti.parameter()
 
         # Apply point constraints
         for i in range(n + 2):
             # Get surrounding points
+            last_theta_2 = theta_points[i if i <= 1 else i - 2]
             last_theta = theta_points[i if i == 0 else i - 1]
             current_theta = theta_points[i]
             next_theta = theta_points[i if i == n + 1 else i + 1]
 
             # Apply voltage constraints
+            last_velocity_2 = (
+                (last_theta[0] - last_theta_2[0]) / dt,
+                (last_theta[1] - last_theta_2[1]) / dt,
+            )
             last_velocity = (
                 (current_theta[0] - last_theta[0]) / dt,
                 (current_theta[1] - last_theta[1]) / dt,
@@ -102,13 +108,23 @@ class Solver:
                 (next_theta[0] - current_theta[0]) / dt,
                 (next_theta[1] - current_theta[1]) / dt,
             )
+            last_acceleration = (
+                (last_velocity[0] - last_velocity_2[0]) / dt,
+                (last_velocity[1] - last_velocity_2[1]) / dt,
+            )
             acceleration = (
                 (next_velocity[0] - last_velocity[0]) / dt,
                 (next_velocity[1] - last_velocity[1]) / dt,
             )
+            jerk = (
+                (acceleration[0] - last_acceleration[0]) / (2 * dt),
+                (acceleration[1] - last_acceleration[1]) / (2 * dt),
+            )
             voltage = ff_model.calculate(current_theta, last_velocity, acceleration)
             opti.subject_to(opti.bounded(-max_voltage, voltage[0], max_voltage))
             opti.subject_to(opti.bounded(-max_voltage, voltage[1], max_voltage))
+            opti.subject_to(opti.bounded(-max_jerk, jerk[0], max_jerk))
+            opti.subject_to(opti.bounded(-max_jerk, jerk[1], max_jerk))
 
             # Apply position constraints
             if i != 0 and i != n + 1:
@@ -125,11 +141,10 @@ class Solver:
                     * sin(current_theta[0] + current_theta[1])
                 )
 
-                opti.subject_to(y > 0)  # Always stay above the ground
-                for constraint in config["constraints"].items():
-                    enabled = self._constraint_parameters[constraint[0]]
-                    type = constraint[1]["type"]
-                    args = constraint[1]["args"]
+                for (constraint_key, constraint) in config["constraints"].items():
+                    enabled = self._constraint_parameters[constraint_key]
+                    type = constraint["type"]
+                    args = constraint["args"]
                     if type == "minX":
                         opti.subject_to(x >= args[0] - ((1 - enabled) * 1000))
 
@@ -150,6 +165,7 @@ class Solver:
                             sqrt((x - center_x) ** 2 + (y - center_y) ** 2)
                             > radius * enabled
                         )
+
                     elif type == "rectangle":
                         x_0 = args[0]
                         y_0 = args[1]
@@ -227,13 +243,65 @@ class Solver:
             )
 
         # Set constraint parameters
-        for constraint in self._constraint_parameters.items():
-            key = constraint[0]
-            value = constraint[1]
-            if key in parameters["constraintOverrides"]:
-                opti.set_value(value, 0)
+        inital_theta = (opti.value(theta_points[0][0]), opti.value(theta_points[0][1]))
+        start_x = (
+            self._config["origin"][0]
+            + self._config["shoulder"]["length"] * cos(inital_theta[0])
+            + self._config["elbow"]["length"] * cos(inital_theta[0] + inital_theta[1])
+        )
+        start_y = (
+            self._config["origin"][1]
+            + self._config["shoulder"]["length"] * sin(inital_theta[0])
+            + self._config["elbow"]["length"] * sin(inital_theta[0] + inital_theta[1])
+        )
+        for (
+            constraint_key,
+            constraint_parameter,
+        ) in self._constraint_parameters.items():
+            constraint = self._config["constraints"][constraint_key]
+            type = constraint["type"]
+            args = constraint["args"]
+
+            # Check if start position violates the constraint
+            start_violated = False
+            if type == "minX":
+                start_violated = start_x < args[0]
+
+            elif type == "maxX":
+                start_violated = start_x > args[0]
+
+            elif type == "minY":
+                start_violated = start_y < args[0]
+
+            elif type == "maxY":
+                start_violated = start_y > args[0]
+
+            elif type == "circle":
+                center_x = args[0]
+                center_y = args[1]
+                radius = args[2]
+                start_violated = (
+                    sqrt((start_x - center_x) ** 2 + (start_y - center_y) ** 2)
+                    <= radius
+                )
+
+            elif type == "rectangle":
+                x_0 = args[0]
+                y_0 = args[1]
+                x_1 = args[2]
+                y_1 = args[3]
+                start_violated = (
+                    start_x >= x_0
+                    and start_x <= x_1
+                    and start_y >= y_0
+                    and start_y <= y_1
+                )
+
+            # Set enabled
+            if start_violated or (constraint_key in parameters["constraintOverrides"]):
+                opti.set_value(constraint_parameter, 0)
             else:
-                opti.set_value(value, 1)
+                opti.set_value(constraint_parameter, 1)
 
         # Solve
         try:

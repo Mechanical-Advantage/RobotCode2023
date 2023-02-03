@@ -9,18 +9,16 @@ import json
 
 from Plotter import plot
 from Solver import Solver
+from math import pi
 
 if __name__ == "__main__":
     config = json.loads(open("src/main/deploy/arm_config.json", "r").read())
     solver = Solver(config)
 
     request = {
-        "hash": -1879723957,
-        "initialJointPositions": [1.4864978511506446, 5.658764589965396],
-        "finalJointPositions": [2.098698247638489, 1.9481554011761955],
-        "initialJointVelocities": [0.0, 0.0],
-        "finalJointVelocities": [0.0, 0.0],
-        "constraintKeys": ["testRectangle"],
+        "initial": [pi - (pi / 2.5), pi / 2],
+        "final": [pi / 2.5, 3 * pi / 2],
+        "constraintOverrides": [],
     }
     result = solver.solve(request)
 
