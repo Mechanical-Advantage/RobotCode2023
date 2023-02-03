@@ -167,12 +167,13 @@ public class RobotContainer {
         .getResetGyro()
         .onTrue(
             new InstantCommand(
-                () -> {
-                  drive.setPose(
-                      new Pose2d(
-                          drive.getPose().getTranslation(),
-                          AllianceFlipUtil.apply(new Rotation2d())));
-                }));
+                    () -> {
+                      drive.setPose(
+                          new Pose2d(
+                              drive.getPose().getTranslation(),
+                              AllianceFlipUtil.apply(new Rotation2d())));
+                    })
+                .ignoringDisable(true));
     var target =
         FieldConstants.aprilTags
             .get(2)
