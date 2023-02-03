@@ -86,12 +86,12 @@ public class Arm extends SubsystemBase {
   static {
     switch (Constants.getRobot()) {
       case ROBOT_SIMBOT:
-        shoulderKp.initDefault(10.0);
-        shoulderKd.initDefault(0.0);
+        shoulderKp.initDefault(80.0);
+        shoulderKd.initDefault(3.0);
         elbowKp.initDefault(10.0);
         elbowKd.initDefault(0.0);
         wristKp.initDefault(30.0);
-        wristKd.initDefault(0.0);
+        wristKd.initDefault(2.0);
         wristMaxVelocity.initDefault(10.0);
         wristMaxAcceleration.initDefault(50.0);
         break;
@@ -299,10 +299,11 @@ public class Arm extends SubsystemBase {
       // Follow trajectory
       trajectoryTimer.start();
       var state = currentTrajectory.sample(trajectoryTimer.get());
+      state.set(0, 1, state.get(0, 1) + shoulderFeedback.calculate(shoulderAngle, state.get(0, 0)));
+      state.set(1, 1, state.get(1, 1) + elbowFeedback.calculate(elbowAngle, state.get(1, 0)));
       var voltages = dynamics.feedforward(state);
-      io.setShoulderVoltage(
-          voltages.get(0, 0) + shoulderFeedback.calculate(shoulderAngle, state.get(0, 0)));
-      io.setElbowVoltage(voltages.get(1, 0) + elbowFeedback.calculate(elbowAngle, state.get(1, 0)));
+      io.setShoulderVoltage(voltages.get(0, 0));
+      io.setElbowVoltage(voltages.get(1, 0));
       setpointPose = // If trajectory is interrupted, go to last setpoint
           new ArmPose(
               kinematics.forward(new Vector<>(state.extractColumnVector(0))),
