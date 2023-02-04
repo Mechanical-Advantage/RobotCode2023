@@ -77,7 +77,8 @@ public class ArmSolverIOKairos implements ArmSolverIO {
     }
     disconnectedAlert.set(connectedCount < instanceCount);
 
-    if (resultReceived) return; // We already got a result
+    // We already got a result
+    if (resultReceived) return;
 
     // Check for new results
     for (var subscriber : resultSubscribers) {

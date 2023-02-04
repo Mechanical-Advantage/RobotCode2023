@@ -37,6 +37,7 @@ import org.littletonrobotics.junction.Logger;
 public class Arm extends SubsystemBase {
   private static final double trajectoryCacheMarginRadians = 0.02;
   private static final double shiftCenterMarginMeters = 0.05;
+  private static final double wristGroundMarginMeters = 0.05;
 
   private final ArmIO io;
   private final ArmSolverIO solverIo;
@@ -108,7 +109,8 @@ public class Arm extends SubsystemBase {
       FORWARD(new ArmPose(new Translation2d(1.0, 1.0), new Rotation2d(-Math.PI / 3))),
       BACKWARD(new ArmPose(new Translation2d(-1.0, 1.0), new Rotation2d(-2 * Math.PI / 3))),
       FORWARD_UP(new ArmPose(new Translation2d(0.5, 1.5), new Rotation2d())),
-      BACKWARD_UP(new ArmPose(new Translation2d(-0.5, 1.5), new Rotation2d(Math.PI)));
+      BACKWARD_UP(new ArmPose(new Translation2d(-0.5, 1.5), new Rotation2d(Math.PI))),
+      INTAKE(new ArmPose(new Translation2d(0.75, 0.075), new Rotation2d()));
 
       private ArmPose pose;
 
@@ -342,9 +344,27 @@ public class Arm extends SubsystemBase {
       Optional<Vector<N2>> shoulderElbowAngles =
           kinematics.inverse(wristEffectiveArmPose.endEffectorPosition());
       if (shoulderElbowAngles.isPresent()) {
+        // Calculate required angle to avoid hitting the ground
+        double globalAngleRadians =
+            MathUtil.angleModulus(wristEffectiveArmPose.globalWristAngle().getRadians());
+        double groundDistance =
+            wristEffectiveArmPose.endEffectorPosition().getY() - wristGroundMarginMeters;
+
+        if (groundDistance < config.wrist().length()) {
+          double minGroundAngle = Math.acos(groundDistance / config.wrist().length());
+          if (globalAngleRadians >= -Math.PI / 2
+              && globalAngleRadians < -Math.PI / 2 + minGroundAngle) {
+            globalAngleRadians = -Math.PI / 2 + minGroundAngle;
+          }
+          if (globalAngleRadians < -Math.PI / 2
+              && globalAngleRadians > -Math.PI / 2 - minGroundAngle) {
+            globalAngleRadians = -Math.PI / 2 - minGroundAngle;
+          }
+        }
+
+        // Calculate setpoint and run controller
         double wristSetpoint =
-            wristEffectiveArmPose
-                .globalWristAngle()
+            new Rotation2d(globalAngleRadians)
                 .minus(
                     new Rotation2d(
                         shoulderElbowAngles.get().get(0, 0) + shoulderElbowAngles.get().get(1, 0)))
@@ -359,6 +379,10 @@ public class Arm extends SubsystemBase {
 
     // Log setpoints
     visualizerSetpoint.update(loggedShoulderSetpoint, loggedElbowSetpoint, loggedWristSetpoint);
+    Logger.getInstance().recordOutput("Arm/SetpointX", setpointPose.endEffectorPosition().getX());
+    Logger.getInstance().recordOutput("Arm/SetpointY", setpointPose.endEffectorPosition().getY());
+    Logger.getInstance()
+        .recordOutput("Arm/SetpointWrist", setpointPose.globalWristAngle().getRadians());
   }
 
   public void setPose(ArmPose.Preset preset) {
@@ -443,8 +467,13 @@ public class Arm extends SubsystemBase {
         }
       }
 
-      // Apply new translation if valid
+      // Don't go into the ground
       translation = translation.plus(config.origin());
+      if (translation.getY() < wristGroundMarginMeters) {
+        translation = new Translation2d(translation.getX(), wristGroundMarginMeters);
+      }
+
+      // Apply new translation if valid
       var angles = kinematics.inverse(translation);
       if (angles.isPresent()) {
         currentTrajectory = null;
