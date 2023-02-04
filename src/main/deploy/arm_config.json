@@ -18,7 +18,7 @@
   },
   "elbow": {
     "mass": 1.036005,
-    "length": 0.8,
+    "length": 0.84,
     "moi": 0.08,
     "cgRadius": 0.4318,
     "minAngle": 0.5235987756,
@@ -44,7 +44,7 @@
   },
   "solver": {
     "interiorPoints": 25,
-    "maxVoltage": 8,
+    "maxVoltage": 10,
     "maxJerk": 30
   },
   "constraints": {
