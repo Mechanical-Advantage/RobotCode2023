@@ -14,7 +14,7 @@ This project contains 6328's robot code for the 2023 CHARGED UP game. See also:
 
 ## Python Environment
 
-To set up the Python environment for formatting with [Black](https://github.com/psf/black) and running [kairos](/kairos/), follow the steps below.
+To set up the Python environment for formatting with [Black](https://github.com/psf/black) and running [Kairos](/kairos/), follow the steps below.
 
 ```bash
 python -m venv venv
