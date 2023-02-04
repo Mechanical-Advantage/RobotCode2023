@@ -36,6 +36,7 @@ import org.littletonrobotics.junction.Logger;
 
 public class Arm extends SubsystemBase {
   private static final double trajectoryCacheMarginRadians = 0.02;
+  private static final double shiftCenterMarginMeters = 0.05;
 
   private final ArmIO io;
   private final ArmSolverIO solverIo;
@@ -419,11 +420,35 @@ public class Arm extends SubsystemBase {
 
   public void shiftPose(Translation2d shift) {
     if (shift.getNorm() > 0.0) {
-      var newTranslation = setpointPose.endEffectorPosition().plus(shift);
-      var angles = kinematics.inverse(newTranslation);
+      var translation = setpointPose.endEffectorPosition().plus(shift).minus(config.origin());
+
+      // Keep translation within arm inner and outer ranges
+      double innerRadius = Math.abs(config.shoulder().length() - config.elbow().length());
+      double outerRadius = config.shoulder().length() + config.elbow().length();
+      if (translation.getNorm() < innerRadius) {
+        translation = translation.times(innerRadius / translation.getNorm());
+      } else if (translation.getNorm() > outerRadius) {
+        translation = translation.times(outerRadius / translation.getNorm());
+      }
+
+      // Keep translation on same side of root
+      double setpointX = setpointPose.endEffectorPosition().minus(config.origin()).getX();
+      if (setpointX > 1e-3) {
+        if (translation.getX() < shiftCenterMarginMeters) {
+          translation = new Translation2d(shiftCenterMarginMeters, translation.getY());
+        }
+      } else if (setpointX < -1e-3) {
+        if (translation.getX() > -shiftCenterMarginMeters) {
+          translation = new Translation2d(-shiftCenterMarginMeters, translation.getY());
+        }
+      }
+
+      // Apply new translation if valid
+      translation = translation.plus(config.origin());
+      var angles = kinematics.inverse(translation);
       if (angles.isPresent()) {
         currentTrajectory = null;
-        setpointPose = new ArmPose(newTranslation, setpointPose.globalWristAngle());
+        setpointPose = new ArmPose(translation, setpointPose.globalWristAngle());
       }
     }
   }
