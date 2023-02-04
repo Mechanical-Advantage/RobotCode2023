@@ -17,16 +17,22 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import org.littletonrobotics.frc2023.util.Alert;
+import org.littletonrobotics.frc2023.util.Alert.AlertType;
 
 public class ArmSolverIOKairos implements ArmSolverIO {
+  private final int instanceCount;
   private final StringPublisher configPublisher;
   private final StringPublisher requestPublisher;
   private final List<DoubleArraySubscriber> resultSubscribers = new ArrayList<>();
+  private final Alert disconnectedAlert = new Alert("", AlertType.ERROR);
 
   private int parameterHash = 0;
   private boolean resultReceived = true;
 
   public ArmSolverIOKairos(int instanceCount) {
+    this.instanceCount = instanceCount;
+
     // Create NT publishers and subscribers
     var kairosTable = NetworkTableInstance.getDefault().getTable("kairos");
     configPublisher = kairosTable.getStringTopic("config").publish(PubSubOption.periodic(0.0));
@@ -43,6 +49,34 @@ public class ArmSolverIOKairos implements ArmSolverIO {
   }
 
   public void updateInputs(ArmSolverIOInputs inputs) {
+    // Update disconnected alert
+    boolean[] connected = new boolean[instanceCount];
+    int connectedCount = 0;
+    for (var connection : NetworkTableInstance.getDefault().getConnections()) {
+      for (int i = 0; i < instanceCount; i++) {
+        if (!connected[i] && connection.remote_id.equals("kairos_" + Integer.toString(i))) {
+          connected[i] = true;
+          connectedCount++;
+        }
+      }
+    }
+    if (connectedCount < instanceCount) {
+      String listText = "";
+      for (int i = 0; i < instanceCount; i++) {
+        if (!connected[i]) {
+          listText += (listText.equals("") ? "" : ", ") + Integer.toString(i);
+        }
+      }
+      disconnectedAlert.setText(
+          "Disconnected from Kairos ("
+              + listText
+              + "). "
+              + (connectedCount == 0
+                  ? "No other instances are online, expect very limited arm functionality."
+                  : "At least one instance is still online."));
+    }
+    disconnectedAlert.set(connectedCount < instanceCount);
+
     if (resultReceived) return; // We already got a result
 
     // Check for new results
