@@ -244,6 +244,7 @@ class Solver:
 
         # Set constraint parameters
         inital_theta = (opti.value(theta_points[0][0]), opti.value(theta_points[0][1]))
+        final_theta = (opti.value(theta_points[-1][0]), opti.value(theta_points[-1][1]))
         start_x = (
             self._config["origin"][0]
             + self._config["shoulder"]["length"] * cos(inital_theta[0])
@@ -254,6 +255,16 @@ class Solver:
             + self._config["shoulder"]["length"] * sin(inital_theta[0])
             + self._config["elbow"]["length"] * sin(inital_theta[0] + inital_theta[1])
         )
+        final_x = (
+            self._config["origin"][0]
+            + self._config["shoulder"]["length"] * cos(final_theta[0])
+            + self._config["elbow"]["length"] * cos(final_theta[0] + final_theta[1])
+        )
+        final_y = (
+            self._config["origin"][1]
+            + self._config["shoulder"]["length"] * sin(final_theta[0])
+            + self._config["elbow"]["length"] * sin(final_theta[0] + final_theta[1])
+        )
         for (
             constraint_key,
             constraint_parameter,
@@ -263,42 +274,42 @@ class Solver:
             args = constraint["args"]
 
             # Check if start position violates the constraint
-            start_violated = False
-            if type == "minX":
-                start_violated = start_x < args[0]
+            any_violated = False
+            for x, y, in [
+                (start_x, start_y),
+                (final_x, final_y),
+            ]:
+                violated = False
+                if type == "minX":
+                    violated = x < args[0]
 
-            elif type == "maxX":
-                start_violated = start_x > args[0]
+                elif type == "maxX":
+                    violated = x > args[0]
 
-            elif type == "minY":
-                start_violated = start_y < args[0]
+                elif type == "minY":
+                    violated = y < args[0]
 
-            elif type == "maxY":
-                start_violated = start_y > args[0]
+                elif type == "maxY":
+                    violated = y > args[0]
 
-            elif type == "circle":
-                center_x = args[0]
-                center_y = args[1]
-                radius = args[2]
-                start_violated = (
-                    sqrt((start_x - center_x) ** 2 + (start_y - center_y) ** 2)
-                    <= radius
-                )
+                elif type == "circle":
+                    center_x = args[0]
+                    center_y = args[1]
+                    radius = args[2]
+                    violated = sqrt((x - center_x) ** 2 + (y - center_y) ** 2) <= radius
 
-            elif type == "rectangle":
-                x_0 = args[0]
-                y_0 = args[1]
-                x_1 = args[2]
-                y_1 = args[3]
-                start_violated = (
-                    start_x >= x_0
-                    and start_x <= x_1
-                    and start_y >= y_0
-                    and start_y <= y_1
-                )
+                elif type == "rectangle":
+                    x_0 = args[0]
+                    y_0 = args[1]
+                    x_1 = args[2]
+                    y_1 = args[3]
+                    violated = x >= x_0 and x <= x_1 and y >= y_0 and y <= y_1
+
+                if violated:
+                    any_violated = True
 
             # Set enabled
-            if start_violated or (constraint_key in parameters["constraintOverrides"]):
+            if any_violated or (constraint_key in parameters["constraintOverrides"]):
                 opti.set_value(constraint_parameter, 0)
             else:
                 opti.set_value(constraint_parameter, 1)

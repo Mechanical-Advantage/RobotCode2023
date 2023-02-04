@@ -12,7 +12,9 @@ import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
@@ -38,6 +40,9 @@ public class Arm extends SubsystemBase {
   private static final double trajectoryCacheMarginRadians = 0.02;
   private static final double shiftCenterMarginMeters = 0.05;
   private static final double wristGroundMarginMeters = 0.05;
+  private static final double[] cubeIntakeAvoidanceRect = new double[] {0.01, 0.0, 0.8, 0.7};
+  private static final double[] coneIntakeAvoidanceRect = new double[] {-0.6, 0.0, -0.01, 0.7};
+  private static final double avoidanceLookaheadSecs = 0.25;
 
   private final ArmIO io;
   private final ArmSolverIO solverIo;
@@ -126,6 +131,14 @@ public class Arm extends SubsystemBase {
         return pose;
       }
     }
+
+    private static double wristLength = 0.0;
+
+    public Translation2d wristPosition() {
+      return new Pose2d(endEffectorPosition, globalWristAngle)
+          .transformBy(new Transform2d(new Translation2d(wristLength, 0.0), new Rotation2d()))
+          .getTranslation();
+    }
   }
 
   public Arm(ArmIO io, ArmSolverIO solverIo) {
@@ -145,6 +158,7 @@ public class Arm extends SubsystemBase {
     solverIo.setConfig(configJson);
     kinematics = new ArmKinematics(config);
     dynamics = new ArmDynamics(config);
+    ArmPose.wristLength = config.wrist().length();
 
     // Calculate homed pose
     ArmPose.Preset.HOMED.setPose(
@@ -385,10 +399,72 @@ public class Arm extends SubsystemBase {
         .recordOutput("Arm/SetpointWrist", setpointPose.globalWristAngle().getRadians());
   }
 
+  /** Returns whether the arm is current in or will pass through the provided region. */
+  private boolean checkAvoidanceRegion(double[] region) {
+    // Check setpoint
+    if (setpointPose.endEffectorPosition().getX() >= region[0]
+        && setpointPose.endEffectorPosition().getX() <= region[2]
+        && setpointPose.endEffectorPosition().getY() >= region[1]
+        && setpointPose.endEffectorPosition().getY() <= region[3]) {
+      return true;
+    }
+    var setpointWristPosition = setpointPose.wristPosition();
+    if (setpointWristPosition.getX() >= region[0]
+        && setpointWristPosition.getX() <= region[2]
+        && setpointWristPosition.getY() >= region[1]
+        && setpointWristPosition.getY() <= region[3]) {
+      return true;
+    }
+
+    // Check trajectory
+    if (currentTrajectory != null && currentTrajectory.isGenerated()) {
+      var points = currentTrajectory.getPoints();
+      var dt = currentTrajectory.getTotalTime() / (points.size() - 1);
+      for (int i = 0; i < points.size(); i++) {
+        var time = dt * i;
+        if (time < trajectoryTimer.get()) {
+          continue;
+        }
+        if (time > trajectoryTimer.get() + avoidanceLookaheadSecs) {
+          break;
+        }
+        var endEffectorPosition = kinematics.forward(points.get(i));
+        var wristPosition =
+            new ArmPose(endEffectorPosition, queuedPose.globalWristAngle()).wristPosition();
+        if (endEffectorPosition.getX() >= region[0]
+            && endEffectorPosition.getX() <= region[2]
+            && endEffectorPosition.getY() >= region[1]
+            && endEffectorPosition.getY() <= region[3]) {
+          return true;
+        }
+        if (wristPosition.getX() >= region[0]
+            && wristPosition.getX() <= region[2]
+            && wristPosition.getY() >= region[1]
+            && wristPosition.getY() <= region[3]) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /** Returns whether the cube intake should be extended to avoid colliding with the arm. */
+  public boolean cubeIntakeShouldExtend() {
+    return checkAvoidanceRegion(cubeIntakeAvoidanceRect);
+  }
+
+  /** Returns whether the cone intake should be extended to avoid colliding with the arm. */
+  public boolean coneIntakeShouldExtend() {
+    return checkAvoidanceRegion(coneIntakeAvoidanceRect);
+  }
+
+  /** Starts navigating to a pose. */
   public void setPose(ArmPose.Preset preset) {
     setPose(preset.getPose());
   }
 
+  /** Starts navigating to a pose. */
   public void setPose(ArmPose pose) {
     // Get current and target angles
     Optional<Vector<N2>> currentAngles = kinematics.inverse(setpointPose.endEffectorPosition());
@@ -442,6 +518,7 @@ public class Arm extends SubsystemBase {
     updateTrajectoryRequest(); // Start solving immediately if nothing else in queue
   }
 
+  /** Adjusts the current pose translation by the provided shift value. */
   public void shiftPose(Translation2d shift) {
     if (shift.getNorm() > 0.0) {
       var translation = setpointPose.endEffectorPosition().plus(shift).minus(config.origin());

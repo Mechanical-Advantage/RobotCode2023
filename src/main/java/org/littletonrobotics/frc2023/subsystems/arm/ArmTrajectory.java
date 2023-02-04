@@ -64,6 +64,11 @@ public class ArmTrajectory {
     return this.totalTime;
   }
 
+  /** Returns the generated interior points. */
+  public List<Vector<N2>> getPoints() {
+    return this.points;
+  }
+
   /**
    * Samples the trajectory at a time, returning a matrix with the position, velocities, and
    * accelerations of the joints.
