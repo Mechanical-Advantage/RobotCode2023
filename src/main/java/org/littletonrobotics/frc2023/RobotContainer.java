@@ -27,6 +27,11 @@ import org.littletonrobotics.frc2023.oi.OverrideOI;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVision;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIO;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIONorthstar;
+import org.littletonrobotics.frc2023.subsystems.arm.Arm;
+import org.littletonrobotics.frc2023.subsystems.arm.ArmIO;
+import org.littletonrobotics.frc2023.subsystems.arm.ArmIOSim;
+import org.littletonrobotics.frc2023.subsystems.arm.ArmSolverIO;
+import org.littletonrobotics.frc2023.subsystems.arm.ArmSolverIOKairos;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
 import org.littletonrobotics.frc2023.subsystems.drive.GyroIO;
 import org.littletonrobotics.frc2023.subsystems.drive.GyroIOPigeon2;
@@ -44,6 +49,7 @@ public class RobotContainer {
 
   // Subsystems
   private Drive drive;
+  private Arm arm;
   private AprilTagVision aprilTagVision;
 
   // OI objects
@@ -81,6 +87,7 @@ public class RobotContainer {
                   new ModuleIOSim(),
                   new ModuleIOSim(),
                   new ModuleIOSim());
+          arm = new Arm(new ArmIOSim(), new ArmSolverIOKairos(1));
           break;
       }
     }
@@ -94,6 +101,9 @@ public class RobotContainer {
               new ModuleIO() {},
               new ModuleIO() {},
               new ModuleIO() {});
+    }
+    if (arm == null) {
+      arm = new Arm(new ArmIO() {}, new ArmSolverIO() {});
     }
     if (aprilTagVision == null) {
       // In replay, match the number of instances for each robot

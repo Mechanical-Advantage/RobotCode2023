@@ -32,10 +32,10 @@ deploy {
                 }
 
                 // Static files artifact
-                // frcStaticFileDeploy(getArtifactTypeClass("FileTreeArtifact")) {
-                //     files = project.fileTree("src/main/deploy")
-                //     directory = "/home/lvuser/deploy"
-                // }
+                frcStaticFileDeploy(getArtifactTypeClass("FileTreeArtifact")) {
+                    files = project.fileTree("src/main/deploy")
+                    directory = "/home/lvuser/deploy"
+                }
             }
         }
     }
@@ -147,6 +147,11 @@ spotless {
         trimTrailingWhitespace()
         endWithNewline()
         licenseHeader("// Copyright (c) 2023 FRC 6328\n// http://github.com/Mechanical-Advantage\n//\n// Use of this source code is governed by an MIT-style\n// license that can be found in the LICENSE file at\n// the root directory of this project.\n\n")
+    }
+    python {
+        target("kairos/*.py")
+        toggleOffOn()
+        black().pathToExe("venv/bin/black")
     }
     groovyGradle {
         target fileTree(".") {

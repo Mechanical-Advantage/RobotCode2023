@@ -1,0 +1,8 @@
+Supported constraints are:
+
+minX = [value]
+maxX = [value]
+minY = [value]
+maxY = [value]
+circle = [center_x, center_y, radius]
+rectangle = [x_0, y_0, x_1, y_1]
