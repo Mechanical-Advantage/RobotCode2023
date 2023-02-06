@@ -38,7 +38,6 @@ public class ArmIOSim implements ArmIO {
             config.wrist().length(),
             config.wrist().minAngle(),
             config.wrist().maxAngle(),
-            config.wrist().mass(),
             false);
     wristSim.setState(VecBuilder.fill(0.0, 0.0));
   }
