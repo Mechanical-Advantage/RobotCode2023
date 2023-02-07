@@ -32,6 +32,9 @@ import org.littletonrobotics.frc2023.subsystems.arm.ArmIO;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmIOSim;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmSolverIO;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmSolverIOKairos;
+import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntake;
+import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntakeIO;
+import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntakeIOSim;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
 import org.littletonrobotics.frc2023.subsystems.drive.GyroIO;
 import org.littletonrobotics.frc2023.subsystems.drive.GyroIOPigeon2;
@@ -53,6 +56,7 @@ public class RobotContainer {
   private Drive drive;
   private Arm arm;
   private Gripper gripper;
+  private CubeIntake cubeIntake;
   private AprilTagVision aprilTagVision;
 
   // OI objects
@@ -91,6 +95,7 @@ public class RobotContainer {
                   new ModuleIOSim(),
                   new ModuleIOSim());
           arm = new Arm(new ArmIOSim(), new ArmSolverIOKairos(1));
+          cubeIntake = new CubeIntake(new CubeIntakeIOSim());
           break;
       }
     }
@@ -110,6 +115,9 @@ public class RobotContainer {
     }
     if (gripper == null) {
       gripper = new Gripper(new GripperIO() {});
+    }
+    if (cubeIntake == null) {
+      cubeIntake = new CubeIntake(new CubeIntakeIO() {});
     }
     if (aprilTagVision == null) {
       // In replay, match the number of instances for each robot
@@ -131,6 +139,7 @@ public class RobotContainer {
             () -> handheldOI.getLeftDriveY(),
             () -> handheldOI.getRightDriveY(),
             () -> overrideOI.getRobotRelative()));
+    cubeIntake.setForceExtendSupplier(arm::cubeIntakeShouldExtend);
     aprilTagVision.setDataInterfaces(drive::getPose, drive::addVisionData);
 
     // Set up auto routines
