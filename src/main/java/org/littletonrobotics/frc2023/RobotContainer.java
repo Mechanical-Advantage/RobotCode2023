@@ -35,7 +35,6 @@ import org.littletonrobotics.frc2023.subsystems.drive.ModuleIOSim;
 import org.littletonrobotics.frc2023.subsystems.drive.ModuleIOSparkMax;
 import org.littletonrobotics.frc2023.subsystems.gripper.Gripper;
 import org.littletonrobotics.frc2023.subsystems.gripper.GripperIO;
-import org.littletonrobotics.frc2023.subsystems.gripper.GripperIOSparkMax;
 import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
 import org.littletonrobotics.frc2023.util.SparkMaxBurnManager;
@@ -46,8 +45,8 @@ public class RobotContainer {
 
   // Subsystems
   private Drive drive;
-  private AprilTagVision aprilTagVision;
   private Gripper gripper;
+  private AprilTagVision aprilTagVision;
 
   // OI objects
   private OverrideOI overrideOI = new OverrideOI();
@@ -65,9 +64,6 @@ public class RobotContainer {
     if (Constants.getMode() != Mode.REPLAY) {
       switch (Constants.getRobot()) {
         case ROBOT_2023C:
-          gripper =
-            new Gripper(
-                new GripperIOSparkMax());
           break;
         case ROBOT_2023P:
           drive =
@@ -101,6 +97,9 @@ public class RobotContainer {
               new ModuleIO() {},
               new ModuleIO() {});
     }
+    if (gripper == null) {
+      gripper = new Gripper(new GripperIO() {});
+    }
     if (aprilTagVision == null) {
       // In replay, match the number of instances for each robot
       switch (Constants.getRobot()) {
@@ -111,11 +110,6 @@ public class RobotContainer {
           aprilTagVision = new AprilTagVision();
           break;
       }
-    }
-    if (gripper == null){
-      gripper =
-          new Gripper(
-              new GripperIO() {});
     }
 
     // Set up subsystems
