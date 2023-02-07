@@ -17,7 +17,7 @@ import org.littletonrobotics.frc2023.FieldConstants;
 import org.littletonrobotics.frc2023.util.trajectory.RotationSequence;
 
 /**
- * Utility funcitons for flipping from the blue to red alliance. By default, all translations and
+ * Utility functions for flipping from the blue to red alliance. By default, all translations and
  * poses in {@link FieldConstants} are stored with the origin at the rightmost point on the blue
  * alliance wall.
  */
