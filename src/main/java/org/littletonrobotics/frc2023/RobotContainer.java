@@ -38,6 +38,8 @@ import org.littletonrobotics.frc2023.subsystems.drive.GyroIOPigeon2;
 import org.littletonrobotics.frc2023.subsystems.drive.ModuleIO;
 import org.littletonrobotics.frc2023.subsystems.drive.ModuleIOSim;
 import org.littletonrobotics.frc2023.subsystems.drive.ModuleIOSparkMax;
+import org.littletonrobotics.frc2023.subsystems.gripper.Gripper;
+import org.littletonrobotics.frc2023.subsystems.gripper.GripperIO;
 import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
@@ -50,6 +52,7 @@ public class RobotContainer {
   // Subsystems
   private Drive drive;
   private Arm arm;
+  private Gripper gripper;
   private AprilTagVision aprilTagVision;
 
   // OI objects
@@ -104,6 +107,9 @@ public class RobotContainer {
     }
     if (arm == null) {
       arm = new Arm(new ArmIO() {}, new ArmSolverIO() {});
+    }
+    if (gripper == null) {
+      gripper = new Gripper(new GripperIO() {});
     }
     if (aprilTagVision == null) {
       // In replay, match the number of instances for each robot
