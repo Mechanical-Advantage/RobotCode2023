@@ -40,8 +40,8 @@ public class Arm extends SubsystemBase {
   private static final double trajectoryCacheMarginRadians = 0.02;
   private static final double shiftCenterMarginMeters = 0.05;
   private static final double wristGroundMarginMeters = 0.05;
-  private static final double[] cubeIntakeAvoidanceRect = new double[] {0.01, 0.0, 0.8, 0.7};
-  private static final double[] coneIntakeAvoidanceRect = new double[] {-0.6, 0.0, -0.01, 0.7};
+  private static final double[] cubeIntakeAvoidanceRect = new double[] {0.01, 0.0, 0.8, 0.6};
+  private static final double[] coneIntakeAvoidanceRect = new double[] {-0.6, 0.0, -0.01, 0.6};
   private static final double avoidanceLookaheadSecs = 0.25;
 
   private final ArmIO io;
@@ -115,7 +115,9 @@ public class Arm extends SubsystemBase {
       BACKWARD(new ArmPose(new Translation2d(-1.0, 1.0), new Rotation2d(-2 * Math.PI / 3))),
       FORWARD_UP(new ArmPose(new Translation2d(0.5, 1.5), new Rotation2d())),
       BACKWARD_UP(new ArmPose(new Translation2d(-0.5, 1.5), new Rotation2d(Math.PI))),
-      INTAKE(new ArmPose(new Translation2d(0.75, 0.075), new Rotation2d()));
+      INTAKE(new ArmPose(new Translation2d(0.75, 0.075), new Rotation2d())),
+      SUBSTATION(new ArmPose(new Translation2d(0.45, 0.81), new Rotation2d())),
+      HYBRID(new ArmPose(new Translation2d(0.48, 0.9), new Rotation2d(-Math.PI / 2)));
 
       private ArmPose pose;
 
