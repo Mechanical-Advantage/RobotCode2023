@@ -11,6 +11,7 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.RelativeEncoder;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.AnalogInput;
@@ -108,10 +109,14 @@ public class ModuleIOSparkMax implements ModuleIO {
     inputs.driveTempCelcius = new double[] {driveSparkMax.getMotorTemperature()};
 
     inputs.turnAbsolutePositionRad =
-        new Rotation2d(
-                turnAbsoluteEncoder.getVoltage() / RobotController.getVoltage5V() * 2.0 * Math.PI)
-            .minus(absoluteEncoderOffset)
-            .getRadians();
+        MathUtil.angleModulus(
+            new Rotation2d(
+                    turnAbsoluteEncoder.getVoltage()
+                        / RobotController.getVoltage5V()
+                        * 2.0
+                        * Math.PI)
+                .minus(absoluteEncoderOffset)
+                .getRadians());
     inputs.turnPositionRad =
         Units.rotationsToRadians(turnRelativeEncoder.getPosition()) / turnAfterEncoderReduction;
     inputs.turnVelocityRadPerSec =

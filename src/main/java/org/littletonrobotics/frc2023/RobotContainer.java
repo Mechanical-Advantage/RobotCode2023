@@ -33,10 +33,6 @@ import org.littletonrobotics.frc2023.subsystems.drive.GyroIOPigeon2;
 import org.littletonrobotics.frc2023.subsystems.drive.ModuleIO;
 import org.littletonrobotics.frc2023.subsystems.drive.ModuleIOSim;
 import org.littletonrobotics.frc2023.subsystems.drive.ModuleIOSparkMax;
-import org.littletonrobotics.frc2023.subsystems.intakes.coneIntake.ConeIntake;
-import org.littletonrobotics.frc2023.subsystems.intakes.coneIntake.ConeIntakeIO;
-import org.littletonrobotics.frc2023.subsystems.intakes.coneIntake.ConeIntakeIOSim;
-import org.littletonrobotics.frc2023.subsystems.intakes.coneIntake.ConeIntakeIOSparkMax;
 import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
 import org.littletonrobotics.frc2023.util.SparkMaxBurnManager;
@@ -48,7 +44,6 @@ public class RobotContainer {
   // Subsystems
   private Drive drive;
   private AprilTagVision aprilTagVision;
-  private ConeIntake coneIntake;
 
   // OI objects
   private OverrideOI overrideOI = new OverrideOI();
@@ -68,7 +63,6 @@ public class RobotContainer {
         case ROBOT_2023C:
           break;
         case ROBOT_2023P:
-          coneIntake = new ConeIntake(new ConeIntakeIOSparkMax());
           drive =
               new Drive(
                   new GyroIOPigeon2(),
@@ -79,7 +73,6 @@ public class RobotContainer {
           aprilTagVision = new AprilTagVision(new AprilTagVisionIONorthstar("northstar"));
           break;
         case ROBOT_SIMBOT:
-          coneIntake = new ConeIntake(new ConeIntakeIOSim());
           drive =
               new Drive(
                   new GyroIO() {},
@@ -111,9 +104,6 @@ public class RobotContainer {
           aprilTagVision = new AprilTagVision();
           break;
       }
-    }
-    if (coneIntake == null) {
-      coneIntake = new ConeIntake(new ConeIntakeIO() {});
     }
 
     // Set up subsystems
