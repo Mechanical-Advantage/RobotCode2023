@@ -162,6 +162,7 @@ bin/
 # Simulation GUI and other tools window save files
 *-window.json
 simgui*.json
+networktables.json
 
 # Python files
 **/__pycache__
