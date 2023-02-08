@@ -9,21 +9,16 @@ package org.littletonrobotics.frc2023;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Transform2d;
-import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import java.util.List;
 import org.littletonrobotics.frc2023.Constants.Mode;
 import org.littletonrobotics.frc2023.commands.DriveTrajectory;
 import org.littletonrobotics.frc2023.commands.DriveWithJoysticks;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
-import org.littletonrobotics.frc2023.commands.HoldPose;
-import org.littletonrobotics.frc2023.oi.HandheldOI;
-import org.littletonrobotics.frc2023.oi.OISelector;
-import org.littletonrobotics.frc2023.oi.OverrideOI;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVision;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIO;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIONorthstar;
@@ -46,6 +41,7 @@ import org.littletonrobotics.frc2023.subsystems.gripper.GripperIO;
 import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
+import org.littletonrobotics.frc2023.util.OverrideSwitches;
 import org.littletonrobotics.frc2023.util.SparkMaxBurnManager;
 import org.littletonrobotics.frc2023.util.trajectory.Waypoint;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
@@ -60,8 +56,15 @@ public class RobotContainer {
   private AprilTagVision aprilTagVision;
 
   // OI objects
-  private OverrideOI overrideOI = new OverrideOI();
-  private HandheldOI handheldOI = new HandheldOI();
+  private CommandXboxController driver = new CommandXboxController(0);
+  private CommandXboxController operator = new CommandXboxController(1);
+  private OverrideSwitches overrides = new OverrideSwitches(5);
+  private Alert driverDisconnected =
+      new Alert("Driver controller is not connected (port 0).", AlertType.WARNING);
+  private Alert operatorDisconnected =
+      new Alert("Operator controller is not connected (port 1).", AlertType.WARNING);
+  private Alert overrideDisconnected =
+      new Alert("Override controller is not connected (port 5).", AlertType.INFO);
 
   // Choosers
   private final LoggedDashboardChooser<Command> autoChooser =
@@ -132,13 +135,6 @@ public class RobotContainer {
     }
 
     // Set up subsystems
-    drive.setDefaultCommand(
-        new DriveWithJoysticks(
-            drive,
-            () -> handheldOI.getLeftDriveX(),
-            () -> handheldOI.getLeftDriveY(),
-            () -> handheldOI.getRightDriveY(),
-            () -> overrideOI.getRobotRelative()));
     cubeIntake.setForceExtendSupplier(arm::cubeIntakeShouldExtend);
     aprilTagVision.setDataInterfaces(drive::getPose, drive::addVisionData);
 
@@ -170,26 +166,37 @@ public class RobotContainer {
       new Alert("Tuning mode active, do not use in competition.", AlertType.INFO).set(true);
     }
 
-    // Instantiate OI classes and bind buttons
-    updateOI();
+    // Bind driver and operator controls
+    bindControls();
   }
 
-  /**
-   * This method scans for any changes to the connected joystick. If anything changed, it creates
-   * new OI objects and binds all of the buttons to commands.
-   */
-  public void updateOI() {
-    if (!OISelector.didJoysticksChange()) {
-      return;
-    }
+  /** Updates the alerts for disconnected controllers. */
+  public void checkControllers() {
+    driverDisconnected.set(
+        !DriverStation.isJoystickConnected(driver.getHID().getPort())
+            || !DriverStation.getJoystickIsXbox(driver.getHID().getPort()));
+    operatorDisconnected.set(
+        !DriverStation.isJoystickConnected(operator.getHID().getPort())
+            || !DriverStation.getJoystickIsXbox(operator.getHID().getPort()));
+    overrideDisconnected.set(!overrides.isConnected());
+  }
 
-    CommandScheduler.getInstance().getActiveButtonLoop().clear();
-    overrideOI = OISelector.findOverrideOI();
-    handheldOI = OISelector.findHandheldOI();
+  /** Binds the driver and operator controls. */
+  public void bindControls() {
+    // Rely on our custom alerts for disconnected controllers
+    DriverStation.silenceJoystickConnectionWarning(true);
 
     // *** DRIVER CONTROLS ***
-    handheldOI
-        .getResetGyro()
+    drive.setDefaultCommand(
+        new DriveWithJoysticks(
+            drive,
+            () -> -driver.getLeftY(),
+            () -> -driver.getLeftX(),
+            () -> -driver.getRightX(),
+            () -> overrides.getDriverSwitch(0)));
+    driver
+        .start()
+        .or(driver.back())
         .onTrue(
             new InstantCommand(
                     () -> {
@@ -199,12 +206,6 @@ public class RobotContainer {
                               AllianceFlipUtil.apply(new Rotation2d())));
                     })
                 .ignoringDisable(true));
-    var target =
-        FieldConstants.aprilTags
-            .get(2)
-            .toPose2d()
-            .transformBy(new Transform2d(new Translation2d(1.0, 0.0), new Rotation2d()));
-    handheldOI.getDriverAssist().whileTrue(new HoldPose(drive, target));
 
     // *** OPERATOR CONTROLS ***
   }

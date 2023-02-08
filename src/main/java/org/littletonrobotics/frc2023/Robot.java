@@ -139,6 +139,9 @@ public class Robot extends LoggedRobot {
     // Check logging fault
     logReceiverQueueAlert.set(Logger.getInstance().getReceiverQueueFault());
 
+    // Check controllers
+    robotContainer.checkControllers();
+
     // Log list of NT clients
     List<String> clientNames = new ArrayList<>();
     List<String> clientAddresses = new ArrayList<>();
@@ -198,9 +201,7 @@ public class Robot extends LoggedRobot {
   public void disabledInit() {}
 
   @Override
-  public void disabledPeriodic() {
-    robotContainer.updateOI();
-  }
+  public void disabledPeriodic() {}
 
   @Override
   public void testInit() {}
