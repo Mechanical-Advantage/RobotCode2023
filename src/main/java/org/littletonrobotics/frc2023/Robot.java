@@ -7,12 +7,15 @@
 
 package org.littletonrobotics.frc2023;
 
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Threads;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import org.littletonrobotics.frc2023.Constants.Mode;
@@ -135,6 +138,19 @@ public class Robot extends LoggedRobot {
 
     // Check logging fault
     logReceiverQueueAlert.set(Logger.getInstance().getReceiverQueueFault());
+
+    // Log list of NT clients
+    List<String> clientNames = new ArrayList<>();
+    List<String> clientAddresses = new ArrayList<>();
+    for (var client : NetworkTableInstance.getDefault().getConnections()) {
+      clientNames.add(client.remote_id);
+      clientAddresses.add(client.remote_ip);
+    }
+    Logger.getInstance()
+        .recordOutput("NTClients/Names", clientNames.toArray(new String[clientNames.size()]));
+    Logger.getInstance()
+        .recordOutput(
+            "NTClients/Addresses", clientAddresses.toArray(new String[clientAddresses.size()]));
 
     // Print auto duration
     if (autoCommand != null) {
