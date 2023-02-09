@@ -171,8 +171,8 @@ public class Arm extends SubsystemBase {
             new Rotation2d(-Math.PI / 2)));
 
     // Create visualizers
-    visualizerMeasured = new ArmVisualizer(config, "Measured", null);
-    visualizerSetpoint = new ArmVisualizer(config, "Setpoint", new Color8Bit(Color.kOrange));
+    visualizerMeasured = new ArmVisualizer(config, "ArmMeasured", null);
+    visualizerSetpoint = new ArmVisualizer(config, "ArmSetpoint", new Color8Bit(Color.kOrange));
 
     // Add preset trajectories to queue
     for (var preset0 : ArmPose.Preset.values()) {

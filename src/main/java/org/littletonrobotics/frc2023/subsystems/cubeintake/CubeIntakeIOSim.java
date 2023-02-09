@@ -15,7 +15,7 @@ import org.littletonrobotics.frc2023.Constants;
 /** Add your docs here. */
 public class CubeIntakeIOSim implements CubeIntakeIO {
   private SingleJointedArmSim armSim =
-      new SingleJointedArmSim(DCMotor.getNEO(1), 0.5, 0.5, 0.0, Math.PI / 2, 3.0, true);
+      new SingleJointedArmSim(DCMotor.getNEO(1), 50, 0.5, 0.5, 0.0, Math.PI / 2.0, true);
   private double armAppliedVolts = 0.0;
 
   public CubeIntakeIOSim() {}
@@ -37,7 +37,7 @@ public class CubeIntakeIOSim implements CubeIntakeIO {
   @Override
   public void setArmVoltage(double voltage) {
     armAppliedVolts = MathUtil.clamp(voltage, -12.0, 12.0);
-    armSim.setInputVoltage(voltage);
+    armSim.setInputVoltage(armAppliedVolts);
   }
 
   @Override

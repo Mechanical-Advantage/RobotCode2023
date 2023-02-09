@@ -70,7 +70,7 @@ public class ArmVisualizer {
     shoulderLigament.setAngle(Units.radiansToDegrees(shoulderAngle) - 90.0);
     elbowLigament.setAngle(Units.radiansToDegrees(elbowAngle));
     wristLigament.setAngle(Units.radiansToDegrees(wristAngle));
-    Logger.getInstance().recordOutput("Mechanisms2d/" + logKey, mechanism);
+    Logger.getInstance().recordOutput("Mechanism2d/" + logKey, mechanism);
 
     var shoulderPose =
         new Pose3d(
@@ -88,6 +88,6 @@ public class ArmVisualizer {
             new Transform3d(
                 new Translation3d(config.elbow().length(), 0.0, 0.0),
                 new Rotation3d(0.0, -wristAngle, 0.0)));
-    Logger.getInstance().recordOutput("Mechanisms3d/" + logKey, shoulderPose, elbowPose, wristPose);
+    Logger.getInstance().recordOutput("Mechanism3d/" + logKey, shoulderPose, elbowPose, wristPose);
   }
 }

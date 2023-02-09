@@ -71,7 +71,9 @@ public class CubeIntake extends SubsystemBase {
     // Create mechanism
     mechanism = new Mechanism2d(4, 3, new Color8Bit(Color.kGray));
     mechanismRoot = mechanism.getRoot("CubeIntake", 2.28, 0.197);
-    mechanismLigament = mechanismRoot.append(new MechanismLigament2d("IntakeArm", 0.5, 90));
+    mechanismLigament =
+        mechanismRoot.append(
+            new MechanismLigament2d("IntakeArm", 0.5, 90, 4, new Color8Bit(Color.kLightGreen)));
   }
 
   public void setForceExtendSupplier(Supplier<Boolean> supplier) {
@@ -102,9 +104,11 @@ public class CubeIntake extends SubsystemBase {
     // Get measured positions
     double angle = inputs.armRelativePositionRad + absoluteAngleOffset;
     mechanismLigament.setAngle(new Rotation2d(angle));
+    Logger.getInstance().recordOutput("Mechanism2d/CubeIntake", mechanism);
     Logger.getInstance().recordOutput("CubeIntake/AngleRadians", angle);
     Logger.getInstance()
-        .recordOutput("CubeIntake/AngleSetpointRadians", controller.getGoal().position);
+        .recordOutput("CubeIntake/AngleSetpointRadians", controller.getSetpoint().position);
+    Logger.getInstance().recordOutput("CubeIntake/AngleGoalRadians", controller.getGoal().position);
 
     // Reset when disabled
     if (DriverStation.isDisabled()) {
