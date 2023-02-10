@@ -2,7 +2,15 @@ import { NT4_Client } from "./NT4.js";
 
 const robotToDashboardTopic = "/nodeselector/robot_to_dashboard";
 const dashboardToRobotTopic = "/nodeselector/dashboard_to_robot";
-const allianceTopic = "/FMSInfo/IsRedAlliance";
+
+function setActive(index) {
+  Array.from(document.getElementsByClassName("active")).forEach((element) => {
+    element.classList.remove("active");
+  });
+  if (index !== null) {
+    document.getElementsByTagName("td")[index].classList.add("active");
+  }
+}
 
 let client = new NT4_Client(
   window.location.hostname,
@@ -16,45 +24,23 @@ let client = new NT4_Client(
   (topic, timestamp, value) => {
     // New data
     if (topic.name === robotToDashboardTopic) {
-      Array.from(document.getElementsByClassName("active")).forEach(
-        (element) => {
-          element.classList.remove("active");
-        }
-      );
-      document.getElementsByTagName("td")[value].classList.add("active");
-    } else if (topic.name == allianceTopic) {
-      let isRed = value;
-      Array.from(document.getElementsByClassName("cone-alliance")).forEach(
-        (element) => {
-          element.classList.remove(isRed ? "cone-blue" : "cone-red");
-          element.classList.add(isRed ? "cone-red" : "cone-blue");
-        }
-      );
+      document.body.style.backgroundColor = "white";
+      setActive(value);
     }
   },
   () => {
     // Connected
-    document.body.style.backgroundColor = "white";
   },
   () => {
     // Disconnected
     document.body.style.backgroundColor = "red";
-    Array.from(document.getElementsByClassName("active")).forEach((element) => {
-      element.classList.remove("active");
-    });
-    Array.from(document.getElementsByClassName("cone-alliance")).forEach(
-      (element) => {
-        element.classList.remove("cone-red");
-        element.classList.remove("cone-blue");
-      }
-    );
+    setActive(null);
   }
 );
 
 window.addEventListener("load", () => {
   // Start NT connection
   client.subscribe([robotToDashboardTopic], false, false, 0.02);
-  client.subscribe([allianceTopic], false, false, 0.25);
   client.publishTopic(dashboardToRobotTopic, "int");
   client.connect();
 

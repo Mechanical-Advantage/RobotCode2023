@@ -169,7 +169,7 @@ public class ObjectiveTracker extends SubsystemBase {
   public Command shiftNodeCommand(Direction direction) {
     return new InstantCommand(() -> shiftNode(direction))
         .andThen(
-            Commands.waitSeconds(0.5),
+            Commands.waitSeconds(0.3),
             Commands.repeatingSequence(
                 new InstantCommand(() -> shiftNode(direction)), new WaitCommand(0.1)))
         .ignoringDisable(true);
