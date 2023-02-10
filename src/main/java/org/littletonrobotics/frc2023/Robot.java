@@ -7,10 +7,12 @@
 
 package org.littletonrobotics.frc2023;
 
+import edu.wpi.first.hal.AllianceStationID;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Threads;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import java.util.ArrayList;
@@ -126,6 +128,11 @@ public class Robot extends LoggedRobot {
             (Command command) -> {
               logCommandFunction.accept(command, false);
             });
+
+    // Default to blue alliance in sim
+    if (Constants.getMode() == Mode.SIM) {
+      DriverStationSim.setAllianceStationId(AllianceStationID.Blue1);
+    }
 
     // Instantiate RobotContainer
     robotContainer = new RobotContainer();
