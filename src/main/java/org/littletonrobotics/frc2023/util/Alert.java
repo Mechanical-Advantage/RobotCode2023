@@ -82,6 +82,19 @@ public class Alert {
 
   /** Updates current alert text. */
   public void setText(String text) {
+    if (active && !text.equals(this.text)) {
+      switch (type) {
+        case ERROR:
+          DriverStation.reportError(text, false);
+          break;
+        case WARNING:
+          DriverStation.reportWarning(text, false);
+          break;
+        case INFO:
+          System.out.println(text);
+          break;
+      }
+    }
     this.text = text;
   }
 
