@@ -57,6 +57,7 @@ public class Drive extends SubsystemBase {
   private PoseEstimator poseEstimator = new PoseEstimator(VecBuilder.fill(0.005, 0.005, 0.0005));
   private double[] lastModulePositionsMeters = new double[] {0.0, 0.0, 0.0, 0.0};
   private Rotation2d lastGyroYaw = new Rotation2d();
+  private Twist2d fieldVelocity = new Twist2d();
 
   static {
     switch (Constants.getRobot()) {
@@ -182,6 +183,19 @@ public class Drive extends SubsystemBase {
     poseEstimator.addDriveData(Timer.getFPGATimestamp(), twist);
     Logger.getInstance().recordOutput("Odometry/Robot", getPose());
 
+    // Update field velocity
+    ChassisSpeeds chassisSpeeds = kinematics.toChassisSpeeds(measuredStates);
+    Translation2d linearFieldVelocity =
+        new Translation2d(chassisSpeeds.vxMetersPerSecond, chassisSpeeds.vyMetersPerSecond)
+            .rotateBy(getRotation());
+    fieldVelocity =
+        new Twist2d(
+            linearFieldVelocity.getX(),
+            linearFieldVelocity.getY(),
+            gyroInputs.connected
+                ? gyroInputs.yawVelocityRadPerSec
+                : chassisSpeeds.omegaRadiansPerSecond);
+
     // Update brake mode
     boolean stillMoving = false;
     for (int i = 0; i < 4; i++) {
@@ -230,6 +244,14 @@ public class Drive extends SubsystemBase {
   /** Returns the maximum angular speed in radians per sec. */
   public double getMaxAngularSpeedRadPerSec() {
     return maxAngularSpeed;
+  }
+
+  /**
+   * Returns the measured X, Y, and theta field velocities in meters per sec. The components of the
+   * twist are velocities and NOT changes in position.
+   */
+  public Twist2d getFieldVelocity() {
+    return fieldVelocity;
   }
 
   /** Returns the current odometry pose. */
