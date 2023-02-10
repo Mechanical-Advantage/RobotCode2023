@@ -9,13 +9,13 @@ package org.littletonrobotics.frc2023.subsystems.objectivetracker;
 
 import org.littletonrobotics.junction.AutoLog;
 
-public interface GridSelectorIO {
+public interface NodeSelectorIO {
   @AutoLog
-  public static class GridSelectorIOInputs {
+  public static class NodeSelectorIOInputs {
     public long selected = -1;
   }
 
-  public default void updateInputs(GridSelectorIOInputs inputs) {}
+  public default void updateInputs(NodeSelectorIOInputs inputs) {}
 
   public default void setSelected(long selected) {}
 }

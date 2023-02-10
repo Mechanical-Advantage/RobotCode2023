@@ -37,8 +37,8 @@ import org.littletonrobotics.frc2023.subsystems.drive.ModuleIOSim;
 import org.littletonrobotics.frc2023.subsystems.drive.ModuleIOSparkMax;
 import org.littletonrobotics.frc2023.subsystems.gripper.Gripper;
 import org.littletonrobotics.frc2023.subsystems.gripper.GripperIO;
-import org.littletonrobotics.frc2023.subsystems.objectivetracker.GridSelectorIO;
-import org.littletonrobotics.frc2023.subsystems.objectivetracker.GridSelectorIOServer;
+import org.littletonrobotics.frc2023.subsystems.objectivetracker.NodeSelectorIO;
+import org.littletonrobotics.frc2023.subsystems.objectivetracker.NodeSelectorIOServer;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.Direction;
 import org.littletonrobotics.frc2023.util.Alert;
@@ -102,7 +102,7 @@ public class RobotContainer {
                   new ModuleIOSim());
           arm = new Arm(new ArmIOSim(), new ArmSolverIOKairos(1));
           cubeIntake = new CubeIntake(new CubeIntakeIOSim());
-          objectiveTracker = new ObjectiveTracker(new GridSelectorIOServer());
+          objectiveTracker = new ObjectiveTracker(new NodeSelectorIOServer());
           break;
       }
     }
@@ -138,7 +138,7 @@ public class RobotContainer {
       }
     }
     if (objectiveTracker == null) {
-      objectiveTracker = new ObjectiveTracker(new GridSelectorIO() {});
+      objectiveTracker = new ObjectiveTracker(new NodeSelectorIO() {});
     }
 
     // Set up subsystems

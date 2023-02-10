@@ -18,23 +18,23 @@ import edu.wpi.first.wpilibj2.command.WaitCommand;
 import org.littletonrobotics.junction.Logger;
 
 public class ObjectiveTracker extends SubsystemBase {
-  private final GridSelectorIO selectorIO;
-  private final GridSelectorIOInputsAutoLogged selectorInputs =
-      new GridSelectorIOInputsAutoLogged();
+  private final NodeSelectorIO selectorIO;
+  private final NodeSelectorIOInputsAutoLogged selectorInputs =
+      new NodeSelectorIOInputsAutoLogged();
 
   private int selectedRow = 0;
   private NodeLevel selectedLevel = NodeLevel.HYBRID;
 
-  public ObjectiveTracker(GridSelectorIO selectorIO) {
+  public ObjectiveTracker(NodeSelectorIO selectorIO) {
     this.selectorIO = selectorIO;
   }
 
   @Override
   public void periodic() {
     selectorIO.updateInputs(selectorInputs);
-    Logger.getInstance().processInputs("GridSelector", selectorInputs);
+    Logger.getInstance().processInputs("NodeSelector", selectorInputs);
 
-    // Read updates from grid selector
+    // Read updates from node selector
     if (selectorInputs.selected != -1) {
       if (DriverStation.getAlliance() == Alliance.Blue) {
         selectedRow = 8 - ((int) selectorInputs.selected % 9);
@@ -51,7 +51,7 @@ public class ObjectiveTracker extends SubsystemBase {
       selectorInputs.selected = -1;
     }
 
-    // Send current node to grid selector
+    // Send current node to selector
     {
       int selected;
       if (DriverStation.getAlliance() == Alliance.Blue) {
@@ -110,7 +110,7 @@ public class ObjectiveTracker extends SubsystemBase {
     }
   }
 
-  /** Shifts the selected node in the grid selector by one position. */
+  /** Shifts the selected node in the selector by one position. */
   public void shiftNode(Direction direction) {
     switch (direction) {
       case LEFT:
@@ -165,7 +165,7 @@ public class ObjectiveTracker extends SubsystemBase {
     }
   }
 
-  /** Command factory to shift the selected node in the grid selector by one position. */
+  /** Command factory to shift the selected node in the selector by one position. */
   public Command shiftNodeCommand(Direction direction) {
     return new InstantCommand(() -> shiftNode(direction))
         .andThen(

@@ -1,12 +1,12 @@
 import { NT4_Client } from "./NT4.js";
 
-const robotToDashboardTopic = "/gridselector/robot_to_dashboard";
-const dashboardToRobotTopic = "/gridselector/dashboard_to_robot";
+const robotToDashboardTopic = "/nodeselector/robot_to_dashboard";
+const dashboardToRobotTopic = "/nodeselector/dashboard_to_robot";
 const allianceTopic = "/FMSInfo/IsRedAlliance";
 
 let client = new NT4_Client(
   window.location.hostname,
-  "GridSelector",
+  "NodeSelector",
   (topic) => {
     // Topic announce
   },

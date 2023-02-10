@@ -15,13 +15,13 @@ import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
 import java.nio.file.Paths;
 
-public class GridSelectorIOServer implements GridSelectorIO {
+public class NodeSelectorIOServer implements NodeSelectorIO {
   private final IntegerPublisher publisher;
   private final IntegerSubscriber subscriber;
 
-  public GridSelectorIOServer() {
+  public NodeSelectorIOServer() {
     // Create publisher and subscriber
-    var table = NetworkTableInstance.getDefault().getTable("gridselector");
+    var table = NetworkTableInstance.getDefault().getTable("nodeselector");
     publisher = table.getIntegerTopic("robot_to_dashboard").publish();
     subscriber = table.getIntegerTopic("dashboard_to_robot").subscribe(-1);
 
@@ -32,14 +32,14 @@ public class GridSelectorIOServer implements GridSelectorIO {
               config.staticFiles.add(
                   Paths.get(
                           Filesystem.getDeployDirectory().getAbsolutePath().toString(),
-                          "gridselector")
+                          "nodeselector")
                       .toString(),
                   Location.EXTERNAL);
             });
     app.start(5800);
   }
 
-  public void updateInputs(GridSelectorIOInputs inputs) {
+  public void updateInputs(NodeSelectorIOInputs inputs) {
     for (var value : subscriber.readQueueValues()) {
       inputs.selected = value;
     }
