@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="index.js" type="module"></script>
+    <title>Grid Selector &mdash; Bot-Bot Goes Bananas</title>
+
+    <style>
+      body {
+        background-color: red;
+        overscroll-behavior: none;
+      }
+
+      table {
+        position: absolute;
+        left: 0%;
+        width: 100%;
+        top: 0%;
+        height: 100%;
+        border-spacing: 10px;
+      }
+
+      td.hybrid {
+        background-color: #777;
+      }
+
+      td.cone {
+        background-color: #555;
+      }
+
+      td.cone-blue {
+        background-color: #008;
+      }
+
+      td.cone-red {
+        background-color: #800;
+      }
+
+      td.cube {
+        background-color: #aaa;
+      }
+
+      td.active {
+        background-color: orange;
+      }
+    </style>
+  </head>
+
+  <body>
+    <table>
+      <tbody>
+        <tr>
+          <td class="hybrid"></td>
+          <td class="hybrid"></td>
+          <td class="hybrid"></td>
+          <td class="hybrid"></td>
+          <td class="hybrid"></td>
+          <td class="hybrid"></td>
+          <td class="hybrid"></td>
+          <td class="hybrid"></td>
+          <td class="hybrid"></td>
+        </tr>
+        <tr>
+          <td class="cone cone-alliance"></td>
+          <td class="cube"></td>
+          <td class="cone cone-alliance"></td>
+          <td class="cone"></td>
+          <td class="cube"></td>
+          <td class="cone"></td>
+          <td class="cone cone-alliance"></td>
+          <td class="cube"></td>
+          <td class="cone cone-alliance"></td>
+        </tr>
+        <tr>
+          <td class="cone cone-alliance"></td>
+          <td class="cube"></td>
+          <td class="cone cone-alliance"></td>
+          <td class="cone"></td>
+          <td class="cube"></td>
+          <td class="cone"></td>
+          <td class="cone cone-alliance"></td>
+          <td class="cube"></td>
+          <td class="cone cone-alliance"></td>
+        </tr>
+      </tbody>
+    </table>
+  </body>
+</html>
