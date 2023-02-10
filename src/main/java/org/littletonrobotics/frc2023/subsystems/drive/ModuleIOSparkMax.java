@@ -18,13 +18,12 @@ import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.RobotController;
 import org.littletonrobotics.frc2023.Constants;
 import org.littletonrobotics.frc2023.util.SparkMaxBurnManager;
-import org.littletonrobotics.frc2023.util.SparkMaxDerivedVelocityController;
 
 public class ModuleIOSparkMax implements ModuleIO {
   private final CANSparkMax driveSparkMax;
   private final CANSparkMax turnSparkMax;
 
-  private final SparkMaxDerivedVelocityController driveDerivedVelocityController;
+  private final RelativeEncoder driveEncoder;
   private final RelativeEncoder turnRelativeEncoder;
   private final AnalogInput turnAbsoluteEncoder;
 
@@ -83,7 +82,9 @@ public class ModuleIOSparkMax implements ModuleIO {
     turnSparkMax.enableVoltageCompensation(12.0);
 
     driveSparkMax.getEncoder().setPosition(0.0);
-    driveDerivedVelocityController = new SparkMaxDerivedVelocityController(driveSparkMax);
+    driveEncoder = driveSparkMax.getEncoder();
+    driveEncoder.setMeasurementPeriod(10);
+    driveEncoder.setAverageDepth(2);
     turnRelativeEncoder = turnSparkMax.getEncoder();
     turnRelativeEncoder.setPosition(0.0);
 
@@ -98,10 +99,9 @@ public class ModuleIOSparkMax implements ModuleIO {
 
   public void updateInputs(ModuleIOInputs inputs) {
     inputs.drivePositionRad =
-        Units.rotationsToRadians(driveDerivedVelocityController.getPosition())
-            / driveAfterEncoderReduction;
+        Units.rotationsToRadians(driveEncoder.getPosition()) / driveAfterEncoderReduction;
     inputs.driveVelocityRadPerSec =
-        Units.rotationsPerMinuteToRadiansPerSecond(driveDerivedVelocityController.getVelocity())
+        Units.rotationsPerMinuteToRadiansPerSecond(driveEncoder.getVelocity())
             / driveAfterEncoderReduction;
     inputs.driveAppliedVolts =
         driveSparkMax.getAppliedOutput() * RobotController.getBatteryVoltage();
