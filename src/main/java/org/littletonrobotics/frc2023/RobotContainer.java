@@ -60,11 +60,11 @@ public class RobotContainer {
   private CommandXboxController operator = new CommandXboxController(1);
   private OverrideSwitches overrides = new OverrideSwitches(5);
   private Alert driverDisconnected =
-      new Alert("Driver controller is not connected (port 0).", AlertType.WARNING);
+      new Alert("Driver controller disconnected (port 0).", AlertType.WARNING);
   private Alert operatorDisconnected =
-      new Alert("Operator controller is not connected (port 1).", AlertType.WARNING);
+      new Alert("Operator controller disconnected (port 1).", AlertType.WARNING);
   private Alert overrideDisconnected =
-      new Alert("Override controller is not connected (port 5).", AlertType.INFO);
+      new Alert("Override controller disconnected (port 5).", AlertType.INFO);
 
   // Choosers
   private final LoggedDashboardChooser<Command> autoChooser =
