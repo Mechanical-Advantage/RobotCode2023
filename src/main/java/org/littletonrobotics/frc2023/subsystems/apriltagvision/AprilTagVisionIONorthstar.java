@@ -11,7 +11,10 @@ import edu.wpi.first.networktables.DoubleArraySubscriber;
 import edu.wpi.first.networktables.IntegerSubscriber;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.PubSubOption;
+import edu.wpi.first.wpilibj.Timer;
 import org.littletonrobotics.frc2023.FieldConstants;
+import org.littletonrobotics.frc2023.util.Alert;
+import org.littletonrobotics.frc2023.util.Alert.AlertType;
 
 public class AprilTagVisionIONorthstar implements AprilTagVisionIO {
   private static final int cameraId = 0;
@@ -23,6 +26,10 @@ public class AprilTagVisionIONorthstar implements AprilTagVisionIO {
 
   private final DoubleArraySubscriber observationSubscriber;
   private final IntegerSubscriber fpsSubscriber;
+
+  private static final double disconnectedTimeout = 1.5;
+  private final Alert disconnectedAlert;
+  private final Timer disconnectedTimer = new Timer();
 
   public AprilTagVisionIONorthstar(String identifier) {
     var northstarTable = NetworkTableInstance.getDefault().getTable(identifier);
@@ -43,6 +50,9 @@ public class AprilTagVisionIONorthstar implements AprilTagVisionIO {
             .subscribe(
                 new double[] {}, PubSubOption.keepDuplicates(true), PubSubOption.sendAll(true));
     fpsSubscriber = outputTable.getIntegerTopic("fps").subscribe(0);
+
+    disconnectedAlert = new Alert("Disconnected from \"" + identifier + "\"", AlertType.ERROR);
+    disconnectedTimer.start();
   }
 
   public void updateInputs(AprilTagVisionIOInputs inputs) {
@@ -54,5 +64,11 @@ public class AprilTagVisionIONorthstar implements AprilTagVisionIO {
       inputs.frames[i] = queue[i].value;
     }
     inputs.fps = fpsSubscriber.get();
+
+    // Update disconnected alert
+    if (queue.length > 0) {
+      disconnectedTimer.reset();
+    }
+    disconnectedAlert.set(disconnectedTimer.hasElapsed(disconnectedTimeout));
   }
 }
