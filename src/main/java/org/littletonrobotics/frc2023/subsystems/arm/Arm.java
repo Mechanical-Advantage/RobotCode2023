@@ -23,6 +23,8 @@ import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.io.File;
 import java.io.IOException;
@@ -140,6 +142,14 @@ public class Arm extends SubsystemBase {
       return new Pose2d(endEffectorPosition, globalWristAngle)
           .transformBy(new Transform2d(new Translation2d(wristLength, 0.0), new Rotation2d()))
           .getTranslation();
+    }
+
+    public ArmPose withFlip(boolean flip) {
+      return flip
+          ? new ArmPose(
+              new Translation2d(-this.endEffectorPosition.getX(), this.endEffectorPosition.getY()),
+              new Rotation2d(-this.globalWristAngle.getCos(), this.globalWristAngle.getSin()))
+          : this;
     }
   }
 
@@ -461,12 +471,12 @@ public class Arm extends SubsystemBase {
   }
 
   /** Starts navigating to a pose. */
-  public void setPose(ArmPose.Preset preset) {
-    setPose(preset.getPose());
+  public void runPath(ArmPose.Preset preset) {
+    runPath(preset.getPose());
   }
 
   /** Starts navigating to a pose. */
-  public void setPose(ArmPose pose) {
+  public void runPath(ArmPose pose) {
     // Get current and target angles
     Optional<Vector<N2>> currentAngles = kinematics.inverse(setpointPose.endEffectorPosition());
     Optional<Vector<N2>> targetAngles = kinematics.inverse(pose.endEffectorPosition());
@@ -519,44 +529,53 @@ public class Arm extends SubsystemBase {
     updateTrajectoryRequest(); // Start solving immediately if nothing else in queue
   }
 
-  /** Adjusts the current pose translation by the provided shift value. */
-  public void shiftPose(Translation2d shift) {
-    if (shift.getNorm() > 0.0) {
-      var translation = setpointPose.endEffectorPosition().plus(shift).minus(config.origin());
+  /** Command factory to navigate to a pose along a path. */
+  public Command runPathCommand(ArmPose.Preset preset) {
+    return runPathCommand(preset.getPose());
+  }
 
-      // Keep translation within arm inner and outer ranges
-      double innerRadius = Math.abs(config.shoulder().length() - config.elbow().length());
-      double outerRadius = config.shoulder().length() + config.elbow().length();
-      if (translation.getNorm() < innerRadius) {
-        translation = translation.times(innerRadius / translation.getNorm());
-      } else if (translation.getNorm() > outerRadius) {
-        translation = translation.times(outerRadius / translation.getNorm());
-      }
+  /** Command factory to navigate to a pose along a path. */
+  public Command runPathCommand(ArmPose pose) {
+    return runOnce(() -> runPath(pose))
+        .andThen(Commands.waitUntil(() -> currentTrajectory == null));
+  }
 
-      // Keep translation on same side of root
-      double setpointX = setpointPose.endEffectorPosition().minus(config.origin()).getX();
-      if (setpointX > 1e-3) {
-        if (translation.getX() < shiftCenterMarginMeters) {
-          translation = new Translation2d(shiftCenterMarginMeters, translation.getY());
-        }
-      } else if (setpointX < -1e-3) {
-        if (translation.getX() > -shiftCenterMarginMeters) {
-          translation = new Translation2d(-shiftCenterMarginMeters, translation.getY());
-        }
-      }
+  /** Go directly to the provided pose without using a path. Only use for small movements. */
+  public void runDirect(ArmPose pose) {
+    var translation = pose.endEffectorPosition().minus(config.origin());
 
-      // Don't go into the ground
-      translation = translation.plus(config.origin());
-      if (translation.getY() < wristGroundMarginMeters) {
-        translation = new Translation2d(translation.getX(), wristGroundMarginMeters);
-      }
+    // Keep translation within arm inner and outer ranges
+    double innerRadius = Math.abs(config.shoulder().length() - config.elbow().length());
+    double outerRadius = config.shoulder().length() + config.elbow().length();
+    if (translation.getNorm() < innerRadius) {
+      translation = translation.times(innerRadius / translation.getNorm());
+    } else if (translation.getNorm() > outerRadius) {
+      translation = translation.times(outerRadius / translation.getNorm());
+    }
 
-      // Apply new translation if valid
-      var angles = kinematics.inverse(translation);
-      if (angles.isPresent()) {
-        currentTrajectory = null;
-        setpointPose = new ArmPose(translation, setpointPose.globalWristAngle());
+    // Keep translation on same side of root
+    double setpointX = setpointPose.endEffectorPosition().minus(config.origin()).getX();
+    if (setpointX > 1e-3) {
+      if (translation.getX() < shiftCenterMarginMeters) {
+        translation = new Translation2d(shiftCenterMarginMeters, translation.getY());
       }
+    } else if (setpointX < -1e-3) {
+      if (translation.getX() > -shiftCenterMarginMeters) {
+        translation = new Translation2d(-shiftCenterMarginMeters, translation.getY());
+      }
+    }
+
+    // Don't go into the ground
+    translation = translation.plus(config.origin());
+    if (translation.getY() < wristGroundMarginMeters) {
+      translation = new Translation2d(translation.getX(), wristGroundMarginMeters);
+    }
+
+    // Apply new translation if valid
+    var angles = kinematics.inverse(translation);
+    if (angles.isPresent()) {
+      currentTrajectory = null;
+      setpointPose = new ArmPose(translation, pose.globalWristAngle());
     }
   }
 }
