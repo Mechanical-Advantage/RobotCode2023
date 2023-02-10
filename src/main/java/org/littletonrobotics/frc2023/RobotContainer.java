@@ -21,7 +21,6 @@ import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVision;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIO;
-import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIONorthstar;
 import org.littletonrobotics.frc2023.subsystems.arm.Arm;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmIO;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmIOSim;
@@ -38,6 +37,10 @@ import org.littletonrobotics.frc2023.subsystems.drive.ModuleIOSim;
 import org.littletonrobotics.frc2023.subsystems.drive.ModuleIOSparkMax;
 import org.littletonrobotics.frc2023.subsystems.gripper.Gripper;
 import org.littletonrobotics.frc2023.subsystems.gripper.GripperIO;
+import org.littletonrobotics.frc2023.subsystems.objectivetracker.GridSelectorIO;
+import org.littletonrobotics.frc2023.subsystems.objectivetracker.GridSelectorIOServer;
+import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker;
+import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.Direction;
 import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
@@ -54,6 +57,7 @@ public class RobotContainer {
   private Gripper gripper;
   private CubeIntake cubeIntake;
   private AprilTagVision aprilTagVision;
+  private ObjectiveTracker objectiveTracker;
 
   // OI objects
   private CommandXboxController driver = new CommandXboxController(0);
@@ -87,7 +91,6 @@ public class RobotContainer {
                   new ModuleIOSparkMax(1),
                   new ModuleIOSparkMax(2),
                   new ModuleIOSparkMax(3));
-          aprilTagVision = new AprilTagVision(new AprilTagVisionIONorthstar("northstar"));
           break;
         case ROBOT_SIMBOT:
           drive =
@@ -99,6 +102,7 @@ public class RobotContainer {
                   new ModuleIOSim());
           arm = new Arm(new ArmIOSim(), new ArmSolverIOKairos(1));
           cubeIntake = new CubeIntake(new CubeIntakeIOSim());
+          objectiveTracker = new ObjectiveTracker(new GridSelectorIOServer());
           break;
       }
     }
@@ -132,6 +136,9 @@ public class RobotContainer {
           aprilTagVision = new AprilTagVision();
           break;
       }
+    }
+    if (objectiveTracker == null) {
+      objectiveTracker = new ObjectiveTracker(new GridSelectorIO() {});
     }
 
     // Set up subsystems
@@ -208,6 +215,10 @@ public class RobotContainer {
                 .ignoringDisable(true));
 
     // *** OPERATOR CONTROLS ***
+    operator.povUp().whileTrue(objectiveTracker.shiftNodeCommand(Direction.UP));
+    operator.povRight().whileTrue(objectiveTracker.shiftNodeCommand(Direction.RIGHT));
+    operator.povDown().whileTrue(objectiveTracker.shiftNodeCommand(Direction.DOWN));
+    operator.povLeft().whileTrue(objectiveTracker.shiftNodeCommand(Direction.LEFT));
   }
 
   /** Passes the autonomous command to the {@link Robot} class. */
