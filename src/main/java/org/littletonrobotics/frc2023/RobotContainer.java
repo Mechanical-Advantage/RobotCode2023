@@ -24,6 +24,7 @@ import org.littletonrobotics.frc2023.commands.DriveWithJoysticks;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
 import org.littletonrobotics.frc2023.commands.HoldFlippableArmPreset;
+import org.littletonrobotics.frc2023.commands.MoveArmAlongFloor;
 import org.littletonrobotics.frc2023.commands.RaiseArmToScore;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVision;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIO;
@@ -240,22 +241,6 @@ public class RobotContainer {
 
     // *** OPERATOR CONTROLS ***
 
-    // Objective tracking controls
-    operator
-        .leftBumper()
-        .onTrue(
-            Commands.runOnce(() -> objectiveTracker.gamePiece = GamePiece.CONE)
-                .ignoringDisable(true));
-    operator
-        .rightBumper()
-        .onTrue(
-            Commands.runOnce(() -> objectiveTracker.gamePiece = GamePiece.CUBE)
-                .ignoringDisable(true));
-    operator.povUp().whileTrue(objectiveTracker.shiftNodeCommand(Direction.UP));
-    operator.povRight().whileTrue(objectiveTracker.shiftNodeCommand(Direction.RIGHT));
-    operator.povDown().whileTrue(objectiveTracker.shiftNodeCommand(Direction.DOWN));
-    operator.povLeft().whileTrue(objectiveTracker.shiftNodeCommand(Direction.LEFT));
-
     // Intake controls
     var singleSubstationArmCommand =
         new HoldFlippableArmPreset(
@@ -281,6 +266,40 @@ public class RobotContainer {
                     () ->
                         objectiveTracker.lastIntakeFront =
                             !doubleSubstationArmCommand.isFlipped())));
+    operator
+        .rightTrigger(0.0)
+        .whileTrue(
+            Commands.waitSeconds(0.1)
+                .andThen(
+                    new MoveArmAlongFloor(arm, operator::getRightTriggerAxis, true)
+                        .alongWith(
+                            gripper.intakeCommand(),
+                            Commands.run(() -> objectiveTracker.lastIntakeFront = true))));
+    operator
+        .leftTrigger(0.0)
+        .whileTrue(
+            Commands.waitSeconds(0.1)
+                .andThen(
+                    new MoveArmAlongFloor(arm, operator::getLeftTriggerAxis, false)
+                        .alongWith(
+                            gripper.intakeCommand(),
+                            Commands.run(() -> objectiveTracker.lastIntakeFront = false))));
+
+    // Objective tracking controls
+    operator
+        .leftBumper()
+        .onTrue(
+            Commands.runOnce(() -> objectiveTracker.gamePiece = GamePiece.CONE)
+                .ignoringDisable(true));
+    operator
+        .rightBumper()
+        .onTrue(
+            Commands.runOnce(() -> objectiveTracker.gamePiece = GamePiece.CUBE)
+                .ignoringDisable(true));
+    operator.povUp().whileTrue(objectiveTracker.shiftNodeCommand(Direction.UP));
+    operator.povRight().whileTrue(objectiveTracker.shiftNodeCommand(Direction.RIGHT));
+    operator.povDown().whileTrue(objectiveTracker.shiftNodeCommand(Direction.DOWN));
+    operator.povLeft().whileTrue(objectiveTracker.shiftNodeCommand(Direction.LEFT));
   }
 
   /** Passes the autonomous command to the {@link Robot} class. */
