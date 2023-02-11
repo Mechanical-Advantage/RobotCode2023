@@ -118,7 +118,7 @@ public class Arm extends SubsystemBase {
       HOMED(null),
       SINGLE_SUBTATION(
           new ArmPose(
-              new Translation2d(0.6, FieldConstants.LoadingZone.singleSubstationCenterZ),
+              new Translation2d(0.5, FieldConstants.LoadingZone.singleSubstationCenterZ),
               new Rotation2d())),
       DOUBLE_SUBTATION(
           new ArmPose(
