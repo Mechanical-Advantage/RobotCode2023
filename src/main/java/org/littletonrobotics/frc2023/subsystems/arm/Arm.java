@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.littletonrobotics.frc2023.Constants;
+import org.littletonrobotics.frc2023.FieldConstants;
+import org.littletonrobotics.frc2023.commands.DriveToNode;
 import org.littletonrobotics.frc2023.util.LoggedTunableNumber;
 import org.littletonrobotics.junction.Logger;
 
@@ -74,6 +76,7 @@ public class Arm extends SubsystemBase {
   private ArmPose queuedPose = null; // Use as setpoint once trajectory is completed
   private Timer trajectoryTimer = new Timer();
   private boolean presetMessagePrinted = false;
+  private int presetTrajectoryCount = 0;
 
   private PIDController shoulderFeedback =
       new PIDController(0.0, 0.0, 0.0, Constants.loopPeriodSecs);
@@ -113,13 +116,39 @@ public class Arm extends SubsystemBase {
   public static record ArmPose(Translation2d endEffectorPosition, Rotation2d globalWristAngle) {
     public static enum Preset {
       HOMED(null),
-      FORWARD(new ArmPose(new Translation2d(1.0, 1.0), new Rotation2d(-Math.PI / 3))),
-      BACKWARD(new ArmPose(new Translation2d(-1.0, 1.0), new Rotation2d(-2 * Math.PI / 3))),
-      FORWARD_UP(new ArmPose(new Translation2d(0.5, 1.5), new Rotation2d())),
-      BACKWARD_UP(new ArmPose(new Translation2d(-0.5, 1.5), new Rotation2d(Math.PI))),
-      INTAKE(new ArmPose(new Translation2d(0.75, 0.075), new Rotation2d())),
-      SUBSTATION(new ArmPose(new Translation2d(0.45, 0.81), new Rotation2d())),
-      HYBRID(new ArmPose(new Translation2d(0.48, 0.9), new Rotation2d(-Math.PI / 2)));
+      SINGLE_SUBTATION(
+          new ArmPose(
+              new Translation2d(0.5, FieldConstants.LoadingZone.singleSubstationCenterZ),
+              new Rotation2d())),
+      DOUBLE_SUBTATION(
+          new ArmPose(
+              new Translation2d(0.5, FieldConstants.LoadingZone.doubleSubstationShelfZ + 0.1),
+              new Rotation2d())),
+      SCORE_HYBRID(new ArmPose(new Translation2d(0.55, 0.9), Rotation2d.fromDegrees(-90.0))),
+      SCORE_MID_CONE(
+          new ArmPose(
+              new Translation2d(
+                  DriveToNode.scoreX - FieldConstants.Grids.midX - 0.2,
+                  FieldConstants.Grids.midConeZ + 0.2),
+              Rotation2d.fromDegrees(30.0))),
+      SCORE_MID_CUBE(
+          new ArmPose(
+              new Translation2d(
+                  DriveToNode.scoreX - FieldConstants.Grids.midX - 0.3,
+                  FieldConstants.Grids.midCubeZ + 0.5),
+              Rotation2d.fromDegrees(-45.0))),
+      SCORE_HIGH_CONE(
+          new ArmPose(
+              new Translation2d(
+                  DriveToNode.scoreX - FieldConstants.Grids.highX - 0.2,
+                  FieldConstants.Grids.highConeZ + 0.2),
+              Rotation2d.fromDegrees(30.0))),
+      SCORE_HIGH_CUBE(
+          new ArmPose(
+              new Translation2d(
+                  DriveToNode.scoreX - FieldConstants.Grids.highX - 0.3,
+                  FieldConstants.Grids.highCubeZ + 0.5),
+              Rotation2d.fromDegrees(-45.0)));
 
       private ArmPose pose;
 
@@ -183,18 +212,23 @@ public class Arm extends SubsystemBase {
     // Create visualizers
     visualizerMeasured = new ArmVisualizer(config, "ArmMeasured", null);
     visualizerSetpoint = new ArmVisualizer(config, "ArmSetpoint", new Color8Bit(Color.kOrange));
+    ArmVisualizer.logRectConstraints(config);
 
     // Add preset trajectories to queue
-    for (var preset0 : ArmPose.Preset.values()) {
-      for (var preset1 : ArmPose.Preset.values()) {
-        if (!preset0.equals(preset1)) {
-          Optional<Vector<N2>> preset0Angles =
-              kinematics.inverse(preset0.getPose().endEffectorPosition());
-          Optional<Vector<N2>> preset1Angles =
-              kinematics.inverse(preset1.getPose().endEffectorPosition());
+    List<ArmPose> allPoses = new ArrayList<>();
+    for (var preset : ArmPose.Preset.values()) {
+      allPoses.add(preset.getPose());
+      allPoses.add(preset.getPose().withFlip(true));
+    }
+    for (var pose0 : allPoses) {
+      for (var pose1 : allPoses) {
+        if (!pose0.equals(pose1)) {
+          Optional<Vector<N2>> preset0Angles = kinematics.inverse(pose0.endEffectorPosition());
+          Optional<Vector<N2>> preset1Angles = kinematics.inverse(pose1.endEffectorPosition());
           if (preset0Angles.isPresent() && preset1Angles.isPresent()) {
             var parameters = new ArmTrajectory.Parameters(preset0Angles.get(), preset1Angles.get());
             allTrajectories.put(parameters.hashCode(), new ArmTrajectory(parameters));
+            presetTrajectoryCount++;
           }
         }
       }
@@ -282,8 +316,7 @@ public class Arm extends SubsystemBase {
     }
     Logger.getInstance().recordOutput("Arm/TrajectoryCount", trajectoryCount);
     Logger.getInstance().recordOutput("Arm/TrajectoryCountGenerated", trajectoryCountGenerated);
-    if (trajectoryCountGenerated
-        >= ArmPose.Preset.values().length * (ArmPose.Preset.values().length - 1)) {
+    if (trajectoryCountGenerated >= presetTrajectoryCount) {
       if (!presetMessagePrinted) {
         System.out.println("All preset arm trajectories ready!");
         presetMessagePrinted = true;
@@ -470,6 +503,11 @@ public class Arm extends SubsystemBase {
     return checkAvoidanceRegion(coneIntakeAvoidanceRect);
   }
 
+  /** Returns whether the current current is complete. */
+  public boolean isTrajectoryFinished() {
+    return currentTrajectory == null;
+  }
+
   /** Starts navigating to a pose. */
   public void runPath(ArmPose.Preset preset) {
     runPath(preset.getPose());
@@ -536,8 +574,7 @@ public class Arm extends SubsystemBase {
 
   /** Command factory to navigate to a pose along a path. */
   public Command runPathCommand(ArmPose pose) {
-    return runOnce(() -> runPath(pose))
-        .andThen(Commands.waitUntil(() -> currentTrajectory == null));
+    return runOnce(() -> runPath(pose)).andThen(Commands.waitUntil(this::isTrajectoryFinished));
   }
 
   /** Go directly to the provided pose without using a path. Only use for small movements. */

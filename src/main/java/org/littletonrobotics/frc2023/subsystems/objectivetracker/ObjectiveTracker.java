@@ -22,8 +22,11 @@ public class ObjectiveTracker extends SubsystemBase {
   private final NodeSelectorIOInputsAutoLogged selectorInputs =
       new NodeSelectorIOInputsAutoLogged();
 
-  private int selectedRow = 0;
-  private NodeLevel selectedLevel = NodeLevel.HYBRID;
+  public GamePiece gamePiece = GamePiece.CUBE; // The selected game piece for intaking and scoring
+  public boolean lastIntakeFront =
+      true; // Whether the last game piece was grabbed from the front or back of the robot
+  public int selectedRow = 0; // The row of the selected target node
+  public NodeLevel selectedLevel = NodeLevel.HYBRID; // The level of the selected target node
 
   public ObjectiveTracker(NodeSelectorIO selectorIO) {
     this.selectorIO = selectorIO;
@@ -33,6 +36,9 @@ public class ObjectiveTracker extends SubsystemBase {
   public void periodic() {
     selectorIO.updateInputs(selectorInputs);
     Logger.getInstance().processInputs("NodeSelector", selectorInputs);
+
+    // Send selected game piece
+    SmartDashboard.putBoolean("Cube Selected", gamePiece == GamePiece.CUBE);
 
     // Read updates from node selector
     if (selectorInputs.selected != -1) {
@@ -60,32 +66,20 @@ public class ObjectiveTracker extends SubsystemBase {
         selected = selectedRow;
       }
       switch (selectedLevel) {
-        case HYBRID:
-          selected += 0;
-          break;
-        case MID:
-          selected += 9;
-          break;
-        case HIGH:
-          selected += 18;
-          break;
+        case HYBRID -> selected += 0;
+        case MID -> selected += 9;
+        case HIGH -> selected += 18;
       }
       selectorIO.setSelected(selected);
     }
 
-    // Log current node as text
+    // Send current node as text
     {
       String text = "";
       switch (selectedLevel) {
-        case HYBRID:
-          text += "HYBRID";
-          break;
-        case MID:
-          text += "MID";
-          break;
-        case HIGH:
-          text += "HIGH";
-          break;
+        case HYBRID -> text += "HYBRID";
+        case MID -> text += "MID";
+        case HIGH -> text += "HIGH";
       }
       text += ", ";
       if (selectedRow < 3) {
@@ -108,6 +102,12 @@ public class ObjectiveTracker extends SubsystemBase {
       text += " node";
       SmartDashboard.putString("Selected Node", text);
     }
+
+    // Log state
+    Logger.getInstance().recordOutput("ObjectiveTracker/GamePiece", gamePiece.toString());
+    Logger.getInstance().recordOutput("ObjectiveTracker/LastIntakeFront", lastIntakeFront);
+    Logger.getInstance().recordOutput("ObjectiveTracker/SelectedRow", selectedRow);
+    Logger.getInstance().recordOutput("ObjectiveTracker/SelectedLevel", selectedLevel.toString());
   }
 
   /** Shifts the selected node in the selector by one position. */
@@ -139,27 +139,17 @@ public class ObjectiveTracker extends SubsystemBase {
 
       case UP:
         switch (selectedLevel) {
-          case HYBRID:
-            break;
-          case MID:
-            selectedLevel = NodeLevel.HYBRID;
-            break;
-          case HIGH:
-            selectedLevel = NodeLevel.MID;
-            break;
+          case HYBRID -> {}
+          case MID -> selectedLevel = NodeLevel.HYBRID;
+          case HIGH -> selectedLevel = NodeLevel.MID;
         }
         break;
 
       case DOWN:
         switch (selectedLevel) {
-          case HYBRID:
-            selectedLevel = NodeLevel.MID;
-            break;
-          case MID:
-            selectedLevel = NodeLevel.HIGH;
-            break;
-          case HIGH:
-            break;
+          case HYBRID -> selectedLevel = NodeLevel.MID;
+          case MID -> selectedLevel = NodeLevel.HIGH;
+          case HIGH -> {}
         }
         break;
     }
@@ -173,6 +163,11 @@ public class ObjectiveTracker extends SubsystemBase {
             Commands.repeatingSequence(
                 new InstantCommand(() -> shiftNode(direction)), new WaitCommand(0.1)))
         .ignoringDisable(true);
+  }
+
+  public static enum GamePiece {
+    CUBE,
+    CONE
   }
 
   public static enum NodeLevel {

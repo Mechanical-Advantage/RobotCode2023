@@ -11,6 +11,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.frc2023.util.LoggedTunableNumber;
+import org.littletonrobotics.frc2023.util.SuppliedWaitCommand;
 import org.littletonrobotics.junction.Logger;
 
 public class Gripper extends SubsystemBase {
@@ -23,6 +24,8 @@ public class Gripper extends SubsystemBase {
       new LoggedTunableNumber("Gripper/IntakeVolts", 10.0);
   private static final LoggedTunableNumber ejectVolts =
       new LoggedTunableNumber("Gripper/EjectVolts", 6.0);
+  private static final LoggedTunableNumber ejectSecs =
+      new LoggedTunableNumber("Gripper/EjectSecs", 0.2);
 
   public Gripper(GripperIO io) {
     this.io = io;
@@ -51,6 +54,7 @@ public class Gripper extends SubsystemBase {
 
   /** Command factory to run the gripper wheels back and eject a game piece. */
   public Command ejectCommand() {
-    return run(() -> io.setVoltage(ejectVolts.get()));
+    return run(() -> io.setVoltage(ejectVolts.get()))
+        .raceWith(new SuppliedWaitCommand(() -> ejectSecs.get()));
   }
 }

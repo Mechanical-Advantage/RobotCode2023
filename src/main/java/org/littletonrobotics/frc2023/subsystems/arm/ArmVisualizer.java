@@ -90,4 +90,32 @@ public class ArmVisualizer {
                 new Rotation3d(0.0, -wristAngle, 0.0)));
     Logger.getInstance().recordOutput("Mechanism3d/" + logKey, shoulderPose, elbowPose, wristPose);
   }
+
+  public static void logRectConstraints(ArmConfig config) {
+    var mechanism = new Mechanism2d(4, 3, new Color8Bit(Color.kGray));
+
+    for (var constraintEntry : config.constraints().entrySet()) {
+      if (constraintEntry.getValue().type().equals("rectangle")) {
+        var args = constraintEntry.getValue().args();
+        var root = mechanism.getRoot(constraintEntry.getKey(), 2 + args[0], args[1]);
+        var bottomLigament =
+            root.append(
+                new MechanismLigament2d(
+                    "Bottom", args[2] - args[0], 0, 1, new Color8Bit(Color.kBlack)));
+        var rightLigament =
+            bottomLigament.append(
+                new MechanismLigament2d(
+                    "Right", args[3] - args[1], 90, 1, new Color8Bit(Color.kBlack)));
+        var topLigament =
+            rightLigament.append(
+                new MechanismLigament2d(
+                    "Right", args[2] - args[0], 90, 1, new Color8Bit(Color.kBlack)));
+        topLigament.append(
+            new MechanismLigament2d(
+                "Right", args[3] - args[1], 90, 1, new Color8Bit(Color.kBlack)));
+      }
+    }
+
+    Logger.getInstance().recordOutput("Mechanism2d/ArmConstraints", mechanism);
+  }
 }

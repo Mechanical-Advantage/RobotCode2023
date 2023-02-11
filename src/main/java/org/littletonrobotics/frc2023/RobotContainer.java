@@ -11,17 +11,24 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import java.util.List;
 import org.littletonrobotics.frc2023.Constants.Mode;
+import org.littletonrobotics.frc2023.commands.DriveToNode;
+import org.littletonrobotics.frc2023.commands.DriveToSubstation;
 import org.littletonrobotics.frc2023.commands.DriveTrajectory;
 import org.littletonrobotics.frc2023.commands.DriveWithJoysticks;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
+import org.littletonrobotics.frc2023.commands.HoldFlippableArmPreset;
+import org.littletonrobotics.frc2023.commands.RaiseArmToScore;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVision;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIO;
 import org.littletonrobotics.frc2023.subsystems.arm.Arm;
+import org.littletonrobotics.frc2023.subsystems.arm.Arm.ArmPose;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmIO;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmIOSim;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmSolverIO;
@@ -41,6 +48,7 @@ import org.littletonrobotics.frc2023.subsystems.objectivetracker.NodeSelectorIO;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.NodeSelectorIOServer;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.Direction;
+import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.GamePiece;
 import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
@@ -195,6 +203,8 @@ public class RobotContainer {
     DriverStation.silenceJoystickConnectionWarning(true);
 
     // *** DRIVER CONTROLS ***
+
+    // Drive controls
     drive.setDefaultCommand(
         new DriveWithJoysticks(
             drive,
@@ -206,7 +216,7 @@ public class RobotContainer {
         .start()
         .or(driver.back())
         .onTrue(
-            new InstantCommand(
+            Commands.runOnce(
                     () -> {
                       drive.setPose(
                           new Pose2d(
@@ -215,11 +225,62 @@ public class RobotContainer {
                     })
                 .ignoringDisable(true));
 
+    // Auto align controls
+    driver.leftTrigger().whileTrue(new DriveToSubstation(drive));
+    var driveToNode = new DriveToNode(drive, objectiveTracker);
+    driver
+        .y()
+        .whileTrue(
+            Commands.parallel(
+                    new RaiseArmToScore(arm, drive, objectiveTracker),
+                    new WaitUntilCommand(driveToNode::atGoal))
+                .andThen(gripper.ejectCommand())
+                .deadlineWith(driveToNode)
+                .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
+
     // *** OPERATOR CONTROLS ***
+
+    // Objective tracking controls
+    operator
+        .leftBumper()
+        .onTrue(
+            Commands.runOnce(() -> objectiveTracker.gamePiece = GamePiece.CONE)
+                .ignoringDisable(true));
+    operator
+        .rightBumper()
+        .onTrue(
+            Commands.runOnce(() -> objectiveTracker.gamePiece = GamePiece.CUBE)
+                .ignoringDisable(true));
     operator.povUp().whileTrue(objectiveTracker.shiftNodeCommand(Direction.UP));
     operator.povRight().whileTrue(objectiveTracker.shiftNodeCommand(Direction.RIGHT));
     operator.povDown().whileTrue(objectiveTracker.shiftNodeCommand(Direction.DOWN));
     operator.povLeft().whileTrue(objectiveTracker.shiftNodeCommand(Direction.LEFT));
+
+    // Intake controls
+    var singleSubstationArmCommand =
+        new HoldFlippableArmPreset(
+            arm, drive, ArmPose.Preset.SINGLE_SUBTATION.getPose(), Rotation2d.fromDegrees(90.0));
+    operator
+        .a()
+        .whileTrue(
+            singleSubstationArmCommand.alongWith(
+                gripper.intakeCommand(),
+                Commands.run(
+                    () ->
+                        objectiveTracker.lastIntakeFront =
+                            !singleSubstationArmCommand.isFlipped())));
+    var doubleSubstationArmCommand =
+        new HoldFlippableArmPreset(
+            arm, drive, ArmPose.Preset.DOUBLE_SUBTATION.getPose(), Rotation2d.fromDegrees(0.0));
+    operator
+        .b()
+        .whileTrue(
+            doubleSubstationArmCommand.alongWith(
+                gripper.intakeCommand(),
+                Commands.run(
+                    () ->
+                        objectiveTracker.lastIntakeFront =
+                            !doubleSubstationArmCommand.isFlipped())));
   }
 
   /** Passes the autonomous command to the {@link Robot} class. */

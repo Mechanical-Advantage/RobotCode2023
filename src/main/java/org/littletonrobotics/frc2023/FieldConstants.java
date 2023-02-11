@@ -168,6 +168,7 @@ public final class FieldConstants {
     public static final double doubleSubstationLength = Units.inchesToMeters(14.0);
     public static final double doubleSubstationX = innerX - doubleSubstationLength;
     public static final double doubleSubstationShelfZ = Units.inchesToMeters(37.375);
+    public static final double doubleSubstationCenterY = Units.inchesToMeters(265.74);
 
     // Single substation dimensions
     public static final double singleSubstationWidth = Units.inchesToMeters(22.75);

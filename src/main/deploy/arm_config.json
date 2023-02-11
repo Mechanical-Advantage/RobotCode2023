@@ -63,13 +63,40 @@
         0.45
       ]
     },
-    "coneIntake": {
+    "nodeMidFront": {
       "type": "rectangle",
       "args": [
-        -0.6,
+        0.5,
         -1,
-        -0.25,
-        0.6
+        1.2,
+        1
+      ]
+    },
+    "nodeHighFront": {
+      "type": "rectangle",
+      "args": [
+        1.1,
+        -1,
+        2,
+        1.2
+      ]
+    },
+    "nodeMidBack": {
+      "type": "rectangle",
+      "args": [
+        -1.2,
+        -1,
+        -0.5,
+        1
+      ]
+    },
+    "nodeHighBack": {
+      "type": "rectangle",
+      "args": [
+        -2,
+        -1,
+        -1.1,
+        1.2
       ]
     }
   }
