@@ -41,19 +41,19 @@ import org.littletonrobotics.frc2023.util.LoggedTunableNumber;
 import org.littletonrobotics.junction.Logger;
 
 public class Arm extends SubsystemBase {
-  private static final double trajectoryCacheMarginRadians = 0.02;
-  private static final double shiftCenterMarginMeters = 0.05;
-  private static final double wristGroundMarginMeters = 0.05;
-  private static final double[] cubeIntakeAvoidanceRect = new double[] {0.01, 0.0, 0.8, 0.6};
-  private static final double[] coneIntakeAvoidanceRect = new double[] {-0.6, 0.0, -0.01, 0.6};
-  private static final double avoidanceLookaheadSecs = 0.25;
+  static final double trajectoryCacheMarginRadians = 0.02;
+  static final double shiftCenterMarginMeters = 0.05;
+  static final double wristGroundMarginMeters = 0.05;
+  static final double[] cubeIntakeAvoidanceRect = new double[] {0.01, 0.0, 0.8, 0.6};
+  static final double[] coneIntakeAvoidanceRect = new double[] {-0.6, 0.0, -0.01, 0.6};
+  static final double avoidanceLookaheadSecs = 0.25;
 
   private final ArmIO io;
   private final ArmSolverIO solverIo;
   private final ArmIOInputsAutoLogged inputs = new ArmIOInputsAutoLogged();
   private final ArmSolverIOInputsAutoLogged solverInputs = new ArmSolverIOInputsAutoLogged();
 
-  private static final String configFilename = "arm_config.json";
+  static final String configFilename = "arm_config.json";
   private final String configJson;
   private final ArmConfig config;
   private final ArmKinematics kinematics;
@@ -118,7 +118,7 @@ public class Arm extends SubsystemBase {
       HOMED(null),
       SINGLE_SUBTATION(
           new ArmPose(
-              new Translation2d(0.5, FieldConstants.LoadingZone.singleSubstationCenterZ),
+              new Translation2d(0.6, FieldConstants.LoadingZone.singleSubstationCenterZ),
               new Rotation2d())),
       DOUBLE_SUBTATION(
           new ArmPose(
@@ -128,25 +128,25 @@ public class Arm extends SubsystemBase {
       SCORE_MID_CONE(
           new ArmPose(
               new Translation2d(
-                  DriveToNode.scoreX - FieldConstants.Grids.midX - 0.2,
+                  DriveToNode.scorePositionX - FieldConstants.Grids.midX - 0.2,
                   FieldConstants.Grids.midConeZ + 0.2),
               Rotation2d.fromDegrees(30.0))),
       SCORE_MID_CUBE(
           new ArmPose(
               new Translation2d(
-                  DriveToNode.scoreX - FieldConstants.Grids.midX - 0.3,
+                  DriveToNode.scorePositionX - FieldConstants.Grids.midX - 0.3,
                   FieldConstants.Grids.midCubeZ + 0.5),
               Rotation2d.fromDegrees(-45.0))),
       SCORE_HIGH_CONE(
           new ArmPose(
               new Translation2d(
-                  DriveToNode.scoreX - FieldConstants.Grids.highX - 0.2,
+                  DriveToNode.scorePositionX - FieldConstants.Grids.highX - 0.2,
                   FieldConstants.Grids.highConeZ + 0.2),
               Rotation2d.fromDegrees(30.0))),
       SCORE_HIGH_CUBE(
           new ArmPose(
               new Translation2d(
-                  DriveToNode.scoreX - FieldConstants.Grids.highX - 0.3,
+                  DriveToNode.scorePositionX - FieldConstants.Grids.highX - 0.3,
                   FieldConstants.Grids.highCubeZ + 0.5),
               Rotation2d.fromDegrees(-45.0)));
 
@@ -162,6 +162,15 @@ public class Arm extends SubsystemBase {
 
       public ArmPose getPose() {
         return pose;
+      }
+
+      public static void updateHomedPreset(ArmConfig config) {
+        HOMED.setPose(
+            new ArmPose(
+                new Translation2d(
+                    config.origin().getX(),
+                    config.origin().getY() + config.shoulder().length() - config.elbow().length()),
+                new Rotation2d(-Math.PI / 2)));
       }
     }
 
@@ -200,38 +209,16 @@ public class Arm extends SubsystemBase {
     kinematics = new ArmKinematics(config);
     dynamics = new ArmDynamics(config);
     ArmPose.wristLength = config.wrist().length();
-
-    // Calculate homed pose
-    ArmPose.Preset.HOMED.setPose(
-        new ArmPose(
-            new Translation2d(
-                config.origin().getX(),
-                config.origin().getY() + config.shoulder().length() - config.elbow().length()),
-            new Rotation2d(-Math.PI / 2)));
+    ArmPose.Preset.updateHomedPreset(config);
 
     // Create visualizers
     visualizerMeasured = new ArmVisualizer(config, "ArmMeasured", null);
     visualizerSetpoint = new ArmVisualizer(config, "ArmSetpoint", new Color8Bit(Color.kOrange));
     ArmVisualizer.logRectConstraints(config);
 
-    // Add preset trajectories to queue
-    List<ArmPose> allPoses = new ArrayList<>();
-    for (var preset : ArmPose.Preset.values()) {
-      allPoses.add(preset.getPose());
-      allPoses.add(preset.getPose().withFlip(true));
-    }
-    for (var pose0 : allPoses) {
-      for (var pose1 : allPoses) {
-        if (!pose0.equals(pose1)) {
-          Optional<Vector<N2>> preset0Angles = kinematics.inverse(pose0.endEffectorPosition());
-          Optional<Vector<N2>> preset1Angles = kinematics.inverse(pose1.endEffectorPosition());
-          if (preset0Angles.isPresent() && preset1Angles.isPresent()) {
-            var parameters = new ArmTrajectory.Parameters(preset0Angles.get(), preset1Angles.get());
-            allTrajectories.put(parameters.hashCode(), new ArmTrajectory(parameters));
-            presetTrajectoryCount++;
-          }
-        }
-      }
+    // Load cached trajectories
+    for (var trajectory : ArmTrajectoryCache.loadTrajectories()) {
+      allTrajectories.put(trajectory.getParameters().hashCode(), trajectory);
     }
   }
 

@@ -16,7 +16,7 @@ import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracke
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
 
 public class DriveToNode extends DriveToPose {
-  public static final double scoreX = FieldConstants.Grids.outerX + 0.4;
+  public static final double scorePositionX = FieldConstants.Grids.outerX + 0.4;
 
   public DriveToNode(Drive drive, ObjectiveTracker objectiveTracker) {
     super(
@@ -38,7 +38,7 @@ public class DriveToNode extends DriveToPose {
               break;
           }
 
-          targetTranslation = new Translation2d(scoreX, targetTranslation.getY());
+          targetTranslation = new Translation2d(scorePositionX, targetTranslation.getY());
           var scoreFront = RaiseArmToScore.shouldScoreFront(drive.getRotation(), objectiveTracker);
           return AllianceFlipUtil.apply(
               new Pose2d(

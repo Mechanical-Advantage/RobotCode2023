@@ -5,21 +5,25 @@
 # license that can be found in the LICENSE file at
 # the root directory of this project.
 
+import math
+
 from casadi import *
 
 from ArmFeedforward import ArmFeedforward, JointConfig
 from DCMotor import DCMotor
-import math
 
 
 class Solver:
-    def __init__(self, config: str):
+    def __init__(self, config: str, silence: bool = False):
         self._config = config
 
         # Create solver
         opti = Opti()
         self._opti = opti
-        opti.solver("ipopt")
+        if silence:
+            opti.solver("ipopt", {"print_time": 0}, {"print_level": 0, "sb": "yes"})
+        else:
+            opti.solver("ipopt")
 
         # Get constants from config
         n = config["solver"]["interiorPoints"]
@@ -315,10 +319,10 @@ class Solver:
                 opti.set_value(constraint_parameter, 1)
 
         # Solve
-        try:
-            opti.solve()
-        except:
-            return None
+        # try:
+        opti.solve()
+        # except:
+        #     return None
 
         # Get results
         result = (opti.value(self._total_time), [], [])

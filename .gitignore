@@ -170,3 +170,6 @@ networktables.json
 
 # Version file
 src/main/java/org/littletonrobotics/frc2023/BuildConstants.java
+
+# Arm trajectory cache
+src/main/deploy/arm_trajectory_cache.json

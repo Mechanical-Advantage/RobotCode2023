@@ -6,10 +6,10 @@
 # the root directory of this project.
 
 import json
+from math import pi
 
 from Plotter import plot
 from Solver import Solver
-from math import pi
 
 if __name__ == "__main__":
     config = json.loads(open("src/main/deploy/arm_config.json", "r").read())
