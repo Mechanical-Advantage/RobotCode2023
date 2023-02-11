@@ -13,6 +13,7 @@ import com.google.common.hash.Hashing;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.numbers.N2;
+import edu.wpi.first.wpilibj.DriverStation;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -24,7 +25,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.littletonrobotics.frc2023.Constants;
-import org.littletonrobotics.frc2023.subsystems.arm.Arm.ArmPose;
 
 public class ArmTrajectoryCache {
   private static final String cacheFilename = "arm_trajectory_cache.json";
@@ -62,6 +62,9 @@ public class ArmTrajectoryCache {
             VecBuilder.fill(trajectoryCache.points()[i * 2], trajectoryCache.points()[i * 2 + 1]));
       }
       trajectory.setPoints(trajectoryCache.totalTime(), points);
+      if (!trajectory.isGenerated()) {
+        DriverStation.reportError("Invalid trajectory found in arm trajectory cache JSON", false);
+      }
       trajectories.add(trajectory);
     }
 

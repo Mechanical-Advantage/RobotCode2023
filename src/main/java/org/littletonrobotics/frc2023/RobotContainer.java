@@ -29,9 +29,9 @@ import org.littletonrobotics.frc2023.commands.RaiseArmToScore;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVision;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIO;
 import org.littletonrobotics.frc2023.subsystems.arm.Arm;
-import org.littletonrobotics.frc2023.subsystems.arm.Arm.ArmPose;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmIO;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmIOSim;
+import org.littletonrobotics.frc2023.subsystems.arm.ArmPose;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmSolverIO;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmSolverIOKairos;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntake;
@@ -152,6 +152,7 @@ public class RobotContainer {
     }
 
     // Set up subsystems
+    arm.setOverrides(() -> overrides.getDriverSwitch(1), () -> overrides.getOperatorSwitch(2));
     cubeIntake.setForceExtendSupplier(arm::cubeIntakeShouldExtend);
     aprilTagVision.setDataInterfaces(drive::getPose, drive::addVisionData);
 

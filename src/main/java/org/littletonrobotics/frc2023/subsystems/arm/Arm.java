@@ -12,9 +12,7 @@ import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
@@ -34,9 +32,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.littletonrobotics.frc2023.Constants;
-import org.littletonrobotics.frc2023.FieldConstants;
-import org.littletonrobotics.frc2023.commands.DriveToNode;
 import org.littletonrobotics.frc2023.util.LoggedTunableNumber;
 import org.littletonrobotics.junction.Logger;
 
@@ -58,6 +55,9 @@ public class Arm extends SubsystemBase {
   private final ArmConfig config;
   private final ArmKinematics kinematics;
   private final ArmDynamics dynamics;
+
+  private Supplier<Boolean> disableSupplier = () -> false;
+  private Supplier<Boolean> forcePregeneratedSupplier = () -> false;
 
   private final ArmVisualizer visualizerMeasured;
   private final ArmVisualizer visualizerSetpoint;
@@ -112,85 +112,6 @@ public class Arm extends SubsystemBase {
     }
   }
 
-  /** Represents a target position for the arm. */
-  public static record ArmPose(Translation2d endEffectorPosition, Rotation2d globalWristAngle) {
-    public static enum Preset {
-      HOMED(null),
-      SINGLE_SUBTATION(
-          new ArmPose(
-              new Translation2d(0.5, FieldConstants.LoadingZone.singleSubstationCenterZ),
-              new Rotation2d())),
-      DOUBLE_SUBTATION(
-          new ArmPose(
-              new Translation2d(0.5, FieldConstants.LoadingZone.doubleSubstationShelfZ + 0.1),
-              new Rotation2d())),
-      SCORE_HYBRID(new ArmPose(new Translation2d(0.55, 0.9), Rotation2d.fromDegrees(-90.0))),
-      SCORE_MID_CONE(
-          new ArmPose(
-              new Translation2d(
-                  DriveToNode.scorePositionX - FieldConstants.Grids.midX - 0.2,
-                  FieldConstants.Grids.midConeZ + 0.2),
-              Rotation2d.fromDegrees(30.0))),
-      SCORE_MID_CUBE(
-          new ArmPose(
-              new Translation2d(
-                  DriveToNode.scorePositionX - FieldConstants.Grids.midX - 0.3,
-                  FieldConstants.Grids.midCubeZ + 0.5),
-              Rotation2d.fromDegrees(-45.0))),
-      SCORE_HIGH_CONE(
-          new ArmPose(
-              new Translation2d(
-                  DriveToNode.scorePositionX - FieldConstants.Grids.highX - 0.2,
-                  FieldConstants.Grids.highConeZ + 0.2),
-              Rotation2d.fromDegrees(30.0))),
-      SCORE_HIGH_CUBE(
-          new ArmPose(
-              new Translation2d(
-                  DriveToNode.scorePositionX - FieldConstants.Grids.highX - 0.3,
-                  FieldConstants.Grids.highCubeZ + 0.5),
-              Rotation2d.fromDegrees(-45.0)));
-
-      private ArmPose pose;
-
-      private Preset(ArmPose pose) {
-        this.pose = pose;
-      }
-
-      private void setPose(ArmPose pose) {
-        this.pose = pose;
-      }
-
-      public ArmPose getPose() {
-        return pose;
-      }
-
-      public static void updateHomedPreset(ArmConfig config) {
-        HOMED.setPose(
-            new ArmPose(
-                new Translation2d(
-                    config.origin().getX(),
-                    config.origin().getY() + config.shoulder().length() - config.elbow().length()),
-                new Rotation2d(-Math.PI / 2)));
-      }
-    }
-
-    private static double wristLength = 0.0;
-
-    public Translation2d wristPosition() {
-      return new Pose2d(endEffectorPosition, globalWristAngle)
-          .transformBy(new Transform2d(new Translation2d(wristLength, 0.0), new Rotation2d()))
-          .getTranslation();
-    }
-
-    public ArmPose withFlip(boolean flip) {
-      return flip
-          ? new ArmPose(
-              new Translation2d(-this.endEffectorPosition.getX(), this.endEffectorPosition.getY()),
-              new Rotation2d(-this.globalWristAngle.getCos(), this.globalWristAngle.getSin()))
-          : this;
-    }
-  }
-
   public Arm(ArmIO io, ArmSolverIO solverIo) {
     this.io = io;
     this.solverIo = solverIo;
@@ -220,6 +141,12 @@ public class Arm extends SubsystemBase {
     for (var trajectory : ArmTrajectoryCache.loadTrajectories()) {
       allTrajectories.put(trajectory.getParameters().hashCode(), trajectory);
     }
+  }
+
+  public void setOverrides(
+      Supplier<Boolean> disableSupplier, Supplier<Boolean> forcePregeneratedSupplier) {
+    this.disableSupplier = disableSupplier;
+    this.forcePregeneratedSupplier = forcePregeneratedSupplier;
   }
 
   /**
@@ -337,7 +264,7 @@ public class Arm extends SubsystemBase {
 
     // Run shoulder and elbow
     ArmPose wristEffectiveArmPose = null; // The arm pose to use for wrist calculations
-    if (DriverStation.isDisabled()) {
+    if (DriverStation.isDisabled() || disableSupplier.get()) {
       // Stop moving when disabled
       io.setShoulderVoltage(0.0);
       io.setElbowVoltage(0.0);
@@ -379,7 +306,7 @@ public class Arm extends SubsystemBase {
     }
 
     // Run wrist
-    if (DriverStation.isDisabled() || wristEffectiveArmPose == null) {
+    if (DriverStation.isDisabled() || wristEffectiveArmPose == null || disableSupplier.get()) {
       // Stop moving when disabled
       io.setWristVoltage(0.0);
       wristFeedback.reset(wristAngle);
@@ -527,6 +454,8 @@ public class Arm extends SubsystemBase {
     trajectoryTimer.reset();
 
     // Search for similar trajectories
+    ArmTrajectory closestTrajectory = null;
+    double closestTrajectoryDiff = Double.POSITIVE_INFINITY;
     for (var trajectory : allTrajectories.values()) {
       var initialDiff =
           trajectory
@@ -535,15 +464,37 @@ public class Arm extends SubsystemBase {
               .minus(parameters.initialJointPositions());
       var finalDiff =
           trajectory.getParameters().finalJointPositions().minus(parameters.finalJointPositions());
+
+      // Check if closest
+      double totalDiff =
+          Math.abs(initialDiff.get(0, 0))
+              + Math.abs(initialDiff.get(1, 0))
+              + Math.abs(finalDiff.get(0, 0))
+              + Math.abs(finalDiff.get(1, 0));
+      if (totalDiff < closestTrajectoryDiff) {
+        closestTrajectory = trajectory;
+        closestTrajectoryDiff = totalDiff;
+      }
+
+      // If close enough, use this trajectory
       if (Math.abs(initialDiff.get(0, 0)) < trajectoryCacheMarginRadians
           && Math.abs(initialDiff.get(1, 0)) < trajectoryCacheMarginRadians
           && Math.abs(finalDiff.get(0, 0)) < trajectoryCacheMarginRadians
           && Math.abs(finalDiff.get(1, 0)) < trajectoryCacheMarginRadians
-          && trajectory.isGenerated()) { // If not generated, try again
+          && trajectory.isGenerated()) {
         currentTrajectory = trajectory;
         queuedPose = pose;
         return;
       }
+    }
+
+    // Use closest if overriden
+    if (forcePregeneratedSupplier.get()) {
+      if (closestTrajectory != null) {
+        currentTrajectory = closestTrajectory;
+        queuedPose = pose;
+      }
+      return;
     }
 
     // Create new trajectory

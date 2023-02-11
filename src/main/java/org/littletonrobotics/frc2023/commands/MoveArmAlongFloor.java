@@ -14,7 +14,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import java.util.function.Supplier;
 import org.littletonrobotics.frc2023.subsystems.arm.Arm;
-import org.littletonrobotics.frc2023.subsystems.arm.Arm.ArmPose;
+import org.littletonrobotics.frc2023.subsystems.arm.ArmPose;
 
 public class MoveArmAlongFloor extends CommandBase {
   public static final double height = 0.15;

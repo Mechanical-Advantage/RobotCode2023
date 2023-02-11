@@ -10,7 +10,7 @@ package org.littletonrobotics.frc2023.commands;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import org.littletonrobotics.frc2023.subsystems.arm.Arm;
-import org.littletonrobotics.frc2023.subsystems.arm.Arm.ArmPose;
+import org.littletonrobotics.frc2023.subsystems.arm.ArmPose;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
 

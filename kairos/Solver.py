@@ -319,10 +319,10 @@ class Solver:
                 opti.set_value(constraint_parameter, 1)
 
         # Solve
-        # try:
-        opti.solve()
-        # except:
-        #     return None
+        try:
+            opti.solve()
+        except:
+            return None
 
         # Get results
         result = (opti.value(self._total_time), [], [])
