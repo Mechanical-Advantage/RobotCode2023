@@ -75,7 +75,7 @@ if __name__ == "__main__":
     else:
         print(
             "Failed to generate all trajectories ("
-                + str(round((end_time - start_time) * 1000) / 1000)
-                + " secs)"
-            )
+            + str(round((end_time - start_time) * 1000) / 1000)
+            + " secs)"
+        )
         sys.exit(1)
