@@ -86,13 +86,8 @@ public class CubeIntakeIOSparkMax implements CubeIntakeIO {
   public void updateInputs(CubeIntakeIOInputs inputs) {
     inputs.armAbsolutePositionRad =
         MathUtil.angleModulus(
-            new Rotation2d(
-                    armAbsoluteEncoder.getPosition()
-                        * 2
-                        * Math.PI
-                        * (armExternalEncoderInvert ? -1 : 1))
-                .minus(armAbsoluteEncoderOffset)
-                .getRadians());
+            armAbsoluteEncoder.getPosition() * 2 * Math.PI * (armExternalEncoderInvert ? -1 : 1)
+                - armAbsoluteEncoderOffset.getRadians());
     inputs.armRelativePositionRad =
         armRelativeEncoder.getDistance() * (armExternalEncoderInvert ? -1 : 1);
     inputs.armInternalPositionRad =
