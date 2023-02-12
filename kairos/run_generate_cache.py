@@ -47,6 +47,9 @@ if __name__ == "__main__":
         result = results[i]
         trajectory = cache_data["trajectories"][i]
         if result == None:
+            print("Failed to generate trajectory:")
+            print("    Request=" + str(trajectory))
+            print("    Result=" + str(result))
             fail_count += 1
         else:
             trajectory["totalTime"] = result[0]
@@ -71,16 +74,8 @@ if __name__ == "__main__":
         sys.exit(0)
     else:
         print(
-            "Failed to generate "
-            + str(fail_count)
-            + " "
-            + (
-                "trajectory"
-                if fail_count == 1
-                else "trajectories"
-                + " ("
+            "Failed to generate all trajectories ("
                 + str(round((end_time - start_time) * 1000) / 1000)
                 + " secs)"
             )
-        )
         sys.exit(1)
