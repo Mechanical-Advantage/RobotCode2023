@@ -15,7 +15,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.PWM;
-import edu.wpi.first.wpilibj.RobotController;
 import org.littletonrobotics.frc2023.Constants;
 import org.littletonrobotics.frc2023.util.SparkMaxBurnManager;
 
@@ -97,12 +96,11 @@ public class CubeIntakeIOSparkMax implements CubeIntakeIO {
     inputs.armInternalVelocityRadPerSec =
         Units.rotationsPerMinuteToRadiansPerSecond(armInternalEncoder.getPosition())
             / armInternalEncoderReduction;
-    inputs.armAppliedVolts = armSparkMax.getAppliedOutput() * RobotController.getBatteryVoltage();
+    inputs.armAppliedVolts = armSparkMax.getAppliedOutput() * armSparkMax.getBusVoltage();
     inputs.armCurrentAmps = new double[] {armSparkMax.getOutputCurrent()};
     inputs.armTempCelcius = new double[] {armSparkMax.getMotorTemperature()};
 
-    inputs.rollerAppliedVolts =
-        rollerSparkMax.getAppliedOutput() * RobotController.getBatteryVoltage();
+    inputs.rollerAppliedVolts = rollerSparkMax.getAppliedOutput() * rollerSparkMax.getBusVoltage();
     inputs.rollerCurrentAmps = new double[] {rollerSparkMax.getOutputCurrent()};
   }
 

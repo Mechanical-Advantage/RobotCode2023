@@ -10,7 +10,6 @@ package org.littletonrobotics.frc2023.subsystems.gripper;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
-import edu.wpi.first.wpilibj.RobotController;
 import org.littletonrobotics.frc2023.Constants;
 import org.littletonrobotics.frc2023.util.SparkMaxBurnManager;
 
@@ -45,7 +44,7 @@ public class GripperIOSparkMax implements GripperIO {
 
   @Override
   public void updateInputs(GripperIOInputs inputs) {
-    inputs.appliedVolts = motor.getAppliedOutput() * RobotController.getBatteryVoltage();
+    inputs.appliedVolts = motor.getAppliedOutput() * motor.getBusVoltage();
     inputs.currentAmps = new double[] {motor.getOutputCurrent()};
   }
 

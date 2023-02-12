@@ -16,7 +16,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.PWM;
-import edu.wpi.first.wpilibj.RobotController;
 import org.littletonrobotics.frc2023.util.SparkMaxBurnManager;
 
 public class ArmIOSparkMax implements ArmIO {
@@ -148,7 +147,7 @@ public class ArmIOSparkMax implements ArmIO {
         Units.rotationsPerMinuteToRadiansPerSecond(shoulderInternalEncoder.getPosition())
             / config.shoulder().reduction();
     inputs.shoulderAppliedVolts =
-        shoulderSparkMax.getAppliedOutput() * RobotController.getBatteryVoltage();
+        shoulderSparkMax.getAppliedOutput() * shoulderSparkMax.getBusVoltage();
     inputs.shoulderCurrentAmps = new double[] {shoulderSparkMax.getOutputCurrent()};
     inputs.shoulderTempCelcius = new double[] {shoulderSparkMax.getMotorTemperature()};
 
@@ -168,8 +167,7 @@ public class ArmIOSparkMax implements ArmIO {
     inputs.elbowInternalVelocityRadPerSec =
         Units.rotationsPerMinuteToRadiansPerSecond(elbowInternalEncoder.getPosition())
             / config.elbow().reduction();
-    inputs.elbowAppliedVolts =
-        elbowSparkMax.getAppliedOutput() * RobotController.getBatteryVoltage();
+    inputs.elbowAppliedVolts = elbowSparkMax.getAppliedOutput() * elbowSparkMax.getBusVoltage();
     inputs.elbowCurrentAmps = new double[] {elbowSparkMax.getOutputCurrent()};
     inputs.elbowTempCelcius = new double[] {elbowSparkMax.getMotorTemperature()};
 
@@ -189,8 +187,7 @@ public class ArmIOSparkMax implements ArmIO {
     inputs.wristInternalVelocityRadPerSec =
         Units.rotationsPerMinuteToRadiansPerSecond(wristInternalEncoder.getPosition())
             / config.wrist().reduction();
-    inputs.wristAppliedVolts =
-        wristSparkMax.getAppliedOutput() * RobotController.getBatteryVoltage();
+    inputs.wristAppliedVolts = wristSparkMax.getAppliedOutput() * wristSparkMax.getBusVoltage();
     inputs.wristCurrentAmps = new double[] {wristSparkMax.getOutputCurrent()};
     inputs.wristTempCelcius = new double[] {wristSparkMax.getMotorTemperature()};
   }
