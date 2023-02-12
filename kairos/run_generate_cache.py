@@ -56,8 +56,9 @@ if __name__ == "__main__":
                 trajectory["points"].append(result[2][i])
 
     # Save to JSON file
-    with open("src/main/deploy/arm_trajectory_cache.json", "w") as cache_file:
-        cache_file.write(json.dumps(cache_data, separators=(",", ":")))
+    if fail_count == 0:
+        with open("src/main/deploy/arm_trajectory_cache.json", "w") as cache_file:
+            cache_file.write(json.dumps(cache_data, separators=(",", ":")))
 
     # Print result
     end_time = time.time()
