@@ -190,20 +190,20 @@ public class Arm extends SubsystemBase {
     if (!isZeroed) {
       shoulderAngleOffset =
           MathUtil.inputModulus(inputs.shoulderAbsolutePositionRad, -Math.PI, Math.PI)
-              - inputs.shoulderPositionRad;
+              - inputs.shoulderRelativePositionRad;
       elbowAngleOffset =
           MathUtil.inputModulus(inputs.elbowAbsolutePositionRad, 0.0, Math.PI * 2.0)
-              - inputs.elbowPositionRad;
+              - inputs.elbowRelativePositionRad;
       wristAngleOffset =
           MathUtil.inputModulus(inputs.wristAbsolutePositionRad, -Math.PI, Math.PI)
-              - inputs.wristPositionRad;
+              - inputs.wristRelativePositionRad;
       isZeroed = true;
     }
 
     // Get measured positions
-    shoulderAngle = inputs.shoulderPositionRad + shoulderAngleOffset;
-    elbowAngle = inputs.elbowPositionRad + elbowAngleOffset;
-    wristAngle = inputs.wristPositionRad + wristAngleOffset;
+    shoulderAngle = inputs.shoulderRelativePositionRad + shoulderAngleOffset;
+    elbowAngle = inputs.elbowRelativePositionRad + elbowAngleOffset;
+    wristAngle = inputs.wristRelativePositionRad + wristAngleOffset;
     visualizerMeasured.update(shoulderAngle, elbowAngle, wristAngle);
 
     // Get new trajectory from solver if available

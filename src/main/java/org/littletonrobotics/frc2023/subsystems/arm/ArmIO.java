@@ -13,22 +13,28 @@ public interface ArmIO {
   @AutoLog
   public static class ArmIOInputs {
     public double shoulderAbsolutePositionRad = 0.0;
-    public double shoulderPositionRad = 0.0;
-    public double shoulderVelocityRadPerSec = 0.0;
+    public double shoulderRelativePositionRad = 0.0;
+    public double shoulderInternalPositionRad = 0.0;
+    public double shoulderRelativeVelocityRadPerSec = 0.0;
+    public double shoulderInternalVelocityRadPerSec = 0.0;
     public double shoulderAppliedVolts = 0.0;
     public double[] shoulderCurrentAmps = new double[] {};
     public double[] shoulderTempCelcius = new double[] {};
 
     public double elbowAbsolutePositionRad = 0.0;
-    public double elbowPositionRad = 0.0;
-    public double elbowVelocityRadPerSec = 0.0;
+    public double elbowRelativePositionRad = 0.0;
+    public double elbowInternalPositionRad = 0.0;
+    public double elbowRelativeVelocityRadPerSec = 0.0;
+    public double elbowInternalVelocityRadPerSec = 0.0;
     public double elbowAppliedVolts = 0.0;
     public double[] elbowCurrentAmps = new double[] {};
     public double[] elbowTempCelcius = new double[] {};
 
     public double wristAbsolutePositionRad = 0.0;
-    public double wristPositionRad = 0.0;
-    public double wristVelocityRadPerSec = 0.0;
+    public double wristRelativePositionRad = 0.0;
+    public double wristInternalPositionRad = 0.0;
+    public double wristRelativeVelocityRadPerSec = 0.0;
+    public double wristInternalVelocityRadPerSec = 0.0;
     public double wristAppliedVolts = 0.0;
     public double[] wristCurrentAmps = new double[] {};
     public double[] wristTempCelcius = new double[] {};

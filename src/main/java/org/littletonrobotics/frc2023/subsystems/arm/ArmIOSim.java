@@ -57,8 +57,10 @@ public class ArmIOSim implements ArmIO {
     wristSim.update(Constants.loopPeriodSecs);
 
     inputs.shoulderAbsolutePositionRad = shoulderElbowStates.get(0, 0);
-    inputs.shoulderPositionRad = shoulderElbowStates.get(0, 0);
-    inputs.shoulderVelocityRadPerSec = shoulderElbowStates.get(2, 0);
+    inputs.shoulderRelativePositionRad = shoulderElbowStates.get(0, 0);
+    inputs.shoulderInternalPositionRad = shoulderElbowStates.get(0, 0);
+    inputs.shoulderRelativeVelocityRadPerSec = shoulderElbowStates.get(2, 0);
+    inputs.shoulderInternalVelocityRadPerSec = shoulderElbowStates.get(2, 0);
     inputs.shoulderAppliedVolts = shoulderAppliedVolts;
     inputs.shoulderCurrentAmps =
         new double[] {
@@ -67,8 +69,10 @@ public class ArmIOSim implements ArmIO {
     inputs.shoulderTempCelcius = new double[] {};
 
     inputs.elbowAbsolutePositionRad = shoulderElbowStates.get(1, 0);
-    inputs.elbowPositionRad = shoulderElbowStates.get(1, 0);
-    inputs.elbowVelocityRadPerSec = shoulderElbowStates.get(3, 0);
+    inputs.elbowRelativePositionRad = shoulderElbowStates.get(1, 0);
+    inputs.elbowInternalPositionRad = shoulderElbowStates.get(1, 0);
+    inputs.elbowRelativeVelocityRadPerSec = shoulderElbowStates.get(3, 0);
+    inputs.elbowInternalVelocityRadPerSec = shoulderElbowStates.get(3, 0);
     inputs.elbowAppliedVolts = elbowAppliedVolts;
     inputs.elbowCurrentAmps =
         new double[] {
@@ -77,8 +81,10 @@ public class ArmIOSim implements ArmIO {
     inputs.elbowTempCelcius = new double[] {};
 
     inputs.wristAbsolutePositionRad = wristSim.getAngleRads();
-    inputs.wristPositionRad = wristSim.getAngleRads();
-    inputs.wristVelocityRadPerSec = wristSim.getVelocityRadPerSec();
+    inputs.wristRelativePositionRad = wristSim.getAngleRads();
+    inputs.wristInternalPositionRad = wristSim.getAngleRads();
+    inputs.wristRelativeVelocityRadPerSec = wristSim.getVelocityRadPerSec();
+    inputs.wristInternalVelocityRadPerSec = wristSim.getVelocityRadPerSec();
     inputs.wristAppliedVolts = wristAppliedVolts;
     inputs.wristCurrentAmps = new double[] {wristSim.getCurrentDrawAmps()};
     inputs.wristTempCelcius = new double[] {};
