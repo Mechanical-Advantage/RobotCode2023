@@ -38,12 +38,12 @@ import org.littletonrobotics.frc2023.util.LoggedTunableNumber;
 import org.littletonrobotics.junction.Logger;
 
 public class Arm extends SubsystemBase {
-  static final double trajectoryCacheMarginRadians = 0.02;
-  static final double shiftCenterMarginMeters = 0.05;
-  static final double wristGroundMarginMeters = 0.05;
-  static final double[] cubeIntakeAvoidanceRect = new double[] {0.01, 0.0, 0.8, 0.6};
-  static final double[] coneIntakeAvoidanceRect = new double[] {-0.6, 0.0, -0.01, 0.6};
-  static final double avoidanceLookaheadSecs = 0.25;
+  public static final double trajectoryCacheMarginRadians = 0.02;
+  public static final double shiftCenterMarginMeters = 0.05;
+  public static final double wristGroundMarginMeters = 0.05;
+  public static final double[] cubeIntakeAvoidanceRect = new double[] {0.01, 0.0, 0.8, 0.6};
+  public static final double[] coneIntakeAvoidanceRect = new double[] {-0.6, 0.0, -0.01, 0.6};
+  public static final double avoidanceLookaheadSecs = 0.25;
 
   private final ArmIO io;
   private final ArmSolverIO solverIo;
@@ -415,6 +415,11 @@ public class Arm extends SubsystemBase {
   /** Returns whether the cone intake should be extended to avoid colliding with the arm. */
   public boolean coneIntakeShouldExtend() {
     return checkAvoidanceRegion(coneIntakeAvoidanceRect);
+  }
+
+  /** Returns the current arm setpoint. */
+  public ArmPose getSetpoint() {
+    return setpointPose != null ? setpointPose : ArmPose.Preset.HOMED.getPose();
   }
 
   /** Returns whether the current current is complete. */

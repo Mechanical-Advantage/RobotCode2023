@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import java.util.List;
 import org.littletonrobotics.frc2023.Constants.Mode;
 import org.littletonrobotics.frc2023.commands.DriveToNode;
@@ -25,6 +26,7 @@ import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
 import org.littletonrobotics.frc2023.commands.HoldFlippableArmPreset;
 import org.littletonrobotics.frc2023.commands.MoveArmAlongFloor;
+import org.littletonrobotics.frc2023.commands.MoveArmWithJoysticks;
 import org.littletonrobotics.frc2023.commands.RaiseArmToScore;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVision;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIO;
@@ -301,6 +303,20 @@ public class RobotContainer {
     operator.povRight().whileTrue(objectiveTracker.shiftNodeCommand(Direction.RIGHT));
     operator.povDown().whileTrue(objectiveTracker.shiftNodeCommand(Direction.DOWN));
     operator.povLeft().whileTrue(objectiveTracker.shiftNodeCommand(Direction.LEFT));
+
+    // Manual arm controls
+    new Trigger(
+            () ->
+                Math.abs(operator.getLeftX()) > DriveWithJoysticks.deadband
+                    || Math.abs(operator.getLeftY()) > DriveWithJoysticks.deadband
+                    || Math.abs(operator.getRightY()) > DriveWithJoysticks.deadband)
+        .whileTrue(
+            new MoveArmWithJoysticks(
+                arm,
+                () -> operator.getLeftX(),
+                () -> -operator.getLeftY(),
+                () -> -operator.getRightY()));
+    operator.leftStick().onTrue(Commands.runOnce(() -> arm.runPath(ArmPose.Preset.HOMED), arm));
   }
 
   /** Passes the autonomous command to the {@link Robot} class. */
