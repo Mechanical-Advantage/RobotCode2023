@@ -174,37 +174,29 @@ public class ArmTrajectoryCache {
     // Launch Python (try venv and then default)
     String requestJson =
         mapper.writeValueAsString(new TrajectoryCacheStore(configAndPresetHash, allTrajectories));
-    boolean venv = true;
-    Process python = runPython(true, requestJson);
-    if (python.exitValue() != 0) {
-      venv = false;
-      python = runPython(false, requestJson);
+    Process venvPython = runPython(true, requestJson);
+    Process systemPython = null;
+    if (venvPython.exitValue() != 0) {
+      systemPython = runPython(false, requestJson);
     }
 
     // Print output
-    BufferedReader stdoutReader = python.inputReader();
-    BufferedReader stderrReader = python.errorReader();
-    while (true) {
-      String line = stdoutReader.readLine();
-      if (line == null) {
-        break;
-      }
-      System.out.println("Output: " + line);
+    if (systemPython == null) {
+      printOutput(venvPython);
+    } else if (systemPython.exitValue() == 0) {
+      printOutput(systemPython);
+    } else {
+      printOutput(venvPython);
+      printOutput(systemPython);
     }
-    while (true) {
-      String line = stderrReader.readLine();
-      if (line == null) {
-        break;
-      }
-      System.out.println("Error: " + line);
-    }
+    int exitValue = systemPython == null ? venvPython.exitValue() : systemPython.exitValue();
     System.out.println(
         "Kairos exited with code "
-            + Integer.toString(python.exitValue())
+            + Integer.toString(exitValue)
             + " (Python="
-            + (venv ? "venv" : "system")
+            + (systemPython == null ? "venv" : "system")
             + ")");
-    System.exit(python.exitValue());
+    System.exit(exitValue);
   }
 
   private static Process runPython(boolean useVenv, String requestJson)
@@ -224,6 +216,25 @@ public class ArmTrajectoryCache {
     Process python = pythonBuilder.start();
     python.waitFor();
     return python;
+  }
+
+  private static void printOutput(Process process) throws IOException {
+    BufferedReader stdoutReader = process.inputReader();
+    BufferedReader stderrReader = process.errorReader();
+    while (true) {
+      String line = stdoutReader.readLine();
+      if (line == null) {
+        break;
+      }
+      System.out.println("Output: " + line);
+    }
+    while (true) {
+      String line = stderrReader.readLine();
+      if (line == null) {
+        break;
+      }
+      System.out.println("Error: " + line);
+    }
   }
 
   private static record TrajectoryCacheStore(
