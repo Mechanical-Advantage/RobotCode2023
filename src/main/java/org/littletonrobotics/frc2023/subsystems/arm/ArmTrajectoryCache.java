@@ -182,17 +182,21 @@ public class ArmTrajectoryCache {
     }
 
     // Print output
-    BufferedReader reader = python.inputReader();
-    String lastLine = null;
+    BufferedReader stdoutReader = python.inputReader();
+    BufferedReader stderrReader = python.errorReader();
     while (true) {
-      String line = reader.readLine();
+      String line = stdoutReader.readLine();
       if (line == null) {
-        if (lastLine != null) {
-          System.out.println("Output: " + lastLine);
-        }
         break;
       }
-      lastLine = line;
+      System.out.println("Output: " + line);
+    }
+    while (true) {
+      String line = stderrReader.readLine();
+      if (line == null) {
+        break;
+      }
+      System.out.println("Error: " + line);
     }
     System.out.println(
         "Kairos exited with code "
