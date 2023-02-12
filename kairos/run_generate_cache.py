@@ -47,9 +47,7 @@ if __name__ == "__main__":
         result = results[i]
         trajectory = cache_data["trajectories"][i]
         if result == None:
-            print("Failed to generate trajectory:")
-            print("    Request=" + str(trajectory))
-            print("    Result=" + str(result))
+            print("Failed to generate trajectory:", trajectory)
             fail_count += 1
         else:
             trajectory["totalTime"] = result[0]
