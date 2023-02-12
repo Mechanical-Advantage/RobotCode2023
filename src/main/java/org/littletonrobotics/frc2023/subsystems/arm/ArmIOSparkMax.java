@@ -51,7 +51,6 @@ public class ArmIOSparkMax implements ArmIO {
     shoulderSparkMax = new CANSparkMax(15, MotorType.kBrushless);
     shoulderAbsoluteEncoder = new PWM(0, false);
     shoulderRelativeEncoder = new Encoder(0, 1, false);
-    shoulderInternalEncoder = shoulderSparkMax.getEncoder();
     isShoulderMotorInverted = false;
     isShoulderExternalEncoderInverted = false;
     shoulderAbsoluteEncoderOffset = new Rotation2d(0.0);
@@ -61,7 +60,6 @@ public class ArmIOSparkMax implements ArmIO {
     elbowSparkMax = new CANSparkMax(16, MotorType.kBrushless);
     elbowAbsoluteEncoder = new PWM(0, false);
     elbowRelativeEncoder = new Encoder(0, 1, false);
-    elbowInternalEncoder = elbowSparkMax.getEncoder();
     isElbowMotorInverted = false;
     isElbowExternalEncoderInverted = false;
     elbowAbsoluteEncoderOffset = new Rotation2d(0.0);
@@ -71,7 +69,6 @@ public class ArmIOSparkMax implements ArmIO {
     wristSparkMax = new CANSparkMax(17, MotorType.kBrushless);
     wristAbsoluteEncoder = new PWM(0, false);
     wristRelativeEncoder = new Encoder(0, 1, false);
-    wristInternalEncoder = wristSparkMax.getEncoder();
     isWristMotorInverted = false;
     isWristExternalEncoderInverted = false;
     wristAbsoluteEncoderOffset = new Rotation2d(0.0);
@@ -96,8 +93,19 @@ public class ArmIOSparkMax implements ArmIO {
     elbowSparkMax.enableVoltageCompensation(12.0);
     wristSparkMax.enableVoltageCompensation(12.0);
 
+    shoulderInternalEncoder = shoulderSparkMax.getEncoder();
+    shoulderInternalEncoder.setMeasurementPeriod(10);
+    shoulderInternalEncoder.setAverageDepth(2);
     shoulderInternalEncoder.setPosition(0.0);
+
+    elbowInternalEncoder = elbowSparkMax.getEncoder();
+    elbowInternalEncoder.setMeasurementPeriod(10);
+    elbowInternalEncoder.setAverageDepth(2);
     elbowInternalEncoder.setPosition(0.0);
+
+    wristInternalEncoder = wristSparkMax.getEncoder();
+    wristInternalEncoder.setMeasurementPeriod(10);
+    wristInternalEncoder.setAverageDepth(2);
     wristInternalEncoder.setPosition(0.0);
 
     shoulderSparkMax.setCANTimeout(0);

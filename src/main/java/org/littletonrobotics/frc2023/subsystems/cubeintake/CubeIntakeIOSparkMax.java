@@ -61,6 +61,8 @@ public class CubeIntakeIOSparkMax implements CubeIntakeIO {
 
     armInternalEncoder = armSparkMax.getEncoder();
     armInternalEncoder.setPosition(0.0);
+    armInternalEncoder.setMeasurementPeriod(10);
+    armInternalEncoder.setAverageDepth(2);
 
     armSparkMax.setInverted(armInvert);
     rollerSparkMax.setInverted(rollerInvert);

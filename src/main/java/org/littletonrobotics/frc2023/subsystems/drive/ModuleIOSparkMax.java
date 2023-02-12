@@ -81,8 +81,8 @@ public class ModuleIOSparkMax implements ModuleIO {
     driveSparkMax.enableVoltageCompensation(12.0);
     turnSparkMax.enableVoltageCompensation(12.0);
 
-    driveSparkMax.getEncoder().setPosition(0.0);
     driveEncoder = driveSparkMax.getEncoder();
+    driveEncoder.setPosition(0.0);
     driveEncoder.setMeasurementPeriod(10);
     driveEncoder.setAverageDepth(2);
     turnRelativeEncoder = turnSparkMax.getEncoder();
