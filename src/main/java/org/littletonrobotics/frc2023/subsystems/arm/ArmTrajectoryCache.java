@@ -134,6 +134,10 @@ public class ArmTrajectoryCache {
         Hashing.sha256()
             .hashString(configJson + trajectoryString, StandardCharsets.UTF_8)
             .toString();
+    System.out.println("******** START HASHED DATA ********");
+    System.out.println(configJson + trajectoryString);
+    System.out.println("******** END HASHED DATA ********");
+    System.out.println(configAndPresetHash);
 
     // Compare to existing hash
     TrajectoryCacheStore existingCache = null;
