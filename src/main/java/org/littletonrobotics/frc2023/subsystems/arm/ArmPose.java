@@ -13,13 +13,13 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import org.littletonrobotics.frc2023.FieldConstants;
 import org.littletonrobotics.frc2023.commands.DriveToNode;
-import org.littletonrobotics.frc2023.commands.MoveArmAlongFloor;
+import org.littletonrobotics.frc2023.commands.IntakeAlongFloor;
 
 /** Represents a target position for the arm. */
 public record ArmPose(Translation2d endEffectorPosition, Rotation2d globalWristAngle) {
   public static enum Preset {
     HOMED(null),
-    SCORE_HYBRID(new ArmPose(new Translation2d(0.55, 0.9), Rotation2d.fromDegrees(-90.0))),
+    SCORE_HYBRID(new ArmPose(new Translation2d(0.58, 0.9), Rotation2d.fromDegrees(-90.0))),
     SCORE_MID_CONE(
         new ArmPose(
             new Translation2d(
@@ -56,9 +56,9 @@ public record ArmPose(Translation2d endEffectorPosition, Rotation2d globalWristA
     CONE_HANDOFF(new ArmPose(new Translation2d(-0.31, 0.53), Rotation2d.fromDegrees(175.0))),
     CONE_HANDOFF_RELEASED(
         new ArmPose(new Translation2d(-0.45, 0.6), Rotation2d.fromDegrees(175.0))),
-    FLOOR_CLOSE(new ArmPose(new Translation2d(0.8, MoveArmAlongFloor.height), new Rotation2d())),
-    FLOOR_CENTER(new ArmPose(new Translation2d(1.0, MoveArmAlongFloor.height), new Rotation2d())),
-    FLOOR_FAR(new ArmPose(new Translation2d(1.2, MoveArmAlongFloor.height), new Rotation2d())),
+    FLOOR_CLOSE(new ArmPose(new Translation2d(0.8, IntakeAlongFloor.height), new Rotation2d())),
+    FLOOR_CENTER(new ArmPose(new Translation2d(1.0, IntakeAlongFloor.height), new Rotation2d())),
+    FLOOR_FAR(new ArmPose(new Translation2d(1.2, IntakeAlongFloor.height), new Rotation2d())),
     EJECT(new ArmPose(new Translation2d(0.17, 0.5), Rotation2d.fromDegrees(10.0)));
 
     private ArmPose pose;

@@ -526,7 +526,13 @@ public class Arm extends SubsystemBase {
 
   /** Command factory to navigate to a pose along a path. */
   public Command runPathCommand(ArmPose pose) {
-    return runOnce(() -> runPath(pose)).andThen(Commands.waitUntil(this::isTrajectoryFinished));
+    return runPathCommand(() -> pose);
+  }
+
+  /** Command factory to navigate to a pose along a path. */
+  public Command runPathCommand(Supplier<ArmPose> pose) {
+    return runOnce(() -> runPath(pose.get()))
+        .andThen(Commands.waitUntil(this::isTrajectoryFinished));
   }
 
   /** Go directly to the provided pose without using a path. Only use for small movements. */
