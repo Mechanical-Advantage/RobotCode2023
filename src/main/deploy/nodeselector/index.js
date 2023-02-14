@@ -56,6 +56,10 @@ window.addEventListener("load", () => {
     cell.addEventListener("click", () => {
       client.addSample(dashboardToRobotTopic, index);
     });
+    cell.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+      client.addSample(dashboardToRobotTopic, index);
+    });
   });
 
   // Add touch listeners
