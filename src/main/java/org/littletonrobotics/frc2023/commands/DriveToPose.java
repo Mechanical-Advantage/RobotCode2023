@@ -9,6 +9,7 @@ package org.littletonrobotics.frc2023.commands;
 
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
@@ -16,17 +17,14 @@ import edu.wpi.first.wpilibj2.command.CommandBase;
 import java.util.function.Supplier;
 import org.littletonrobotics.frc2023.Constants;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
+import org.littletonrobotics.frc2023.util.GeomUtil;
 import org.littletonrobotics.frc2023.util.LoggedTunableNumber;
 
 public class DriveToPose extends CommandBase {
   private final Drive drive;
   private final Supplier<Pose2d> poseSupplier;
 
-  private boolean running = false;
-  private final ProfiledPIDController xController =
-      new ProfiledPIDController(
-          0.0, 0.0, 0.0, new TrapezoidProfile.Constraints(0.0, 0.0), Constants.loopPeriodSecs);
-  private final ProfiledPIDController yController =
+  private final ProfiledPIDController driveController =
       new ProfiledPIDController(
           0.0, 0.0, 0.0, new TrapezoidProfile.Constraints(0.0, 0.0), Constants.loopPeriodSecs);
   private final ProfiledPIDController thetaController =
@@ -86,30 +84,23 @@ public class DriveToPose extends CommandBase {
   public void initialize() {
     // Reset all controllers
     var currentPose = drive.getPose();
-    xController.reset(currentPose.getX());
-    yController.reset(currentPose.getY());
+    driveController.reset(
+        currentPose.getTranslation().getDistance(poseSupplier.get().getTranslation()));
     thetaController.reset(currentPose.getRotation().getRadians());
   }
 
   @Override
   public void execute() {
-    running = true;
-
     // Update from tunable numbers
     if (driveKp.hasChanged(hashCode())
         || driveKd.hasChanged(hashCode())
         || thetaKp.hasChanged(hashCode())
         || thetaKd.hasChanged(hashCode())) {
-      xController.setP(driveKp.get());
-      xController.setD(driveKd.get());
-      xController.setConstraints(
+      driveController.setP(driveKp.get());
+      driveController.setD(driveKd.get());
+      driveController.setConstraints(
           new TrapezoidProfile.Constraints(driveMaxVelocity.get(), driveMaxAcceleration.get()));
-      xController.setTolerance(driveTolerance.get());
-      yController.setP(driveKp.get());
-      yController.setD(driveKd.get());
-      yController.setConstraints(
-          new TrapezoidProfile.Constraints(driveMaxVelocity.get(), driveMaxAcceleration.get()));
-      yController.setTolerance(driveTolerance.get());
+      driveController.setTolerance(driveTolerance.get());
       thetaController.setP(thetaKp.get());
       thetaController.setD(thetaKd.get());
       thetaController.setConstraints(
@@ -122,26 +113,31 @@ public class DriveToPose extends CommandBase {
     var targetPose = poseSupplier.get();
 
     // Command speeds
-    double xVelocity = xController.calculate(currentPose.getX(), targetPose.getX());
-    double yVelocity = yController.calculate(currentPose.getY(), targetPose.getY());
+    double driveVelocityScalar =
+        driveController.calculate(
+            currentPose.getTranslation().getDistance(poseSupplier.get().getTranslation()), 0.0);
     double thetaVelocity =
         thetaController.calculate(
             currentPose.getRotation().getRadians(), targetPose.getRotation().getRadians());
-    if (xController.atGoal()) xVelocity = 0.0;
-    if (yController.atGoal()) yVelocity = 0.0;
+    if (driveController.atGoal()) driveVelocityScalar = 0.0;
     if (thetaController.atGoal()) thetaVelocity = 0.0;
+    var driveVelocity =
+        new Pose2d(
+                new Translation2d(),
+                currentPose.getTranslation().minus(targetPose.getTranslation()).getAngle())
+            .transformBy(GeomUtil.translationToTransform(driveVelocityScalar, 0.0))
+            .getTranslation();
     drive.runVelocity(
         ChassisSpeeds.fromFieldRelativeSpeeds(
-            xVelocity, yVelocity, thetaVelocity, currentPose.getRotation()));
+            driveVelocity.getX(), driveVelocity.getY(), thetaVelocity, currentPose.getRotation()));
   }
 
   @Override
   public void end(boolean interrupted) {
     drive.stop();
-    running = false;
   }
 
   public boolean atGoal() {
-    return running && xController.atGoal() && yController.atGoal() && thetaController.atGoal();
+    return driveController.atGoal() && thetaController.atGoal();
   }
 }
