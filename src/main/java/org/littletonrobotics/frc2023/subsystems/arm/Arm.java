@@ -41,8 +41,8 @@ public class Arm extends SubsystemBase {
   public static final double trajectoryCacheMarginRadians = 0.02;
   public static final double shiftCenterMarginMeters = 0.05;
   public static final double wristGroundMarginMeters = 0.05;
-  public static final double[] cubeIntakeAvoidanceRect = new double[] {0.05, 0.0, 0.75, 0.6};
-  public static final double[] coneIntakeAvoidanceRect = new double[] {-0.65, 0.0, -0.05, 0.55};
+  public static final double[] cubeIntakeAvoidanceRect = new double[] {0.05, 0.0, 0.75, 0.65};
+  public static final double[] coneIntakeAvoidanceRect = new double[] {-0.65, 0.0, -0.05, 0.6};
   public static final double avoidanceLookaheadSecs = 0.25;
 
   private final ArmIO io;
