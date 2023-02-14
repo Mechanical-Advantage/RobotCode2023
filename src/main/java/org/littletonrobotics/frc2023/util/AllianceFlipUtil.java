@@ -31,6 +31,15 @@ public class AllianceFlipUtil {
     }
   }
 
+  /** Flips an x coordinate to the correct side of the field based on the current alliance color. */
+  public static double apply(double xCoordinate) {
+    if (shouldFlip()) {
+      return FieldConstants.fieldLength - xCoordinate;
+    } else {
+      return xCoordinate;
+    }
+  }
+
   /** Flips a rotation based on the current alliance color. */
   public static Rotation2d apply(Rotation2d rotation) {
     if (shouldFlip()) {
