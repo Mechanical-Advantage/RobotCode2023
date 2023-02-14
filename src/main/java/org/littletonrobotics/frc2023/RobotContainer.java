@@ -22,10 +22,13 @@ import org.littletonrobotics.frc2023.commands.DriveToNode;
 import org.littletonrobotics.frc2023.commands.DriveToSubstation;
 import org.littletonrobotics.frc2023.commands.DriveTrajectory;
 import org.littletonrobotics.frc2023.commands.DriveWithJoysticks;
+import org.littletonrobotics.frc2023.commands.EjectHeld;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
-import org.littletonrobotics.frc2023.commands.HoldFlippableArmPreset;
-import org.littletonrobotics.frc2023.commands.MoveArmAlongFloor;
+import org.littletonrobotics.frc2023.commands.IntakeAlongFloor;
+import org.littletonrobotics.frc2023.commands.IntakeConeHandoff;
+import org.littletonrobotics.frc2023.commands.IntakeCubeHandoff;
+import org.littletonrobotics.frc2023.commands.IntakeSubstation;
 import org.littletonrobotics.frc2023.commands.MoveArmWithJoysticks;
 import org.littletonrobotics.frc2023.commands.RaiseArmToScore;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVision;
@@ -36,6 +39,9 @@ import org.littletonrobotics.frc2023.subsystems.arm.ArmIOSim;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmPose;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmSolverIO;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmSolverIOKairos;
+import org.littletonrobotics.frc2023.subsystems.coneintake.ConeIntake;
+import org.littletonrobotics.frc2023.subsystems.coneintake.ConeIntakeIO;
+import org.littletonrobotics.frc2023.subsystems.coneintake.ConeIntakeIOSim;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntake;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntakeIO;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntakeIOSim;
@@ -67,6 +73,7 @@ public class RobotContainer {
   private Arm arm;
   private Gripper gripper;
   private CubeIntake cubeIntake;
+  private ConeIntake coneIntake;
   private AprilTagVision aprilTagVision;
   private ObjectiveTracker objectiveTracker;
 
@@ -114,6 +121,7 @@ public class RobotContainer {
                   new ModuleIOSim());
           arm = new Arm(new ArmIOSim(), new ArmSolverIOKairos(1));
           cubeIntake = new CubeIntake(new CubeIntakeIOSim());
+          coneIntake = new ConeIntake(new ConeIntakeIOSim());
           objectiveTracker = new ObjectiveTracker(new NodeSelectorIOServer());
           break;
       }
@@ -138,6 +146,9 @@ public class RobotContainer {
     if (cubeIntake == null) {
       cubeIntake = new CubeIntake(new CubeIntakeIO() {});
     }
+    if (coneIntake == null) {
+      coneIntake = new ConeIntake(new ConeIntakeIO() {});
+    }
     if (aprilTagVision == null) {
       // In replay, match the number of instances for each robot
       switch (Constants.getRobot()) {
@@ -156,6 +167,7 @@ public class RobotContainer {
     // Set up subsystems
     arm.setOverrides(() -> overrides.getDriverSwitch(1), () -> overrides.getOperatorSwitch(2));
     cubeIntake.setForceExtendSupplier(arm::cubeIntakeShouldExtend);
+    coneIntake.setForceExtendSupplier(arm::coneIntakeShouldExtend);
     aprilTagVision.setDataInterfaces(drive::getPose, drive::addVisionData);
 
     // Set up auto routines
@@ -231,62 +243,41 @@ public class RobotContainer {
 
     // Auto align controls
     driver.leftTrigger().whileTrue(new DriveToSubstation(drive));
+    var raiseArm = new RaiseArmToScore(arm, drive, objectiveTracker);
     var driveToNode = new DriveToNode(drive, objectiveTracker);
     driver
         .y()
         .whileTrue(
-            Commands.parallel(
-                    new RaiseArmToScore(arm, drive, objectiveTracker),
-                    new WaitUntilCommand(driveToNode::atGoal))
+            new WaitUntilCommand(() -> raiseArm.atGoal() && driveToNode.atGoal())
+                .deadlineWith(raiseArm, driveToNode)
                 .andThen(gripper.ejectCommand())
-                .deadlineWith(driveToNode)
                 .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
 
     // *** OPERATOR CONTROLS ***
 
     // Intake controls
-    var singleSubstationArmCommand =
-        new HoldFlippableArmPreset(
-            arm, drive, ArmPose.Preset.SINGLE_SUBTATION.getPose(), Rotation2d.fromDegrees(90.0));
-    operator
-        .a()
-        .whileTrue(
-            singleSubstationArmCommand.alongWith(
-                gripper.intakeCommand(),
-                Commands.run(
-                    () ->
-                        objectiveTracker.lastIntakeFront =
-                            !singleSubstationArmCommand.isFlipped())));
-    var doubleSubstationArmCommand =
-        new HoldFlippableArmPreset(
-            arm, drive, ArmPose.Preset.DOUBLE_SUBTATION.getPose(), Rotation2d.fromDegrees(0.0));
+    operator.a().whileTrue(new IntakeSubstation(true, arm, drive, gripper, objectiveTracker));
+    operator.x().whileTrue(new IntakeSubstation(false, arm, drive, gripper, objectiveTracker));
     operator
         .b()
-        .whileTrue(
-            doubleSubstationArmCommand.alongWith(
-                gripper.intakeCommand(),
-                Commands.run(
-                    () ->
-                        objectiveTracker.lastIntakeFront =
-                            !doubleSubstationArmCommand.isFlipped())));
+        .and(() -> objectiveTracker.gamePiece == GamePiece.CUBE)
+        .whileTrue(new IntakeCubeHandoff(cubeIntake, arm, gripper, objectiveTracker));
+    var coneIntakeTrigger = operator.b().and(() -> objectiveTracker.gamePiece == GamePiece.CONE);
+    coneIntakeTrigger.onTrue(
+        new IntakeConeHandoff(
+            coneIntake, arm, gripper, objectiveTracker, coneIntakeTrigger::getAsBoolean));
     operator
         .rightTrigger(0.0)
         .whileTrue(
-            Commands.waitSeconds(0.1)
-                .andThen(
-                    new MoveArmAlongFloor(arm, operator::getRightTriggerAxis, true)
-                        .alongWith(
-                            gripper.intakeCommand(),
-                            Commands.run(() -> objectiveTracker.lastIntakeFront = true))));
+            new IntakeAlongFloor(
+                true, arm, gripper, objectiveTracker, operator::getRightTriggerAxis));
     operator
         .leftTrigger(0.0)
         .whileTrue(
-            Commands.waitSeconds(0.1)
-                .andThen(
-                    new MoveArmAlongFloor(arm, operator::getLeftTriggerAxis, false)
-                        .alongWith(
-                            gripper.intakeCommand(),
-                            Commands.run(() -> objectiveTracker.lastIntakeFront = false))));
+            new IntakeAlongFloor(
+                false, arm, gripper, objectiveTracker, operator::getLeftTriggerAxis));
+    operator.rightTrigger().onTrue(new EjectHeld(true, arm, gripper));
+    operator.leftTrigger().whileTrue(new EjectHeld(false, arm, gripper));
 
     // Objective tracking controls
     operator
@@ -309,13 +300,13 @@ public class RobotContainer {
             () ->
                 Math.abs(operator.getLeftX()) > DriveWithJoysticks.deadband
                     || Math.abs(operator.getLeftY()) > DriveWithJoysticks.deadband
-                    || Math.abs(operator.getRightY()) > DriveWithJoysticks.deadband)
+                    || Math.abs(operator.getRawAxis(3)) > DriveWithJoysticks.deadband)
         .whileTrue(
             new MoveArmWithJoysticks(
                 arm,
                 () -> operator.getLeftX(),
                 () -> -operator.getLeftY(),
-                () -> -operator.getRightY()));
+                () -> -operator.getRawAxis(3)));
     operator.leftStick().onTrue(Commands.runOnce(() -> arm.runPath(ArmPose.Preset.HOMED), arm));
   }
 

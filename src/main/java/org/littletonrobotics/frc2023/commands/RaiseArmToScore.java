@@ -65,8 +65,7 @@ public class RaiseArmToScore extends CommandBase {
     }
   }
 
-  @Override
-  public boolean isFinished() {
+  public boolean atGoal() {
     return lastPose != null && arm.isTrajectoryFinished();
   }
 

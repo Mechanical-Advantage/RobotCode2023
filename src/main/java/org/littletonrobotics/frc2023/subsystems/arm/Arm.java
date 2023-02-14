@@ -41,8 +41,8 @@ public class Arm extends SubsystemBase {
   public static final double trajectoryCacheMarginRadians = 0.02;
   public static final double shiftCenterMarginMeters = 0.05;
   public static final double wristGroundMarginMeters = 0.05;
-  public static final double[] cubeIntakeAvoidanceRect = new double[] {0.01, 0.0, 0.8, 0.6};
-  public static final double[] coneIntakeAvoidanceRect = new double[] {-0.6, 0.0, -0.01, 0.6};
+  public static final double[] cubeIntakeAvoidanceRect = new double[] {0.05, 0.0, 0.75, 0.6};
+  public static final double[] coneIntakeAvoidanceRect = new double[] {-0.65, 0.0, -0.05, 0.55};
   public static final double avoidanceLookaheadSecs = 0.25;
 
   private final ArmIO io;
@@ -135,7 +135,11 @@ public class Arm extends SubsystemBase {
     // Create visualizers
     visualizerMeasured = new ArmVisualizer(config, "ArmMeasured", null);
     visualizerSetpoint = new ArmVisualizer(config, "ArmSetpoint", new Color8Bit(Color.kOrange));
-    ArmVisualizer.logRectConstraints(config);
+    ArmVisualizer.logRectangleConstraints("ArmConstraints", config, new Color8Bit(Color.kBlack));
+    ArmVisualizer.logRectangles(
+        "ArmIntakeAvoidance",
+        new double[][] {cubeIntakeAvoidanceRect, coneIntakeAvoidanceRect},
+        new Color8Bit(Color.kGreen));
 
     // Load cached trajectories
     for (var trajectory : ArmTrajectoryCache.loadTrajectories()) {
@@ -302,7 +306,12 @@ public class Arm extends SubsystemBase {
         io.setShoulderVoltage(0.0);
         io.setElbowVoltage(0.0);
       }
-      wristEffectiveArmPose = setpointPose; // Move wrist based on current setpoint
+      if (currentTrajectory == null) {
+        wristEffectiveArmPose =
+            setpointPose; // Move wrist based on current setpoint (no trajectory in queue)
+      } else {
+        wristEffectiveArmPose = queuedPose; // Move wrist based on queued trajectory
+      }
     }
 
     // Run wrist
@@ -424,7 +433,7 @@ public class Arm extends SubsystemBase {
 
   /** Returns whether the current current is complete. */
   public boolean isTrajectoryFinished() {
-    return currentTrajectory == null;
+    return currentTrajectory == null && wristFeedback.getGoal().equals(wristFeedback.getSetpoint());
   }
 
   /** Starts navigating to a pose. */

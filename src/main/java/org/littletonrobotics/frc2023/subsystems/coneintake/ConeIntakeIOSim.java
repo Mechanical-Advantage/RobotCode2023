@@ -5,22 +5,22 @@
 // license that can be found in the LICENSE file at
 // the root directory of this project.
 
-package org.littletonrobotics.frc2023.subsystems.cubeintake;
+package org.littletonrobotics.frc2023.subsystems.coneintake;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import org.littletonrobotics.frc2023.Constants;
 
-public class CubeIntakeIOSim implements CubeIntakeIO {
+public class ConeIntakeIOSim implements ConeIntakeIO {
   private SingleJointedArmSim armSim =
       new SingleJointedArmSim(DCMotor.getNEO(1), 50, 0.5, 0.5, 0.0, Math.PI / 2.0, true);
   private double armAppliedVolts = 0.0;
 
-  public CubeIntakeIOSim() {}
+  public ConeIntakeIOSim() {}
 
   @Override
-  public void updateInputs(CubeIntakeIOInputs inputs) {
+  public void updateInputs(ConeIntakeIOInputs inputs) {
     armSim.update(Constants.loopPeriodSecs);
 
     inputs.armAbsolutePositionRad = armSim.getAngleRads();

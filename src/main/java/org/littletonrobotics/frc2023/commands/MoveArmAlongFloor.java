@@ -20,7 +20,7 @@ public class MoveArmAlongFloor extends CommandBase {
   public static final double height = 0.15;
   public static final double frontMinX = 0.75;
   public static final double frontMaxX = 1.3;
-  public static final double backMinX = -0.75;
+  public static final double backMinX = -0.65;
   public static final double backMaxX = -1.3;
 
   private final Arm arm;
@@ -29,6 +29,7 @@ public class MoveArmAlongFloor extends CommandBase {
   private final SlewRateLimiter limiter = new SlewRateLimiter(1.0);
   private double startX = 0.0;
 
+  /** Moves the arm along the floor based on the position of a joystick. */
   public MoveArmAlongFloor(Arm arm, Supplier<Double> extensionPercentSupplier, boolean isFront) {
     this.arm = arm;
     this.extensionPercentSupplier = extensionPercentSupplier;

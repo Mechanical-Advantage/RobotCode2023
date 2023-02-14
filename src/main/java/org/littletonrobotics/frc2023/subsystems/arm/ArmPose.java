@@ -36,7 +36,7 @@ public record ArmPose(Translation2d endEffectorPosition, Rotation2d globalWristA
         new ArmPose(
             new Translation2d(
                 DriveToNode.scorePositionX - FieldConstants.Grids.highX - 0.2,
-                FieldConstants.Grids.highConeZ + 0.2),
+                FieldConstants.Grids.highConeZ + 0.15),
             Rotation2d.fromDegrees(30.0))),
     SCORE_HIGH_CUBE(
         new ArmPose(
@@ -46,40 +46,20 @@ public record ArmPose(Translation2d endEffectorPosition, Rotation2d globalWristA
             Rotation2d.fromDegrees(-45.0))),
     SINGLE_SUBTATION(
         new ArmPose(
-            new Translation2d(0.5, FieldConstants.LoadingZone.singleSubstationCenterZ),
+            new Translation2d(0.49, FieldConstants.LoadingZone.singleSubstationCenterZ),
             new Rotation2d())),
     DOUBLE_SUBTATION(
         new ArmPose(
-            new Translation2d(0.5, FieldConstants.LoadingZone.doubleSubstationShelfZ + 0.1),
+            new Translation2d(0.49, FieldConstants.LoadingZone.doubleSubstationShelfZ + 0.1),
             new Rotation2d())),
-    FLOOR_FRONT_CLOSE(
-        new ArmPose(
-            new Translation2d(MoveArmAlongFloor.frontMinX, MoveArmAlongFloor.height),
-            new Rotation2d())),
-    FLOOR_FRONT_CENTER(
-        new ArmPose(
-            new Translation2d(
-                (MoveArmAlongFloor.frontMinX + MoveArmAlongFloor.frontMaxX) / 2.0,
-                MoveArmAlongFloor.height),
-            new Rotation2d())),
-    FLOOR_FRONT_FAR(
-        new ArmPose(
-            new Translation2d(MoveArmAlongFloor.frontMaxX, MoveArmAlongFloor.height),
-            new Rotation2d())),
-    FLOOR_BACK_CLOSE(
-        new ArmPose(
-            new Translation2d(MoveArmAlongFloor.backMinX, MoveArmAlongFloor.height),
-            Rotation2d.fromDegrees(180.0))),
-    FLOOR_BACK_CENTER(
-        new ArmPose(
-            new Translation2d(
-                (MoveArmAlongFloor.backMinX + MoveArmAlongFloor.backMaxX) / 2.0,
-                MoveArmAlongFloor.height),
-            Rotation2d.fromDegrees(180.0))),
-    FLOOR_BACK_FAR(
-        new ArmPose(
-            new Translation2d(MoveArmAlongFloor.backMaxX, MoveArmAlongFloor.height),
-            Rotation2d.fromDegrees(180.0)));
+    CUBE_HANDOFF(new ArmPose(new Translation2d(0.3, 0.57), Rotation2d.fromDegrees(-75.0))),
+    CONE_HANDOFF(new ArmPose(new Translation2d(-0.31, 0.53), Rotation2d.fromDegrees(175.0))),
+    CONE_HANDOFF_RELEASED(
+        new ArmPose(new Translation2d(-0.45, 0.6), Rotation2d.fromDegrees(175.0))),
+    FLOOR_CLOSE(new ArmPose(new Translation2d(0.8, MoveArmAlongFloor.height), new Rotation2d())),
+    FLOOR_CENTER(new ArmPose(new Translation2d(1.0, MoveArmAlongFloor.height), new Rotation2d())),
+    FLOOR_FAR(new ArmPose(new Translation2d(1.2, MoveArmAlongFloor.height), new Rotation2d())),
+    EJECT(new ArmPose(new Translation2d(0.17, 0.5), Rotation2d.fromDegrees(10.0)));
 
     private ArmPose pose;
 

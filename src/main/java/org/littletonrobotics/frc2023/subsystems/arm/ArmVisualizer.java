@@ -17,6 +17,8 @@ import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
+import java.util.ArrayList;
+import java.util.List;
 import org.littletonrobotics.junction.Logger;
 
 /** Helper class for creating a {@link Mechanism2d} and 3D component representation of an arm. */
@@ -91,31 +93,39 @@ public class ArmVisualizer {
     Logger.getInstance().recordOutput("Mechanism3d/" + logKey, shoulderPose, elbowPose, wristPose);
   }
 
-  public static void logRectConstraints(ArmConfig config) {
-    var mechanism = new Mechanism2d(4, 3, new Color8Bit(Color.kGray));
-
-    for (var constraintEntry : config.constraints().entrySet()) {
-      if (constraintEntry.getValue().type().equals("rectangle")) {
-        var args = constraintEntry.getValue().args();
-        var root = mechanism.getRoot(constraintEntry.getKey(), 2 + args[0], args[1]);
-        var bottomLigament =
-            root.append(
-                new MechanismLigament2d(
-                    "Bottom", args[2] - args[0], 0, 1, new Color8Bit(Color.kBlack)));
-        var rightLigament =
-            bottomLigament.append(
-                new MechanismLigament2d(
-                    "Right", args[3] - args[1], 90, 1, new Color8Bit(Color.kBlack)));
-        var topLigament =
-            rightLigament.append(
-                new MechanismLigament2d(
-                    "Right", args[2] - args[0], 90, 1, new Color8Bit(Color.kBlack)));
-        topLigament.append(
-            new MechanismLigament2d(
-                "Right", args[3] - args[1], 90, 1, new Color8Bit(Color.kBlack)));
+  /** Logs the rectangle constraints in the provided config as a 2D mechanism. */
+  public static void logRectangleConstraints(String logKey, ArmConfig config, Color8Bit color) {
+    List<ArmConfig.Constraint> rectangleConstraints = new ArrayList<>();
+    for (var constraint : config.constraints().values()) {
+      if (constraint.type().equals("rectangle")) {
+        rectangleConstraints.add(constraint);
       }
     }
 
-    Logger.getInstance().recordOutput("Mechanism2d/ArmConstraints", mechanism);
+    double[][] rectangles = new double[rectangleConstraints.size()][];
+    for (int i = 0; i < rectangleConstraints.size(); i++) {
+      rectangles[i] = rectangleConstraints.get(i).args();
+    }
+
+    logRectangles(logKey, rectangles, color);
+  }
+
+  /** Logs a set of rectangles as a 2D mechanism. */
+  public static void logRectangles(String logKey, double[][] rects, Color8Bit color) {
+    var mechanism = new Mechanism2d(4, 3, new Color8Bit(Color.kGray));
+
+    for (int i = 0; i < rects.length; i++) {
+      var rect = rects[i];
+      var root = mechanism.getRoot("Rect" + Integer.toString(i), 2 + rect[0], rect[1]);
+      var bottomLigament =
+          root.append(new MechanismLigament2d("Bottom", rect[2] - rect[0], 0, 1, color));
+      var rightLigament =
+          bottomLigament.append(new MechanismLigament2d("Right", rect[3] - rect[1], 90, 1, color));
+      var topLigament =
+          rightLigament.append(new MechanismLigament2d("Right", rect[2] - rect[0], 90, 1, color));
+      topLigament.append(new MechanismLigament2d("Right", rect[3] - rect[1], 90, 1, color));
+    }
+
+    Logger.getInstance().recordOutput("Mechanism2d/" + logKey, mechanism);
   }
 }

@@ -5,7 +5,7 @@
 // license that can be found in the LICENSE file at
 // the root directory of this project.
 
-package org.littletonrobotics.frc2023.subsystems.cubeintake;
+package org.littletonrobotics.frc2023.subsystems.coneintake;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
@@ -18,7 +18,7 @@ import edu.wpi.first.wpilibj.PWM;
 import org.littletonrobotics.frc2023.Constants;
 import org.littletonrobotics.frc2023.util.SparkMaxBurnManager;
 
-public class CubeIntakeIOSparkMax implements CubeIntakeIO {
+public class ConeIntakeIOSparkMax implements ConeIntakeIO {
   private final CANSparkMax armSparkMax;
   private final CANSparkMax rollerSparkMax;
 
@@ -32,7 +32,7 @@ public class CubeIntakeIOSparkMax implements CubeIntakeIO {
   private final double armInternalEncoderReduction;
   private final Rotation2d armAbsoluteEncoderOffset;
 
-  public CubeIntakeIOSparkMax() {
+  public ConeIntakeIOSparkMax() {
     switch (Constants.getRobot()) {
       case ROBOT_2023C:
         armSparkMax = new CANSparkMax(0, MotorType.kBrushless);
@@ -81,7 +81,7 @@ public class CubeIntakeIOSparkMax implements CubeIntakeIO {
   }
 
   @Override
-  public void updateInputs(CubeIntakeIOInputs inputs) {
+  public void updateInputs(ConeIntakeIOInputs inputs) {
     inputs.armAbsolutePositionRad =
         MathUtil.angleModulus(
             armAbsoluteEncoder.getPosition() * 2 * Math.PI * (armExternalEncoderInvert ? -1 : 1)
