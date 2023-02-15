@@ -10,6 +10,7 @@ package org.littletonrobotics.frc2023;
 import edu.wpi.first.hal.AllianceStationID;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj.Threads;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import org.littletonrobotics.frc2023.Constants.Mode;
+import org.littletonrobotics.frc2023.Constants.RobotType;
 import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
 import org.littletonrobotics.frc2023.util.BatteryTracker;
@@ -83,7 +85,9 @@ public class Robot extends LoggedRobot {
           logNoFileAlert.set(true);
         }
         logger.addDataReceiver(new NT4Publisher());
-        LoggedPowerDistribution.getInstance();
+        if (Constants.getRobot() == RobotType.ROBOT_2023C) {
+          LoggedPowerDistribution.getInstance(50, ModuleType.kRev);
+        }
         break;
 
       case SIM:

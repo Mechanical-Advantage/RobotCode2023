@@ -14,6 +14,7 @@ import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Filesystem;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -39,7 +40,7 @@ public class ArmTrajectoryCache {
     try {
       cache =
           mapper.readValue(
-              Path.of("src", "main", "deploy", cacheFilename).toFile(), TrajectoryCacheStore.class);
+              new File(Filesystem.getDeployDirectory(), cacheFilename), TrajectoryCacheStore.class);
     } catch (IOException e) {
       throw new RuntimeException("Failed to parse arm trajectory cache JSON");
     }
