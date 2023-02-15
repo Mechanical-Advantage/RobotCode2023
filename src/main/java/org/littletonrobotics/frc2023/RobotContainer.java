@@ -266,18 +266,21 @@ public class RobotContainer {
     coneIntakeTrigger.onTrue(
         new IntakeConeHandoff(
             coneIntake, arm, gripper, objectiveTracker, coneIntakeTrigger::getAsBoolean));
+    var ejectOverride = overrides.operatorSwitch(1);
     operator
         .rightTrigger(0.0)
+        .and(ejectOverride.negate())
         .whileTrue(
             new IntakeAlongFloor(
                 true, arm, gripper, objectiveTracker, operator::getRightTriggerAxis));
     operator
         .leftTrigger(0.0)
+        .and(ejectOverride.negate())
         .whileTrue(
             new IntakeAlongFloor(
                 false, arm, gripper, objectiveTracker, operator::getLeftTriggerAxis));
-    operator.rightTrigger().onTrue(new EjectHeld(true, arm, gripper));
-    operator.leftTrigger().whileTrue(new EjectHeld(false, arm, gripper));
+    operator.rightTrigger().and(ejectOverride).onTrue(new EjectHeld(true, arm, gripper));
+    operator.leftTrigger().and(ejectOverride).whileTrue(new EjectHeld(false, arm, gripper));
 
     // Objective tracking controls
     operator
