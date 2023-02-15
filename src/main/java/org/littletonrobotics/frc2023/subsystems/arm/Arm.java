@@ -573,4 +573,14 @@ public class Arm extends SubsystemBase {
       setpointPose = new ArmPose(translation, pose.globalWristAngle());
     }
   }
+
+  /**
+   * Returns the maximum reach (x coordinate relative to the arm origin) that the arm can achieve at
+   * the provided height.
+   */
+  public double calcMaxReachAtHeight(double height) {
+    return Math.sqrt(
+        Math.pow(config.shoulder().length() + config.elbow().length(), 2.0)
+            - Math.pow(height - config.origin().getY(), 2.0));
+  }
 }

@@ -102,6 +102,7 @@ public final class FieldConstants {
 
     // Translations (all nodes in the same column/row have the same X/Y coordinate)
     public static final Translation2d[] lowTranslations = new Translation2d[nodeRowCount];
+    public static final Translation3d[] low3dTranslations = new Translation3d[nodeRowCount];
     public static final Translation2d[] midTranslations = new Translation2d[nodeRowCount];
     public static final Translation3d[] mid3dTranslations = new Translation3d[nodeRowCount];
     public static final Translation2d[] highTranslations = new Translation2d[nodeRowCount];
@@ -111,6 +112,7 @@ public final class FieldConstants {
       for (int i = 0; i < nodeRowCount; i++) {
         boolean isCube = i == 1 || i == 4 || i == 7;
         lowTranslations[i] = new Translation2d(lowX, nodeFirstY + nodeSeparationY * i);
+        low3dTranslations[i] = new Translation3d(lowX, nodeFirstY + nodeSeparationY * i, 0.0);
         midTranslations[i] = new Translation2d(midX, nodeFirstY + nodeSeparationY * i);
         mid3dTranslations[i] =
             new Translation3d(midX, nodeFirstY + nodeSeparationY * i, isCube ? midCubeZ : midConeZ);
@@ -140,6 +142,20 @@ public final class FieldConstants {
           new Translation2d(complexLowXCubes, nodeFirstY + nodeSeparationY * 7),
           new Translation2d(
               complexLowXCones, nodeFirstY + nodeSeparationY * 8 + complexLowOuterYOffset),
+        };
+
+    public static final Translation3d[] complexLow3dTranslations =
+        new Translation3d[] {
+          new Translation3d(complexLowXCones, nodeFirstY - complexLowOuterYOffset, 0.0),
+          new Translation3d(complexLowXCubes, nodeFirstY + nodeSeparationY * 1, 0.0),
+          new Translation3d(complexLowXCones, nodeFirstY + nodeSeparationY * 2, 0.0),
+          new Translation3d(complexLowXCones, nodeFirstY + nodeSeparationY * 3, 0.0),
+          new Translation3d(complexLowXCubes, nodeFirstY + nodeSeparationY * 4, 0.0),
+          new Translation3d(complexLowXCones, nodeFirstY + nodeSeparationY * 5, 0.0),
+          new Translation3d(complexLowXCones, nodeFirstY + nodeSeparationY * 6, 0.0),
+          new Translation3d(complexLowXCubes, nodeFirstY + nodeSeparationY * 7, 0.0),
+          new Translation3d(
+              complexLowXCones, nodeFirstY + nodeSeparationY * 8 + complexLowOuterYOffset, 0.0),
         };
   }
 
