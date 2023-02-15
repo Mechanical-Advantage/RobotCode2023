@@ -13,7 +13,7 @@ import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
 
 public final class Constants {
-  private static final RobotType robot = RobotType.ROBOT_SIMBOT;
+  private static final RobotType robot = RobotType.ROBOT_2023C;
   public static final double loopPeriodSecs = 0.02;
   public static final boolean tuningMode = false;
 
@@ -46,7 +46,7 @@ public final class Constants {
   }
 
   public static final Map<RobotType, String> logFolders =
-      Map.of(RobotType.ROBOT_2023P, "/media/sda2/");
+      Map.of(RobotType.ROBOT_2023C, "/media/sda2/");
 
   public static enum RobotType {
     ROBOT_2023C,
