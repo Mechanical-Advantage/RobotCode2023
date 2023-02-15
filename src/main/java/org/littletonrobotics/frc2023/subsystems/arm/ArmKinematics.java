@@ -93,4 +93,21 @@ public class ArmKinematics {
     // Return result
     return Optional.of(VecBuilder.fill(shoulderAngle, elbowAngle));
   }
+
+  /**
+   * Returns the maximum reach (x coordinate relative to the arm origin) that the arm can achieve at
+   * the provided height.
+   */
+  public double calcMaxReachAtHeight(double height) {
+    // Set the elbow angle equation to the max angle and solve for x
+    return Math.sqrt(
+            Math.cos(-config.elbow().maxAngle())
+                    * 2
+                    * config.shoulder().length()
+                    * config.elbow().length()
+                - Math.pow(height - config.origin().getY(), 2)
+                + Math.pow(config.shoulder().length(), 2)
+                + Math.pow(config.elbow().length(), 2))
+        - 1e-6; // Shift back to ensure this is still valid after rounding errors
+  }
 }

@@ -30,16 +30,16 @@ public class AutoScore extends SequentialCommandGroup {
   public static final double minDriveX = FieldConstants.Grids.outerX + 0.5;
   public static final double minArmExtension = 0.6;
 
-  public final Translation2d hybridRelativePosition = new Translation2d(-0.4, 0.3);
-  public final Rotation2d hybridWristAngle = Rotation2d.fromDegrees(-15.0);
-  public final Translation2d midCubeRelativePosition = new Translation2d(-0.5, 0.5);
-  public final Rotation2d midCubeWristAngle = Rotation2d.fromDegrees(-45.0);
-  public final Translation2d midConeRelativePosition = new Translation2d(-0.4, 0.0);
-  public final Rotation2d midConeWristAngle = Rotation2d.fromDegrees(30.0);
-  public final Translation2d highCubeRelativePosition = new Translation2d(-0.5, 0.5);
-  public final Rotation2d highCubeWristAngle = Rotation2d.fromDegrees(-45.0);
-  public final Translation2d highConeRelativePosition = new Translation2d(-0.4, 0.0);
-  public final Rotation2d highConeWristAngle = Rotation2d.fromDegrees(30.0);
+  public static final Translation2d hybridRelativePosition = new Translation2d(-0.2, 0.6);
+  public static final Rotation2d hybridWristAngle = Rotation2d.fromDegrees(-60.0);
+  public static final Translation2d midCubeRelativePosition = new Translation2d(-0.5, 0.5);
+  public static final Rotation2d midCubeWristAngle = Rotation2d.fromDegrees(-30.0);
+  public static final Translation2d midConeRelativePosition = new Translation2d(-0.25, 0.15);
+  public static final Rotation2d midConeWristAngle = Rotation2d.fromDegrees(30.0);
+  public static final Translation2d highCubeRelativePosition = new Translation2d(-0.5, 0.5);
+  public static final Rotation2d highCubeWristAngle = Rotation2d.fromDegrees(-30.0);
+  public static final Translation2d highConeRelativePosition = new Translation2d(-0.25, 0.15);
+  public static final Rotation2d highConeWristAngle = Rotation2d.fromDegrees(30.0);
 
   private final Drive drive;
   private final Arm arm;
@@ -58,9 +58,9 @@ public class AutoScore extends SequentialCommandGroup {
     this.objectiveTracker = objectiveTracker;
 
     // Set up commands
-    Supplier<Pose2d> driveTargetSupplier = () -> getDriveTarget(reachScoreDisable.get());
+    Supplier<Pose2d> driveTargetSupplier = () -> getDriveTarget(!reachScoreDisable.get());
     Supplier<ArmPose> armTargetSupplier =
-        () -> getArmTarget(getDriveTarget(reachScoreDisable.get()));
+        () -> getArmTarget(getDriveTarget(!reachScoreDisable.get()));
     var driveCommand = new DriveToPose(drive, driveTargetSupplier);
     var armCommand =
         arm.runPathCommand(armTargetSupplier)
@@ -70,6 +70,104 @@ public class AutoScore extends SequentialCommandGroup {
             .deadlineWith(driveCommand, armCommand)
             .andThen(gripper.ejectCommand())
             .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
+  }
+
+  /** Returns whether to score off of the front or back of the robot. */
+  private boolean shouldScoreFront() {
+    var currentPose = AllianceFlipUtil.apply(drive.getPose());
+    var nodeTranslation = GeomUtil.translation3dTo2dXY(getNodeTranslation());
+    var relativeRotation =
+        nodeTranslation
+            .minus(currentPose.getTranslation())
+            .getAngle()
+            .minus(currentPose.getRotation());
+    if (objectiveTracker.selectedLevel == NodeLevel.HYBRID
+        || objectiveTracker.gamePiece == GamePiece.CUBE) {
+      // Choose nearest side
+      return relativeRotation.getCos() > 0.0;
+
+    } else {
+      // Choose the same side as the cone was grabbed
+      return objectiveTracker.lastIntakeFront;
+    }
+  }
+
+  /** Returns the best drive target for the selected node. */
+  private Pose2d getDriveTarget(boolean allowReach) {
+    var nodeTranslation = getNodeTranslation();
+    var currentPose = AllianceFlipUtil.apply(drive.getPose()); // Unflipped
+    var relativeArmPosition = getRelativeArmPosition();
+
+    // Calculate drive distance
+    double minDistance = minArmExtension - relativeArmPosition.getX();
+    double maxDistance =
+        arm.calcMaxReachAtHeight(nodeTranslation.getZ() + relativeArmPosition.getY())
+            - relativeArmPosition.getX();
+    double distanceFromNode =
+        MathUtil.clamp(
+            currentPose.getTranslation().getDistance(GeomUtil.translation3dTo2dXY(nodeTranslation)),
+            minDistance,
+            maxDistance);
+
+    // If reach not allowed, return target at minimum distance
+    if (!allowReach) {
+      return AllianceFlipUtil.apply(
+          new Pose2d(
+              Math.max(minDriveX, nodeTranslation.getX() + minDistance),
+              nodeTranslation.getY(),
+              Rotation2d.fromDegrees(shouldScoreFront() ? 180.0 : 0.0)));
+    }
+
+    // Calculate angle from node
+    var angleFromNode =
+        currentPose
+            .getTranslation()
+            .minus(GeomUtil.translation3dTo2dXY(nodeTranslation))
+            .getAngle();
+    var maxAngleFromNode =
+        new Rotation2d(Math.acos((minDriveX - nodeTranslation.getX()) / maxDistance));
+    if (angleFromNode.getRadians() > maxAngleFromNode.getRadians()) {
+      angleFromNode = maxAngleFromNode;
+    }
+    if (angleFromNode.getRadians() < -maxAngleFromNode.getRadians()) {
+      angleFromNode = maxAngleFromNode.unaryMinus();
+    }
+
+    // Increase distance if below min x
+    double newMinDistance = (minDriveX - nodeTranslation.getX()) / angleFromNode.getCos();
+    if (distanceFromNode < newMinDistance) {
+      distanceFromNode = newMinDistance;
+    }
+
+    // Get drive pose
+    var driveTranslation =
+        new Pose2d(GeomUtil.translation3dTo2dXY(nodeTranslation), angleFromNode)
+            .transformBy(GeomUtil.translationToTransform(distanceFromNode, 0.0))
+            .getTranslation();
+    var driveRotation =
+        GeomUtil.translation3dTo2dXY(nodeTranslation)
+            .minus(driveTranslation)
+            .getAngle()
+            .plus(Rotation2d.fromDegrees(shouldScoreFront() ? 0.0 : 180.0));
+    return AllianceFlipUtil.apply(new Pose2d(driveTranslation, driveRotation));
+  }
+
+  /** Returns the best arm target for the selected node and drive position. */
+  private ArmPose getArmTarget(Pose2d drivePosition) {
+    var nodeTranslation = getNodeTranslation();
+    drivePosition = AllianceFlipUtil.apply(drivePosition); // Unflipped
+
+    // Calculate pose
+    var distanceToNode =
+        drivePosition.getTranslation().getDistance(GeomUtil.translation3dTo2dXY(nodeTranslation));
+    var armPose =
+        new ArmPose(
+            new Translation2d(distanceToNode, nodeTranslation.getZ())
+                .plus(getRelativeArmPosition()),
+            getWristAngle());
+
+    // Return pose with flip
+    return armPose.withFlip(!shouldScoreFront());
   }
 
   /** Returns the position of the target node. */
@@ -134,95 +232,5 @@ public class AutoScore extends SequentialCommandGroup {
         break;
     }
     return new Rotation2d();
-  }
-
-  /** Returns whether to score off of the front or back of the robot. */
-  private boolean shouldScoreFront() {
-    var currentPose = AllianceFlipUtil.apply(drive.getPose());
-    var nodeTranslation = GeomUtil.translation3dTo2dXY(getNodeTranslation());
-    var relativeRotation =
-        nodeTranslation
-            .minus(currentPose.getTranslation())
-            .getAngle()
-            .minus(currentPose.getRotation());
-    if (objectiveTracker.selectedLevel == NodeLevel.HYBRID
-        || objectiveTracker.gamePiece == GamePiece.CUBE) {
-      // Choose nearest side
-      return relativeRotation.getCos() > 0.0;
-
-    } else {
-      // Choose the same side as the cone was grabbed
-      return objectiveTracker.lastIntakeFront;
-    }
-  }
-
-  /** Returns the best drive target for the selected node. */
-  private Pose2d getDriveTarget(boolean allowReach) {
-    var nodeTranslation = getNodeTranslation();
-    var currentPose = AllianceFlipUtil.apply(drive.getPose()); // Unflipped
-    var relativeArmPosition = getRelativeArmPosition();
-
-    // Calculate drive distance
-    double minDistance = minArmExtension - relativeArmPosition.getX();
-    double maxDistance =
-        arm.calcMaxReachAtHeight(nodeTranslation.getZ() + relativeArmPosition.getY())
-            - relativeArmPosition.getX()
-            - 0.2;
-    double distanceFromNode =
-        MathUtil.clamp(
-            currentPose.getTranslation().getDistance(GeomUtil.translation3dTo2dXY(nodeTranslation)),
-            minDistance,
-            maxDistance);
-
-    // Calculate angle from node
-    var angleFromNode =
-        currentPose
-            .getTranslation()
-            .minus(GeomUtil.translation3dTo2dXY(nodeTranslation))
-            .getAngle();
-    var maxAngleFromNode =
-        new Rotation2d(Math.acos((minDriveX - nodeTranslation.getX()) / maxDistance));
-    if (angleFromNode.getRadians() > maxAngleFromNode.getRadians()) {
-      angleFromNode = maxAngleFromNode;
-    }
-    if (angleFromNode.getRadians() < -maxAngleFromNode.getRadians()) {
-      angleFromNode = maxAngleFromNode.unaryMinus();
-    }
-
-    // Increase distance if below min x
-    double newMinDistance = (minDriveX - nodeTranslation.getX()) / angleFromNode.getCos();
-    if (distanceFromNode < newMinDistance) {
-      distanceFromNode = newMinDistance;
-    }
-
-    // Get drive pose
-    var driveTranslation =
-        new Pose2d(GeomUtil.translation3dTo2dXY(nodeTranslation), angleFromNode)
-            .transformBy(GeomUtil.translationToTransform(distanceFromNode, 0.0))
-            .getTranslation();
-    var driveRotation =
-        GeomUtil.translation3dTo2dXY(nodeTranslation)
-            .minus(driveTranslation)
-            .getAngle()
-            .plus(Rotation2d.fromDegrees(shouldScoreFront() ? 0.0 : 180.0));
-    return AllianceFlipUtil.apply(new Pose2d(driveTranslation, driveRotation));
-  }
-
-  /** Returns the best arm target for the selected node and drive position. */
-  private ArmPose getArmTarget(Pose2d drivePosition) {
-    var nodeTranslation = getNodeTranslation();
-    drivePosition = AllianceFlipUtil.apply(drivePosition); // Unflipped
-
-    // Calculate pose
-    var distanceToNode =
-        drivePosition.getTranslation().getDistance(GeomUtil.translation3dTo2dXY(nodeTranslation));
-    var armPose =
-        new ArmPose(
-            new Translation2d(distanceToNode, nodeTranslation.getZ())
-                .plus(getRelativeArmPosition()),
-            getWristAngle());
-
-    // Return pose with flip
-    return armPose.withFlip(!shouldScoreFront());
   }
 }

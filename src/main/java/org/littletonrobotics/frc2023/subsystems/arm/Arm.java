@@ -579,8 +579,6 @@ public class Arm extends SubsystemBase {
    * the provided height.
    */
   public double calcMaxReachAtHeight(double height) {
-    return Math.sqrt(
-        Math.pow(config.shoulder().length() + config.elbow().length(), 2.0)
-            - Math.pow(height - config.origin().getY(), 2.0));
+    return kinematics.calcMaxReachAtHeight(height);
   }
 }

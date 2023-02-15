@@ -12,38 +12,73 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import org.littletonrobotics.frc2023.FieldConstants;
-import org.littletonrobotics.frc2023.commands.DriveToNode;
+import org.littletonrobotics.frc2023.commands.AutoScore;
 import org.littletonrobotics.frc2023.commands.IntakeAlongFloor;
 
 /** Represents a target position for the arm. */
 public record ArmPose(Translation2d endEffectorPosition, Rotation2d globalWristAngle) {
   public static enum Preset {
     HOMED(null),
-    SCORE_HYBRID(new ArmPose(new Translation2d(0.58, 0.9), Rotation2d.fromDegrees(-90.0))),
+    SCORE_HYBRID(
+        new ArmPose(
+            new Translation2d(
+                    Math.max(
+                            AutoScore.minDriveX,
+                            FieldConstants.Grids.lowX
+                                - AutoScore.hybridRelativePosition.getX()
+                                + AutoScore.minArmExtension)
+                        - FieldConstants.Grids.lowX,
+                    0.0)
+                .plus(AutoScore.hybridRelativePosition),
+            AutoScore.hybridWristAngle)),
     SCORE_MID_CONE(
         new ArmPose(
             new Translation2d(
-                DriveToNode.scorePositionX - FieldConstants.Grids.midX - 0.2,
-                FieldConstants.Grids.midConeZ + 0.2),
-            Rotation2d.fromDegrees(30.0))),
+                    Math.max(
+                            AutoScore.minDriveX,
+                            FieldConstants.Grids.midX
+                                - AutoScore.midConeRelativePosition.getX()
+                                + AutoScore.minArmExtension)
+                        - FieldConstants.Grids.midX,
+                    FieldConstants.Grids.midConeZ)
+                .plus(AutoScore.midConeRelativePosition),
+            AutoScore.midConeWristAngle)),
     SCORE_MID_CUBE(
         new ArmPose(
             new Translation2d(
-                DriveToNode.scorePositionX - FieldConstants.Grids.midX - 0.3,
-                FieldConstants.Grids.midCubeZ + 0.5),
-            Rotation2d.fromDegrees(-45.0))),
+                    Math.max(
+                            AutoScore.minDriveX,
+                            FieldConstants.Grids.midX
+                                - AutoScore.midCubeRelativePosition.getX()
+                                + AutoScore.minArmExtension)
+                        - FieldConstants.Grids.midX,
+                    FieldConstants.Grids.midCubeZ)
+                .plus(AutoScore.midCubeRelativePosition),
+            AutoScore.midCubeWristAngle)),
     SCORE_HIGH_CONE(
         new ArmPose(
             new Translation2d(
-                DriveToNode.scorePositionX - FieldConstants.Grids.highX - 0.2,
-                FieldConstants.Grids.highConeZ + 0.15),
-            Rotation2d.fromDegrees(30.0))),
+                    Math.max(
+                            AutoScore.minDriveX,
+                            FieldConstants.Grids.highX
+                                - AutoScore.highConeRelativePosition.getX()
+                                + AutoScore.minArmExtension)
+                        - FieldConstants.Grids.highX,
+                    FieldConstants.Grids.highConeZ)
+                .plus(AutoScore.highConeRelativePosition),
+            AutoScore.highConeWristAngle)),
     SCORE_HIGH_CUBE(
         new ArmPose(
             new Translation2d(
-                DriveToNode.scorePositionX - FieldConstants.Grids.highX - 0.3,
-                FieldConstants.Grids.highCubeZ + 0.5),
-            Rotation2d.fromDegrees(-45.0))),
+                    Math.max(
+                            AutoScore.minDriveX,
+                            FieldConstants.Grids.highX
+                                - AutoScore.highCubeRelativePosition.getX()
+                                + AutoScore.minArmExtension)
+                        - FieldConstants.Grids.highX,
+                    FieldConstants.Grids.highCubeZ)
+                .plus(AutoScore.highCubeRelativePosition),
+            AutoScore.highCubeWristAngle)),
     SINGLE_SUBTATION(
         new ArmPose(
             new Translation2d(0.49, FieldConstants.LoadingZone.singleSubstationCenterZ),
