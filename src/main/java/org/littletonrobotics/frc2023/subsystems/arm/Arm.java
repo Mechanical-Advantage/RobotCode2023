@@ -16,6 +16,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.Timer;
@@ -38,7 +39,7 @@ import org.littletonrobotics.frc2023.util.LoggedTunableNumber;
 import org.littletonrobotics.junction.Logger;
 
 public class Arm extends SubsystemBase {
-  public static final double trajectoryCacheMarginRadians = 0.02;
+  public static final double trajectoryCacheMarginRadians = Units.degreesToRadians(3.0);
   public static final double shiftCenterMarginMeters = 0.05;
   public static final double wristGroundMarginMeters = 0.05;
   public static final double[] cubeIntakeAvoidanceRect = new double[] {0.05, 0.0, 0.75, 0.65};
@@ -439,6 +440,7 @@ public class Arm extends SubsystemBase {
     Optional<Vector<N2>> currentAngles = kinematics.inverse(setpointPose.endEffectorPosition());
     Optional<Vector<N2>> targetAngles = kinematics.inverse(pose.endEffectorPosition());
     if (currentAngles.isEmpty() || targetAngles.isEmpty()) {
+      DriverStation.reportWarning("Infeasible arm trajectory requested", false);
       return;
     }
 
@@ -452,63 +454,65 @@ public class Arm extends SubsystemBase {
       return;
     }
 
-    // Create parameters
-    var parameters = new ArmTrajectory.Parameters(currentAngles.get(), targetAngles.get());
-
     // Reset current trajectory
     trajectoryTimer.stop();
     trajectoryTimer.reset();
 
-    // Search for similar trajectories
-    ArmTrajectory closestTrajectory = null;
-    double closestTrajectoryDiff = Double.POSITIVE_INFINITY;
-    for (var trajectory : allTrajectories.values()) {
-      var initialDiff =
-          trajectory
-              .getParameters()
-              .initialJointPositions()
-              .minus(parameters.initialJointPositions());
-      var finalDiff =
-          trajectory.getParameters().finalJointPositions().minus(parameters.finalJointPositions());
+    // Create trajectory and search for similar
+    var parameters = new ArmTrajectory.Parameters(currentAngles.get(), targetAngles.get());
+    var trajectory = new ArmTrajectory(parameters);
+    ArmTrajectory closestTrajectory = trajectory.findClosest(allTrajectories.values());
 
-      // Check if closest
-      double totalDiff =
-          Math.abs(initialDiff.get(0, 0))
-              + Math.abs(initialDiff.get(1, 0))
-              + Math.abs(finalDiff.get(0, 0))
-              + Math.abs(finalDiff.get(1, 0));
-      if (totalDiff < closestTrajectoryDiff) {
-        closestTrajectory = trajectory;
-        closestTrajectoryDiff = totalDiff;
-      }
-
-      // If close enough, use this trajectory
-      if (Math.abs(initialDiff.get(0, 0)) < trajectoryCacheMarginRadians
-          && Math.abs(initialDiff.get(1, 0)) < trajectoryCacheMarginRadians
-          && Math.abs(finalDiff.get(0, 0)) < trajectoryCacheMarginRadians
-          && Math.abs(finalDiff.get(1, 0)) < trajectoryCacheMarginRadians
-          && trajectory.isGenerated()) {
-        currentTrajectory = trajectory;
-        queuedPose = pose;
-        return;
-      }
-    }
-
-    // Use closest if overriden
-    if (forcePregeneratedSupplier.get()) {
-      if (closestTrajectory != null) {
-        currentTrajectory = closestTrajectory;
-        queuedPose = pose;
-      }
+    // If close enough or overridden, use this trajectory
+    var initialDiff =
+        trajectory
+            .getParameters()
+            .initialJointPositions()
+            .minus(closestTrajectory.getParameters().initialJointPositions());
+    var finalDiff =
+        trajectory
+            .getParameters()
+            .finalJointPositions()
+            .minus(closestTrajectory.getParameters().finalJointPositions());
+    if (forcePregeneratedSupplier.get()
+        || (Math.abs(initialDiff.get(0, 0)) <= trajectoryCacheMarginRadians
+            && Math.abs(initialDiff.get(1, 0)) <= trajectoryCacheMarginRadians
+            && Math.abs(finalDiff.get(0, 0)) <= trajectoryCacheMarginRadians
+            && Math.abs(finalDiff.get(1, 0)) <= trajectoryCacheMarginRadians
+            && closestTrajectory.isGenerated())) {
+      currentTrajectory = closestTrajectory;
+      queuedPose = pose;
       return;
     }
 
-    // Create new trajectory
-    var trajectory = new ArmTrajectory(parameters);
+    // Start new trajectory
     allTrajectories.put(parameters.hashCode(), trajectory);
     currentTrajectory = trajectory;
     queuedPose = pose;
     updateTrajectoryRequest(); // Start solving immediately if nothing else in queue
+
+    // Pregenerate return to homed if not cached
+    Vector<N2> homedAngles =
+        kinematics.inverse(ArmPose.Preset.HOMED.getPose().endEffectorPosition()).get();
+    var returnTrajectory =
+        new ArmTrajectory(new ArmTrajectory.Parameters(targetAngles.get(), homedAngles));
+    ArmTrajectory closestReturnTrajectory = returnTrajectory.findClosest(allTrajectories.values());
+    initialDiff =
+        returnTrajectory
+            .getParameters()
+            .initialJointPositions()
+            .minus(closestReturnTrajectory.getParameters().initialJointPositions());
+    finalDiff =
+        returnTrajectory
+            .getParameters()
+            .finalJointPositions()
+            .minus(closestReturnTrajectory.getParameters().finalJointPositions());
+    if (Math.abs(initialDiff.get(0, 0)) > trajectoryCacheMarginRadians
+        || Math.abs(initialDiff.get(1, 0)) > trajectoryCacheMarginRadians
+        || Math.abs(finalDiff.get(0, 0)) > trajectoryCacheMarginRadians
+        || Math.abs(finalDiff.get(1, 0)) > trajectoryCacheMarginRadians) {
+      allTrajectories.put(returnTrajectory.getParameters().hashCode(), returnTrajectory);
+    }
   }
 
   /** Command factory to navigate to a pose along a path. */

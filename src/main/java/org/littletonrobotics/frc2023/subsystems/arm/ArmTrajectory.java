@@ -15,6 +15,7 @@ import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.numbers.N3;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -121,5 +122,34 @@ public class ArmTrajectory {
 
     return new MatBuilder<>(Nat.N2(), Nat.N3())
         .fill(position_0, velocity_0, acceleration_0, position_1, velocity_1, acceleration_1);
+  }
+
+  /** Returns the trajectory from the collection closest to this trajectory. */
+  public ArmTrajectory findClosest(Collection<ArmTrajectory> others) {
+    ArmTrajectory closestTrajectory = null;
+    double closestTrajectoryDiff = Double.POSITIVE_INFINITY;
+    for (var trajectory : others) {
+      var initialDiff =
+          trajectory
+              .getParameters()
+              .initialJointPositions()
+              .minus(parameters.initialJointPositions());
+      var finalDiff =
+          trajectory.getParameters().finalJointPositions().minus(parameters.finalJointPositions());
+
+      // Check if closest
+      double maxDiff =
+          Math.max(
+              Math.max(
+                  Math.max(Math.abs(initialDiff.get(0, 0)), Math.abs(initialDiff.get(1, 0))),
+                  Math.abs(finalDiff.get(0, 0))),
+              Math.abs(finalDiff.get(1, 0)));
+      if (maxDiff < closestTrajectoryDiff) {
+        closestTrajectory = trajectory;
+        closestTrajectoryDiff = maxDiff;
+      }
+    }
+
+    return closestTrajectory;
   }
 }

@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.hash.Hashing;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
@@ -82,7 +83,7 @@ public class ArmTrajectoryCache {
     ArmKinematics kinematics = new ArmKinematics(config);
     ArmPose.Preset.updateHomedPreset(config);
 
-    // Create set of trajectories
+    // Create set of trajectories between presets
     List<TrajectoryCache> allTrajectories = new ArrayList<>();
     List<ArmPose> allPoses = new ArrayList<>();
     for (var preset : ArmPose.Preset.values()) {
@@ -95,37 +96,72 @@ public class ArmTrajectoryCache {
           Optional<Vector<N2>> preset0Angles = kinematics.inverse(pose0.endEffectorPosition());
           Optional<Vector<N2>> preset1Angles = kinematics.inverse(pose1.endEffectorPosition());
           if (preset0Angles.isPresent() && preset1Angles.isPresent()) {
-            double[] initialJointPositions =
-                new double[] {preset0Angles.get().get(0, 0), preset0Angles.get().get(1, 0)};
-            double[] finalJointPositions =
-                new double[] {preset1Angles.get().get(0, 0), preset1Angles.get().get(1, 0)};
-
-            // Check if already generated
-            boolean identicalFound = false;
-            for (var otherTrajectory : allTrajectories) {
-              if (Math.abs(initialJointPositions[0] - otherTrajectory.initialJointPositions()[0])
-                      < Arm.trajectoryCacheMarginRadians
-                  && Math.abs(initialJointPositions[1] - otherTrajectory.initialJointPositions()[1])
-                      < Arm.trajectoryCacheMarginRadians
-                  && Math.abs(finalJointPositions[0] - otherTrajectory.finalJointPositions()[0])
-                      < Arm.trajectoryCacheMarginRadians
-                  && Math.abs(finalJointPositions[1] - otherTrajectory.finalJointPositions()[1])
-                      < Arm.trajectoryCacheMarginRadians) {
-                identicalFound = true;
-                break;
-              }
-            }
-
             // Add to list of trajectories
-            if (!identicalFound) {
-              allTrajectories.add(
-                  new TrajectoryCache(
-                      initialJointPositions, finalJointPositions, 0, new double[] {}));
-            }
+            allTrajectories.add(
+                new TrajectoryCache(
+                    new double[] {preset0Angles.get().get(0, 0), preset0Angles.get().get(1, 0)},
+                    new double[] {preset1Angles.get().get(0, 0), preset1Angles.get().get(1, 0)},
+                    0,
+                    new double[] {}));
           }
         }
       }
     }
+
+    // Add extra scoring trajectories
+    Vector<N2> homedAngles =
+        kinematics.inverse(ArmPose.Preset.HOMED.getPose().endEffectorPosition()).get();
+    List.of(
+            ArmPose.Preset.SCORE_HYBRID.getPose(),
+            ArmPose.Preset.SCORE_HYBRID.getPose().withFlip(true),
+            ArmPose.Preset.SCORE_MID_CONE.getPose(),
+            ArmPose.Preset.SCORE_MID_CONE.getPose().withFlip(true),
+            ArmPose.Preset.SCORE_MID_CUBE.getPose(),
+            ArmPose.Preset.SCORE_MID_CUBE.getPose().withFlip(true),
+            ArmPose.Preset.SCORE_HIGH_CONE.getPose(),
+            ArmPose.Preset.SCORE_HIGH_CONE.getPose().withFlip(true),
+            ArmPose.Preset.SCORE_HIGH_CUBE.getPose(),
+            ArmPose.Preset.SCORE_HIGH_CUBE.getPose().withFlip(true))
+        .forEach(
+            (ArmPose targetPose) -> {
+              double xPosition = targetPose.endEffectorPosition().getX();
+              while (true) {
+                xPosition += targetPose.endEffectorPosition().getX() > 0.0 ? 0.05 : -0.05;
+
+                boolean lastPoint = false;
+                double maxReach =
+                    kinematics.calcMaxReachAtHeight(targetPose.endEffectorPosition().getY());
+                if (Math.abs(xPosition) > maxReach) {
+                  xPosition = targetPose.endEffectorPosition().getX() > 0.0 ? maxReach : -maxReach;
+                  lastPoint = true;
+                }
+                Optional<Vector<N2>> targetAngles =
+                    kinematics.inverse(
+                        new Translation2d(xPosition, targetPose.endEffectorPosition().getY()));
+                if (targetAngles.isEmpty()) {
+                  break;
+                }
+
+                // Add trajectories between homed and target
+                allTrajectories.add(
+                    new TrajectoryCache(
+                        new double[] {homedAngles.get(0, 0), homedAngles.get(1, 0)},
+                        new double[] {targetAngles.get().get(0, 0), targetAngles.get().get(1, 0)},
+                        0,
+                        new double[] {}));
+                allTrajectories.add(
+                    new TrajectoryCache(
+                        new double[] {targetAngles.get().get(0, 0), targetAngles.get().get(1, 0)},
+                        new double[] {homedAngles.get(0, 0), homedAngles.get(1, 0)},
+                        0,
+                        new double[] {}));
+
+                // Exit if last point
+                if (lastPoint) {
+                  break;
+                }
+              }
+            });
 
     // Calculate hash
     ObjectMapper mapper = new ObjectMapper();
