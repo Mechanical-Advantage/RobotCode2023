@@ -35,6 +35,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.littletonrobotics.frc2023.Constants;
+import org.littletonrobotics.frc2023.util.Alert;
+import org.littletonrobotics.frc2023.util.Alert.AlertType;
 import org.littletonrobotics.frc2023.util.LoggedTunableNumber;
 import org.littletonrobotics.junction.Logger;
 
@@ -45,6 +47,9 @@ public class Arm extends SubsystemBase {
   public static final double[] cubeIntakeAvoidanceRect = new double[] {0.05, 0.0, 0.75, 0.65};
   public static final double[] coneIntakeAvoidanceRect = new double[] {-0.65, 0.0, -0.05, 0.6};
   public static final double avoidanceLookaheadSecs = 0.25;
+  public static final double emergencyDisableMaxError = Units.degreesToRadians(10.0);
+  public static final double emergencyDisableMaxErrorTime = 0.5;
+  public static final double emergencyDisableBeyondLimitThreshold = Units.degreesToRadians(5.0);
 
   private final ArmIO io;
   private final ArmSolverIO solverIo;
@@ -59,6 +64,14 @@ public class Arm extends SubsystemBase {
 
   private Supplier<Boolean> disableSupplier = () -> false;
   private Supplier<Boolean> forcePregeneratedSupplier = () -> false;
+  private boolean emergencyDisable = false;
+  private Timer emergencyDisableMaxErrorTimer = new Timer();
+  private Alert driverDisableAlert =
+      new Alert("Arm disabled due to driver override.", AlertType.WARNING);
+  private Alert emergencyDisableAlert =
+      new Alert(
+          "Arm emergency disabled due to high position error. Disable the arm manually and reenable to reset.",
+          AlertType.ERROR);
 
   private final ArmVisualizer visualizerMeasured;
   private final ArmVisualizer visualizerSetpoint;
@@ -165,6 +178,11 @@ public class Arm extends SubsystemBase {
     }
   }
 
+  /** Returns whether the arm should be prevented from moving. */
+  private boolean isDisabled() {
+    return DriverStation.isDisabled() || disableSupplier.get() || emergencyDisable;
+  }
+
   public void periodic() {
     io.updateInputs(inputs);
     solverIo.updateInputs(solverInputs);
@@ -207,7 +225,6 @@ public class Arm extends SubsystemBase {
     shoulderAngle = inputs.shoulderRelativePositionRad + shoulderAngleOffset;
     elbowAngle = inputs.elbowRelativePositionRad + elbowAngleOffset;
     wristAngle = inputs.wristRelativePositionRad + wristAngleOffset;
-    visualizerMeasured.update(shoulderAngle, elbowAngle, wristAngle);
 
     // Get new trajectory from solver if available
     if (solverInputs.parameterHash != 0
@@ -235,7 +252,7 @@ public class Arm extends SubsystemBase {
     Logger.getInstance().recordOutput("Arm/TrajectoryCountGenerated", trajectoryCountGenerated);
 
     // Set setpoint to current position when disabled (don't move when enabling)
-    if (DriverStation.isDisabled()) {
+    if (isDisabled()) {
       setpointPose =
           new ArmPose(
               kinematics.forward(VecBuilder.fill(shoulderAngle, elbowAngle)),
@@ -254,14 +271,14 @@ public class Arm extends SubsystemBase {
       setpointPose = queuedPose;
     }
 
-    // Values to be logged at the end of the cycle
-    double loggedShoulderSetpoint = Math.PI / 2.0;
-    double loggedElbowSetpoint = Math.PI;
-    double loggedWristSetpoint = 0.0;
+    // Values to be logged at the end of the cycle and used for emergency stop
+    double shoulderAngleSetpoint = Math.PI / 2.0;
+    double elbowAngleSetpoint = Math.PI;
+    double wristAngleSetpoint = 0.0;
 
     // Run shoulder and elbow
     ArmPose wristEffectiveArmPose = null; // The arm pose to use for wrist calculations
-    if (DriverStation.isDisabled() || disableSupplier.get()) {
+    if (isDisabled()) {
       // Stop moving when disabled
       io.setShoulderVoltage(0.0);
       io.setElbowVoltage(0.0);
@@ -281,8 +298,8 @@ public class Arm extends SubsystemBase {
               kinematics.forward(new Vector<>(state.extractColumnVector(0))),
               queuedPose.globalWristAngle());
       wristEffectiveArmPose = queuedPose; // Move wrist based on trajectory endpoint
-      loggedShoulderSetpoint = state.get(0, 0);
-      loggedElbowSetpoint = state.get(1, 0);
+      shoulderAngleSetpoint = state.get(0, 0);
+      elbowAngleSetpoint = state.get(1, 0);
 
     } else {
       // Go to setpoint
@@ -293,8 +310,8 @@ public class Arm extends SubsystemBase {
             voltages.get(0, 0) + shoulderFeedback.calculate(shoulderAngle, angles.get().get(0, 0)));
         io.setElbowVoltage(
             voltages.get(1, 0) + elbowFeedback.calculate(elbowAngle, angles.get().get(1, 0)));
-        loggedShoulderSetpoint = angles.get().get(0, 0);
-        loggedElbowSetpoint = angles.get().get(1, 0);
+        shoulderAngleSetpoint = angles.get().get(0, 0);
+        elbowAngleSetpoint = angles.get().get(1, 0);
       } else {
         io.setShoulderVoltage(0.0);
         io.setElbowVoltage(0.0);
@@ -308,7 +325,7 @@ public class Arm extends SubsystemBase {
     }
 
     // Run wrist
-    if (DriverStation.isDisabled() || wristEffectiveArmPose == null || disableSupplier.get()) {
+    if (isDisabled() || wristEffectiveArmPose == null) {
       // Stop moving when disabled
       io.setWristVoltage(0.0);
       wristFeedback.reset(wristAngle);
@@ -347,16 +364,59 @@ public class Arm extends SubsystemBase {
         wristSetpoint =
             MathUtil.clamp(wristSetpoint, config.wrist().minAngle(), config.wrist().maxAngle());
         io.setWristVoltage(wristFeedback.calculate(wristAngle, wristSetpoint));
-        loggedWristSetpoint = wristFeedback.getSetpoint().position;
+        wristAngleSetpoint = wristFeedback.getSetpoint().position;
       }
     }
 
-    // Log setpoints
-    visualizerSetpoint.update(loggedShoulderSetpoint, loggedElbowSetpoint, loggedWristSetpoint);
-    Logger.getInstance().recordOutput("Arm/SetpointX", setpointPose.endEffectorPosition().getX());
-    Logger.getInstance().recordOutput("Arm/SetpointY", setpointPose.endEffectorPosition().getY());
+    // Log setpoints and measured positions
+    visualizerMeasured.update(shoulderAngle, elbowAngle, wristAngle);
+    visualizerSetpoint.update(shoulderAngleSetpoint, elbowAngleSetpoint, wristAngleSetpoint);
+    Logger.getInstance().recordOutput("Arm/MeasuredAngle/Shoulder", shoulderAngle);
+    Logger.getInstance().recordOutput("Arm/MeasuredAngle/Elbow", elbowAngle);
+    Logger.getInstance().recordOutput("Arm/MeasuredAngle/Wrist", wristAngle);
+    Logger.getInstance().recordOutput("Arm/SetpointAngle/Shoulder", shoulderAngleSetpoint);
+    Logger.getInstance().recordOutput("Arm/SetpointAngle/Elbow", elbowAngleSetpoint);
+    Logger.getInstance().recordOutput("Arm/SetpointAngle/Wrist", wristAngleSetpoint);
     Logger.getInstance()
-        .recordOutput("Arm/SetpointWrist", setpointPose.globalWristAngle().getRadians());
+        .recordOutput("Arm/SetpointPose/X", setpointPose.endEffectorPosition().getX());
+    Logger.getInstance()
+        .recordOutput("Arm/SetpointPose/Y", setpointPose.endEffectorPosition().getY());
+    Logger.getInstance()
+        .recordOutput("Arm/SetpointPose/Wrist", setpointPose.globalWristAngle().getRadians());
+
+    // Trigger emergency stop if necessary
+    emergencyDisableMaxErrorTimer.start();
+    if (isDisabled()) {
+      emergencyDisableMaxErrorTimer.reset();
+    } else {
+      // Check for high error
+      if (Math.abs(shoulderAngle - shoulderAngleSetpoint) < emergencyDisableMaxError
+          && Math.abs(elbowAngle - elbowAngleSetpoint) < emergencyDisableMaxError
+          && Math.abs(wristAngle - wristAngleSetpoint) < emergencyDisableMaxError) {
+        emergencyDisableMaxErrorTimer.reset();
+      } else if (emergencyDisableMaxErrorTimer.hasElapsed(emergencyDisableMaxErrorTime)) {
+        emergencyDisable = true;
+      }
+
+      // Check if beyond limits
+      if (shoulderAngle < config.shoulder().minAngle() - emergencyDisableBeyondLimitThreshold
+          || shoulderAngle > config.shoulder().maxAngle() + emergencyDisableBeyondLimitThreshold
+          || elbowAngle < config.elbow().minAngle() - emergencyDisableBeyondLimitThreshold
+          || elbowAngle > config.elbow().maxAngle() + emergencyDisableBeyondLimitThreshold
+          || wristAngle < config.wrist().minAngle() - emergencyDisableBeyondLimitThreshold
+          || wristAngle > config.wrist().maxAngle() + emergencyDisableBeyondLimitThreshold) {
+        emergencyDisable = true;
+      }
+    }
+
+    // Reset internal emergency stop when override is active
+    if (disableSupplier.get()) {
+      emergencyDisable = false;
+    }
+
+    // Update disable alerts
+    driverDisableAlert.set(disableSupplier.get());
+    emergencyDisableAlert.set(emergencyDisable);
   }
 
   /** Returns whether the arm is current in or will pass through the provided region. */
