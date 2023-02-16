@@ -14,8 +14,8 @@ import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.numbers.N2;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
+import edu.wpi.first.wpilibj.RobotBase;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -30,6 +30,7 @@ import org.littletonrobotics.frc2023.Constants;
 
 public class ArmTrajectoryCache {
   private static final String cacheFilename = "arm_trajectory_cache.json";
+  private static final String cacheRequestFilename = "arm_trajectory_cache_request.json";
 
   private ArmTrajectoryCache() {}
 
@@ -64,8 +65,10 @@ public class ArmTrajectoryCache {
             VecBuilder.fill(trajectoryCache.points()[i * 2], trajectoryCache.points()[i * 2 + 1]));
       }
       trajectory.setPoints(trajectoryCache.totalTime(), points);
-      if (!trajectory.isGenerated()) {
-        DriverStation.reportError("Invalid trajectory found in arm trajectory cache JSON", false);
+      if (!trajectory.isGenerated() && RobotBase.isSimulation()) {
+        // Throw during test
+        System.err.println("Invalid trajectory found in arm trajectory cache JSON");
+        throw new RuntimeException();
       }
       trajectories.add(trajectory);
     }
@@ -208,13 +211,15 @@ public class ArmTrajectoryCache {
     }
     if (!generateNew) System.exit(0);
 
+    // Save request JSON
+    File cacheFile = Path.of(System.getProperty("java.io.tmpdir"), cacheRequestFilename).toFile();
+    mapper.writeValue(cacheFile, new TrajectoryCacheStore(configAndPresetHash, allTrajectories));
+
     // Launch Python (try venv and then default)
-    String requestJson =
-        mapper.writeValueAsString(new TrajectoryCacheStore(configAndPresetHash, allTrajectories));
-    Process venvPython = runPython(true, requestJson);
+    Process venvPython = runPython(true);
     Process systemPython = null;
     if (venvPython.exitValue() != 0) {
-      systemPython = runPython(false, requestJson);
+      systemPython = runPython(false);
     }
 
     // Print output
@@ -237,8 +242,7 @@ public class ArmTrajectoryCache {
     System.exit(exitValue);
   }
 
-  private static Process runPython(boolean useVenv, String requestJson)
-      throws IOException, InterruptedException {
+  private static Process runPython(boolean useVenv) throws IOException, InterruptedException {
     ProcessBuilder pythonBuilder;
     String pythonPath = "python";
     if (useVenv) {
@@ -249,8 +253,7 @@ public class ArmTrajectoryCache {
       }
     }
     pythonBuilder =
-        new ProcessBuilder(
-            pythonPath, "kairos" + File.separator + "run_generate_cache.py", requestJson);
+        new ProcessBuilder(pythonPath, "kairos" + File.separator + "run_generate_cache.py");
     Process python = pythonBuilder.start();
     python.waitFor();
     return python;

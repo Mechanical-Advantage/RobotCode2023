@@ -7,7 +7,9 @@
 
 import json
 import multiprocessing
+import os
 import sys
+import tempfile
 import time
 
 from Solver import Solver
@@ -20,7 +22,9 @@ def calculate_func(trajectory):
 
     # Create solver on first run
     if solver == None:
-        config = json.loads(open("src/main/deploy/arm_config.json", "r").read())
+        config = json.loads(
+            open(os.path.join("src", "main", "deploy", "arm_config.json"), "r").read()
+        )
         solver = Solver(config, silence=True)
 
     # Generate trajectory
@@ -34,8 +38,12 @@ def calculate_func(trajectory):
 
 
 if __name__ == "__main__":
-    cache_data = json.loads(sys.argv[-1])
     start_time = time.time()
+    cache_data = None
+    with open(
+        os.path.join(tempfile.gettempdir(), "arm_trajectory_cache_request.json"), "r"
+    ) as cache_file:
+        cache_data = json.loads(cache_file.read())
 
     # Generate all trajectories
     fail_count = 0
@@ -58,22 +66,26 @@ if __name__ == "__main__":
 
     # Save to JSON file
     if fail_count == 0:
-        with open("src/main/deploy/arm_trajectory_cache.json", "w") as cache_file:
+        with open(
+            os.path.join("src", "main", "deploy", "arm_trajectory_cache.json"), "w"
+        ) as cache_file:
             cache_file.write(json.dumps(cache_data, separators=(",", ":")))
 
     # Print result
     end_time = time.time()
+    cpu_count = multiprocessing.cpu_count()
+    extra_info = (
+        " ("
+        + str(round((end_time - start_time) * 1000) / 1000)
+        + " secs, "
+        + str(cpu_count)
+        + " "
+        + ("core" if cpu_count == 1 else "cores")
+        + ")"
+    )
     if fail_count == 0:
-        print(
-            "Successfully generated all trajectories ("
-            + str(round((end_time - start_time) * 1000) / 1000)
-            + " secs)"
-        )
+        print("Successfully generated all trajectories" + extra_info)
         sys.exit(0)
     else:
-        print(
-            "Failed to generate all trajectories ("
-            + str(round((end_time - start_time) * 1000) / 1000)
-            + " secs)"
-        )
+        print("Failed to generate all trajectories" + extra_info)
         sys.exit(1)
