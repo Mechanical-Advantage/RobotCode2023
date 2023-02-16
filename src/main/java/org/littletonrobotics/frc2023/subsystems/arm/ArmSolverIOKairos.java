@@ -72,7 +72,7 @@ public class ArmSolverIOKairos implements ArmSolverIO {
               + listText
               + "). "
               + (connectedCount == 0
-                  ? "No other instances are online, expect very limited arm functionality."
+                  ? "No other instances are online, expect limited arm functionality."
                   : "At least one instance is still online."));
     }
     disconnectedAlert.set(connectedCount < instanceCount);

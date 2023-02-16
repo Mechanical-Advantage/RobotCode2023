@@ -75,8 +75,6 @@ public class Arm extends SubsystemBase {
   private ArmPose setpointPose = null; // Pose to revert to when not following trajectory
   private ArmPose queuedPose = null; // Use as setpoint once trajectory is completed
   private Timer trajectoryTimer = new Timer();
-  private boolean presetMessagePrinted = false;
-  private int presetTrajectoryCount = 0;
 
   private PIDController shoulderFeedback =
       new PIDController(0.0, 0.0, 0.0, Constants.loopPeriodSecs);
@@ -234,12 +232,6 @@ public class Arm extends SubsystemBase {
     }
     Logger.getInstance().recordOutput("Arm/TrajectoryCount", trajectoryCount);
     Logger.getInstance().recordOutput("Arm/TrajectoryCountGenerated", trajectoryCountGenerated);
-    if (trajectoryCountGenerated >= presetTrajectoryCount) {
-      if (!presetMessagePrinted) {
-        System.out.println("All preset arm trajectories ready!");
-        presetMessagePrinted = true;
-      }
-    }
 
     // Set setpoint to current position when disabled (don't move when enabling)
     if (DriverStation.isDisabled()) {
