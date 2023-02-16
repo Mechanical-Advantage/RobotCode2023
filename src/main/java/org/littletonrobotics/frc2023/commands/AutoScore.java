@@ -28,6 +28,8 @@ import org.littletonrobotics.frc2023.util.GeomUtil;
 
 public class AutoScore extends SequentialCommandGroup {
   public static final double minDriveX = FieldConstants.Grids.outerX + 0.5;
+  public static final double minDriveY = 0.5;
+  public static final double maxDriveY = FieldConstants.Community.leftY - 0.5;
   public static final double minArmExtension = 0.6;
 
   public static final Translation2d hybridRelativePosition = new Translation2d(-0.2, 0.6);
@@ -134,9 +136,9 @@ public class AutoScore extends SequentialCommandGroup {
     }
 
     // Increase distance if below min x
-    double newMinDistance = (minDriveX - nodeTranslation.getX()) / angleFromNode.getCos();
-    if (distanceFromNode < newMinDistance) {
-      distanceFromNode = newMinDistance;
+    double minDistanceAtAngle = (minDriveX - nodeTranslation.getX()) / angleFromNode.getCos();
+    if (distanceFromNode < minDistanceAtAngle) {
+      distanceFromNode = minDistanceAtAngle;
     }
 
     // Get drive pose
@@ -144,6 +146,9 @@ public class AutoScore extends SequentialCommandGroup {
         new Pose2d(GeomUtil.translation3dTo2dXY(nodeTranslation), angleFromNode)
             .transformBy(GeomUtil.translationToTransform(distanceFromNode, 0.0))
             .getTranslation();
+    driveTranslation =
+        new Translation2d(
+            driveTranslation.getX(), MathUtil.clamp(driveTranslation.getY(), minDriveY, maxDriveY));
     var driveRotation =
         GeomUtil.translation3dTo2dXY(nodeTranslation)
             .minus(driveTranslation)
