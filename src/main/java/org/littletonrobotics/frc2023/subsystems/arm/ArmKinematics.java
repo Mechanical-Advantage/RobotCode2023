@@ -108,6 +108,6 @@ public class ArmKinematics {
                 - Math.pow(height - config.origin().getY(), 2)
                 + Math.pow(config.shoulder().length(), 2)
                 + Math.pow(config.elbow().length(), 2))
-        - 1e-6; // Shift back to ensure this is still valid after rounding errors
+        - 1e-3; // Shift back to ensure this is still valid after rounding errors
   }
 }

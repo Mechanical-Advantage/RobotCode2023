@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.littletonrobotics.frc2023.Constants;
+import org.littletonrobotics.frc2023.Constants.Mode;
 import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
 import org.littletonrobotics.frc2023.util.LoggedTunableNumber;
@@ -385,27 +386,29 @@ public class Arm extends SubsystemBase {
         .recordOutput("Arm/SetpointPose/Wrist", setpointPose.globalWristAngle().getRadians());
 
     // Trigger emergency stop if necessary
-    emergencyDisableMaxErrorTimer.start();
-    if (isDisabled()) {
-      emergencyDisableMaxErrorTimer.reset();
-    } else {
-      // Check for high error
-      if (Math.abs(shoulderAngle - shoulderAngleSetpoint) < emergencyDisableMaxError
-          && Math.abs(elbowAngle - elbowAngleSetpoint) < emergencyDisableMaxError
-          && Math.abs(wristAngle - wristAngleSetpoint) < emergencyDisableMaxError) {
+    if (Constants.getMode() != Mode.SIM) {
+      emergencyDisableMaxErrorTimer.start();
+      if (isDisabled()) {
         emergencyDisableMaxErrorTimer.reset();
-      } else if (emergencyDisableMaxErrorTimer.hasElapsed(emergencyDisableMaxErrorTime)) {
-        emergencyDisable = true;
-      }
+      } else {
+        // Check for high error
+        if (Math.abs(shoulderAngle - shoulderAngleSetpoint) < emergencyDisableMaxError
+            && Math.abs(elbowAngle - elbowAngleSetpoint) < emergencyDisableMaxError
+            && Math.abs(wristAngle - wristAngleSetpoint) < emergencyDisableMaxError) {
+          emergencyDisableMaxErrorTimer.reset();
+        } else if (emergencyDisableMaxErrorTimer.hasElapsed(emergencyDisableMaxErrorTime)) {
+          emergencyDisable = true;
+        }
 
-      // Check if beyond limits
-      if (shoulderAngle < config.shoulder().minAngle() - emergencyDisableBeyondLimitThreshold
-          || shoulderAngle > config.shoulder().maxAngle() + emergencyDisableBeyondLimitThreshold
-          || elbowAngle < config.elbow().minAngle() - emergencyDisableBeyondLimitThreshold
-          || elbowAngle > config.elbow().maxAngle() + emergencyDisableBeyondLimitThreshold
-          || wristAngle < config.wrist().minAngle() - emergencyDisableBeyondLimitThreshold
-          || wristAngle > config.wrist().maxAngle() + emergencyDisableBeyondLimitThreshold) {
-        emergencyDisable = true;
+        // Check if beyond limits
+        if (shoulderAngle < config.shoulder().minAngle() - emergencyDisableBeyondLimitThreshold
+            || shoulderAngle > config.shoulder().maxAngle() + emergencyDisableBeyondLimitThreshold
+            || elbowAngle < config.elbow().minAngle() - emergencyDisableBeyondLimitThreshold
+            || elbowAngle > config.elbow().maxAngle() + emergencyDisableBeyondLimitThreshold
+            || wristAngle < config.wrist().minAngle() - emergencyDisableBeyondLimitThreshold
+            || wristAngle > config.wrist().maxAngle() + emergencyDisableBeyondLimitThreshold) {
+          emergencyDisable = true;
+        }
       }
     }
 
@@ -506,9 +509,9 @@ public class Arm extends SubsystemBase {
 
     // Exit if already at setpoint
     if (Math.abs(currentAngles.get().get(0, 0) - targetAngles.get().get(0, 0))
-            < trajectoryCacheMarginRadians
+            <= trajectoryCacheMarginRadians
         && Math.abs(currentAngles.get().get(1, 0) - targetAngles.get().get(1, 0))
-            < trajectoryCacheMarginRadians) {
+            <= trajectoryCacheMarginRadians) {
       currentTrajectory = null;
       setpointPose = pose;
       return;
@@ -524,25 +527,27 @@ public class Arm extends SubsystemBase {
     ArmTrajectory closestTrajectory = trajectory.findClosest(allTrajectories.values());
 
     // If close enough or overridden, use this trajectory
-    var initialDiff =
-        trajectory
-            .getParameters()
-            .initialJointPositions()
-            .minus(closestTrajectory.getParameters().initialJointPositions());
-    var finalDiff =
-        trajectory
-            .getParameters()
-            .finalJointPositions()
-            .minus(closestTrajectory.getParameters().finalJointPositions());
-    if (forcePregeneratedSupplier.get()
-        || (Math.abs(initialDiff.get(0, 0)) <= trajectoryCacheMarginRadians
-            && Math.abs(initialDiff.get(1, 0)) <= trajectoryCacheMarginRadians
-            && Math.abs(finalDiff.get(0, 0)) <= trajectoryCacheMarginRadians
-            && Math.abs(finalDiff.get(1, 0)) <= trajectoryCacheMarginRadians
-            && closestTrajectory.isGenerated())) {
-      currentTrajectory = closestTrajectory;
-      queuedPose = pose;
-      return;
+    if (closestTrajectory != null) {
+      var initialDiff =
+          trajectory
+              .getParameters()
+              .initialJointPositions()
+              .minus(closestTrajectory.getParameters().initialJointPositions());
+      var finalDiff =
+          trajectory
+              .getParameters()
+              .finalJointPositions()
+              .minus(closestTrajectory.getParameters().finalJointPositions());
+      if (forcePregeneratedSupplier.get()
+          || (Math.abs(initialDiff.get(0, 0)) <= trajectoryCacheMarginRadians
+              && Math.abs(initialDiff.get(1, 0)) <= trajectoryCacheMarginRadians
+              && Math.abs(finalDiff.get(0, 0)) <= trajectoryCacheMarginRadians
+              && Math.abs(finalDiff.get(1, 0)) <= trajectoryCacheMarginRadians
+              && closestTrajectory.isGenerated())) {
+        currentTrajectory = closestTrajectory;
+        queuedPose = pose;
+        return;
+      }
     }
 
     // Start new trajectory
@@ -554,24 +559,29 @@ public class Arm extends SubsystemBase {
     // Pregenerate return to homed if not cached
     Vector<N2> homedAngles =
         kinematics.inverse(ArmPose.Preset.HOMED.getPose().endEffectorPosition()).get();
-    var returnTrajectory =
-        new ArmTrajectory(new ArmTrajectory.Parameters(targetAngles.get(), homedAngles));
-    ArmTrajectory closestReturnTrajectory = returnTrajectory.findClosest(allTrajectories.values());
-    initialDiff =
-        returnTrajectory
-            .getParameters()
-            .initialJointPositions()
-            .minus(closestReturnTrajectory.getParameters().initialJointPositions());
-    finalDiff =
-        returnTrajectory
-            .getParameters()
-            .finalJointPositions()
-            .minus(closestReturnTrajectory.getParameters().finalJointPositions());
-    if (Math.abs(initialDiff.get(0, 0)) > trajectoryCacheMarginRadians
-        || Math.abs(initialDiff.get(1, 0)) > trajectoryCacheMarginRadians
-        || Math.abs(finalDiff.get(0, 0)) > trajectoryCacheMarginRadians
-        || Math.abs(finalDiff.get(1, 0)) > trajectoryCacheMarginRadians) {
-      allTrajectories.put(returnTrajectory.getParameters().hashCode(), returnTrajectory);
+    var diff = targetAngles.get().minus(homedAngles);
+    if (Math.abs(diff.get(0, 0)) > trajectoryCacheMarginRadians
+        || Math.abs(diff.get(1, 0)) > trajectoryCacheMarginRadians) {
+      var returnTrajectory =
+          new ArmTrajectory(new ArmTrajectory.Parameters(targetAngles.get(), homedAngles));
+      ArmTrajectory closestReturnTrajectory =
+          returnTrajectory.findClosest(allTrajectories.values());
+      var initialDiff =
+          returnTrajectory
+              .getParameters()
+              .initialJointPositions()
+              .minus(closestReturnTrajectory.getParameters().initialJointPositions());
+      var finalDiff =
+          returnTrajectory
+              .getParameters()
+              .finalJointPositions()
+              .minus(closestReturnTrajectory.getParameters().finalJointPositions());
+      if (Math.abs(initialDiff.get(0, 0)) > trajectoryCacheMarginRadians
+          || Math.abs(initialDiff.get(1, 0)) > trajectoryCacheMarginRadians
+          || Math.abs(finalDiff.get(0, 0)) > trajectoryCacheMarginRadians
+          || Math.abs(finalDiff.get(1, 0)) > trajectoryCacheMarginRadians) {
+        allTrajectories.put(returnTrajectory.getParameters().hashCode(), returnTrajectory);
+      }
     }
   }
 
