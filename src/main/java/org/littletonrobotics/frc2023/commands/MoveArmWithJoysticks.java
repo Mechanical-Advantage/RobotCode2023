@@ -38,6 +38,7 @@ public class MoveArmWithJoysticks extends CommandBase {
     this.linearXSupplier = linearXSupplier;
     this.linearYSupplier = linearYSupplier;
     this.wristSupplier = wristSupplier;
+    addRequirements(arm);
   }
 
   @Override
