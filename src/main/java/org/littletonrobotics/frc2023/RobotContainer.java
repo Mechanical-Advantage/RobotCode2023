@@ -13,12 +13,10 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import java.util.List;
 import org.littletonrobotics.frc2023.Constants.Mode;
-import org.littletonrobotics.frc2023.commands.DriveToNode;
 import org.littletonrobotics.frc2023.commands.DriveToSubstation;
 import org.littletonrobotics.frc2023.commands.DriveTrajectory;
 import org.littletonrobotics.frc2023.commands.DriveWithJoysticks;
@@ -30,7 +28,6 @@ import org.littletonrobotics.frc2023.commands.IntakeConeHandoff;
 import org.littletonrobotics.frc2023.commands.IntakeCubeHandoff;
 import org.littletonrobotics.frc2023.commands.IntakeSubstation;
 import org.littletonrobotics.frc2023.commands.MoveArmWithJoysticks;
-import org.littletonrobotics.frc2023.commands.RaiseArmToScore;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVision;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIO;
 import org.littletonrobotics.frc2023.subsystems.arm.Arm;
@@ -244,15 +241,6 @@ public class RobotContainer {
 
     // Auto align controls
     driver.leftTrigger().whileTrue(new DriveToSubstation(drive));
-    var raiseArm = new RaiseArmToScore(arm, drive, objectiveTracker);
-    var driveToNode = new DriveToNode(drive, objectiveTracker);
-    driver
-        .y()
-        .whileTrue(
-            new WaitUntilCommand(() -> raiseArm.atGoal() && driveToNode.atGoal())
-                .deadlineWith(raiseArm, driveToNode)
-                .andThen(gripper.ejectCommand())
-                .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
 
     // *** OPERATOR CONTROLS ***
 
