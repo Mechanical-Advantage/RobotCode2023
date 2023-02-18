@@ -161,7 +161,7 @@ spotless {
     python {
         target("kairos/*.py")
         toggleOffOn()
-        black().pathToExe("venv/bin/black")
+        black().pathToExe(System.properties["os.name"].toLowerCase().contains("windows") ? "venv/Scripts/black" : "venv/bin/black")
     }
     groovyGradle {
         target fileTree(".") {

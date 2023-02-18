@@ -18,6 +18,7 @@ To set up the Python environment for formatting with [Black](https://github.com/
 
 ```bash
 python -m venv venv
-source ./venv/bin/activate
+source ./venv/bin/activate # Linux/macOS
+.\\venv\\Scripts\\activate # Windows
 pip install -r requirements.txt
 ```
