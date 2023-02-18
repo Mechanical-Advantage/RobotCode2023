@@ -24,6 +24,7 @@ public class DriveToPose extends CommandBase {
   private final Drive drive;
   private final Supplier<Pose2d> poseSupplier;
 
+  private boolean running = false;
   private final ProfiledPIDController driveController =
       new ProfiledPIDController(
           0.0, 0.0, 0.0, new TrapezoidProfile.Constraints(0.0, 0.0), Constants.loopPeriodSecs);
@@ -92,6 +93,8 @@ public class DriveToPose extends CommandBase {
 
   @Override
   public void execute() {
+    running = true;
+
     // Update from tunable numbers
     if (driveKp.hasChanged(hashCode())
         || driveKd.hasChanged(hashCode())
@@ -135,10 +138,11 @@ public class DriveToPose extends CommandBase {
 
   @Override
   public void end(boolean interrupted) {
+    running = false;
     drive.stop();
   }
 
   public boolean atGoal() {
-    return driveController.atGoal() && thetaController.atGoal();
+    return running && driveController.atGoal() && thetaController.atGoal();
   }
 }

@@ -20,9 +20,9 @@ import org.littletonrobotics.frc2023.subsystems.arm.Arm;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmPose;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
 import org.littletonrobotics.frc2023.subsystems.gripper.Gripper;
-import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.GamePiece;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.NodeLevel;
+import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.Objective;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
 import org.littletonrobotics.frc2023.util.GeomUtil;
 
@@ -43,62 +43,110 @@ public class AutoScore extends SequentialCommandGroup {
   public static final Translation2d highConeRelativePosition = new Translation2d(-0.25, 0.15);
   public static final Rotation2d highConeWristAngle = Rotation2d.fromDegrees(30.0);
 
-  private final Drive drive;
-  private final Arm arm;
-  private final ObjectiveTracker objectiveTracker;
+  private Supplier<Pose2d> driveTargetSupplier = null;
+  private Supplier<ArmPose> armTargetSupplier = null;
 
+  /** Auto score in full automatic mode with auto drive and auto arm. */
   public AutoScore(
       Drive drive,
       Arm arm,
       Gripper gripper,
-      ObjectiveTracker objectiveTracker,
-      Supplier<Boolean> autoAlignDisable,
-      Supplier<Boolean> autoPlaceDisable,
+      Objective objective,
       Supplier<Boolean> reachScoreDisable) {
-    this.drive = drive;
-    this.arm = arm;
-    this.objectiveTracker = objectiveTracker;
-
-    // Set up commands
-    Supplier<Pose2d> driveTargetSupplier = () -> getDriveTarget(!reachScoreDisable.get());
-    Supplier<ArmPose> armTargetSupplier =
-        () -> getArmTarget(getDriveTarget(!reachScoreDisable.get()));
+    initTargetSuppliers(drive::getPose, arm, objective, reachScoreDisable);
     var driveCommand = new DriveToPose(drive, driveTargetSupplier);
     var armCommand =
         arm.runPathCommand(armTargetSupplier)
             .andThen(Commands.run(() -> arm.runDirect(armTargetSupplier.get()), arm));
     addCommands(
-        Commands.waitUntil(() -> arm.isTrajectoryFinished() && driveCommand.atGoal())
+        Commands.waitUntil(() -> driveCommand.atGoal() && arm.isTrajectoryFinished())
             .deadlineWith(driveCommand, armCommand)
             .andThen(gripper.ejectCommand())
             .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
   }
 
-  /** Returns whether to score off of the front or back of the robot. */
-  private boolean shouldScoreFront() {
-    var currentPose = AllianceFlipUtil.apply(drive.getPose());
-    var nodeTranslation = GeomUtil.translation3dTo2dXY(getNodeTranslation());
-    var relativeRotation =
-        nodeTranslation
-            .minus(currentPose.getTranslation())
-            .getAngle()
-            .minus(currentPose.getRotation());
-    if (objectiveTracker.selectedLevel == NodeLevel.HYBRID
-        || objectiveTracker.gamePiece == GamePiece.CUBE) {
-      // Choose nearest side
-      return relativeRotation.getCos() > 0.0;
+  /** Auto score in semi-automatic mode with manual drive and auto arm. */
+  public AutoScore(
+      Supplier<Pose2d> poseSupplier,
+      Arm arm,
+      Gripper gripper,
+      Objective objective,
+      Supplier<Boolean> reachScoreDisable,
+      Supplier<Boolean> ejectButton) {
+    initTargetSuppliers(poseSupplier, arm, objective, reachScoreDisable);
+    var armCommand =
+        arm.runPathCommand(armTargetSupplier)
+            .andThen(Commands.run(() -> arm.runDirect(armTargetSupplier.get()), arm));
+    addCommands(
+        Commands.waitUntil(() -> arm.isTrajectoryFinished() && ejectButton.get())
+            .deadlineWith(armCommand)
+            .andThen(gripper.ejectCommand())
+            .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
+  }
 
-    } else {
-      // Choose the same side as the cone was grabbed
-      return objectiveTracker.lastIntakeFront;
-    }
+  /** Auto score in semi-automatic mode with auto drive and manual arm. */
+  public AutoScore(
+      Drive drive,
+      Arm arm,
+      Gripper gripper,
+      Objective objective,
+      Supplier<Boolean> reachScoreDisable,
+      Supplier<Boolean> ejectButton,
+      MoveArmWithJoysticks moveArmCommand) {
+    initTargetSuppliers(drive::getPose, arm, objective, reachScoreDisable);
+    var driveCommand = new DriveToPose(drive, driveTargetSupplier);
+    var armCommand = arm.runPathCommand(armTargetSupplier).andThen(moveArmCommand);
+    addCommands(
+        Commands.waitUntil(
+                () -> driveCommand.atGoal() && arm.isTrajectoryFinished() && ejectButton.get())
+            .deadlineWith(driveCommand, armCommand)
+            .andThen(gripper.ejectCommand())
+            .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
+  }
+
+  /** Auto score in manual mode with manual drive and manual arm. */
+  public AutoScore(
+      Supplier<Pose2d> poseSupplier,
+      Arm arm,
+      Gripper gripper,
+      Objective objective,
+      Supplier<Boolean> reachScoreDisable,
+      Supplier<Boolean> ejectButton,
+      MoveArmWithJoysticks moveArmCommand) {
+    initTargetSuppliers(poseSupplier, arm, objective, reachScoreDisable);
+    var armCommand = arm.runPathCommand(armTargetSupplier).andThen(moveArmCommand);
+    addCommands(
+        Commands.waitUntil(() -> arm.isTrajectoryFinished() && ejectButton.get())
+            .deadlineWith(armCommand)
+            .andThen(gripper.ejectCommand())
+            .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
+  }
+
+  /** Creates the drive and arm target suppliers (repeated in multiple constructors). */
+  private void initTargetSuppliers(
+      Supplier<Pose2d> poseSupplier,
+      Arm arm,
+      Objective objective,
+      Supplier<Boolean> reachScoreDisable) {
+    driveTargetSupplier =
+        () ->
+            AllianceFlipUtil.apply(
+                getDriveTarget(poseSupplier.get(), objective, arm, !reachScoreDisable.get()));
+    armTargetSupplier =
+        () ->
+            getArmTarget(
+                getDriveTarget(poseSupplier.get(), objective, arm, !reachScoreDisable.get()),
+                objective,
+                arm,
+                !reachScoreDisable.get());
   }
 
   /** Returns the best drive target for the selected node. */
-  private Pose2d getDriveTarget(boolean allowReach) {
-    var nodeTranslation = getNodeTranslation();
-    var currentPose = AllianceFlipUtil.apply(drive.getPose()); // Unflipped
-    var relativeArmPosition = getRelativeArmPosition();
+  private Pose2d getDriveTarget(
+      Pose2d unflippedPose, Objective objective, Arm arm, boolean allowReach) {
+    var pose = unflippedPose;
+    var nodeTranslation = getNodeTranslation(objective);
+    var relativeArmPosition = getRelativeArmPosition(objective);
 
     // Calculate drive distance
     double minDistance = minArmExtension - relativeArmPosition.getX();
@@ -107,7 +155,7 @@ public class AutoScore extends SequentialCommandGroup {
             - relativeArmPosition.getX();
     double distanceFromNode =
         MathUtil.clamp(
-            currentPose.getTranslation().getDistance(GeomUtil.translation3dTo2dXY(nodeTranslation)),
+            pose.getTranslation().getDistance(GeomUtil.translation3dTo2dXY(nodeTranslation)),
             minDistance,
             maxDistance);
 
@@ -117,15 +165,12 @@ public class AutoScore extends SequentialCommandGroup {
           new Pose2d(
               Math.max(minDriveX, nodeTranslation.getX() + minDistance),
               nodeTranslation.getY(),
-              Rotation2d.fromDegrees(shouldScoreFront() ? 180.0 : 0.0)));
+              Rotation2d.fromDegrees(shouldScoreFront(pose, objective) ? 180.0 : 0.0)));
     }
 
     // Calculate angle from node
     var angleFromNode =
-        currentPose
-            .getTranslation()
-            .minus(GeomUtil.translation3dTo2dXY(nodeTranslation))
-            .getAngle();
+        pose.getTranslation().minus(GeomUtil.translation3dTo2dXY(nodeTranslation)).getAngle();
     var maxAngleFromNode =
         new Rotation2d(Math.acos((minDriveX - nodeTranslation.getX()) / maxDistance));
     if (angleFromNode.getRadians() > maxAngleFromNode.getRadians()) {
@@ -153,49 +198,67 @@ public class AutoScore extends SequentialCommandGroup {
         GeomUtil.translation3dTo2dXY(nodeTranslation)
             .minus(driveTranslation)
             .getAngle()
-            .plus(Rotation2d.fromDegrees(shouldScoreFront() ? 0.0 : 180.0));
-    return AllianceFlipUtil.apply(new Pose2d(driveTranslation, driveRotation));
+            .plus(Rotation2d.fromDegrees(shouldScoreFront(pose, objective) ? 0.0 : 180.0));
+    return new Pose2d(driveTranslation, driveRotation);
   }
 
   /** Returns the best arm target for the selected node and drive position. */
-  private ArmPose getArmTarget(Pose2d drivePosition) {
-    var nodeTranslation = getNodeTranslation();
-    drivePosition = AllianceFlipUtil.apply(drivePosition); // Unflipped
+  private ArmPose getArmTarget(
+      Pose2d unflippedPose, Objective objective, Arm arm, boolean allowReach) {
+    var nodeTranslation = getNodeTranslation(objective);
 
     // Calculate pose
     var distanceToNode =
-        drivePosition.getTranslation().getDistance(GeomUtil.translation3dTo2dXY(nodeTranslation));
+        unflippedPose.getTranslation().getDistance(GeomUtil.translation3dTo2dXY(nodeTranslation));
     var armPose =
         new ArmPose(
             new Translation2d(distanceToNode, nodeTranslation.getZ())
-                .plus(getRelativeArmPosition()),
-            getWristAngle());
+                .plus(getRelativeArmPosition(objective)),
+            getWristAngle(objective));
 
     // Return pose with flip
-    return armPose.withFlip(!shouldScoreFront());
+    return armPose.withFlip(!shouldScoreFront(unflippedPose, objective));
+  }
+
+  /** Returns whether to score off of the front or back of the robot. */
+  public static boolean shouldScoreFront(Pose2d unflippedPose, Objective objective) {
+    var nodeTranslation = GeomUtil.translation3dTo2dXY(getNodeTranslation(objective));
+    var relativeRotation =
+        nodeTranslation
+            .minus(unflippedPose.getTranslation())
+            .getAngle()
+            .minus(unflippedPose.getRotation());
+    if (objective.nodeLevel == NodeLevel.HYBRID || objective.gamePiece == GamePiece.CUBE) {
+      // Choose nearest side
+      return relativeRotation.getCos() > 0.0;
+
+    } else {
+      // Choose the same side as the cone was grabbed
+      return objective.lastIntakeFront;
+    }
   }
 
   /** Returns the position of the target node. */
-  private Translation3d getNodeTranslation() {
-    switch (objectiveTracker.selectedLevel) {
+  public static Translation3d getNodeTranslation(Objective objective) {
+    switch (objective.nodeLevel) {
       case HYBRID:
-        return FieldConstants.Grids.complexLow3dTranslations[objectiveTracker.selectedRow];
+        return FieldConstants.Grids.complexLow3dTranslations[objective.nodeRow];
       case MID:
-        return FieldConstants.Grids.mid3dTranslations[objectiveTracker.selectedRow];
+        return FieldConstants.Grids.mid3dTranslations[objective.nodeRow];
       case HIGH:
-        return FieldConstants.Grids.high3dTranslations[objectiveTracker.selectedRow];
+        return FieldConstants.Grids.high3dTranslations[objective.nodeRow];
       default:
         return new Translation3d();
     }
   }
 
   /** Returns the relative arm position for the selected node. */
-  private Translation2d getRelativeArmPosition() {
-    switch (objectiveTracker.selectedLevel) {
+  public static Translation2d getRelativeArmPosition(Objective objective) {
+    switch (objective.nodeLevel) {
       case HYBRID:
         return hybridRelativePosition;
       case MID:
-        switch (objectiveTracker.gamePiece) {
+        switch (objective.gamePiece) {
           case CUBE:
             return midCubeRelativePosition;
           case CONE:
@@ -203,7 +266,7 @@ public class AutoScore extends SequentialCommandGroup {
         }
         break;
       case HIGH:
-        switch (objectiveTracker.gamePiece) {
+        switch (objective.gamePiece) {
           case CUBE:
             return highCubeRelativePosition;
           case CONE:
@@ -215,12 +278,12 @@ public class AutoScore extends SequentialCommandGroup {
   }
 
   /** Returns the wrist angle for the selected node. */
-  private Rotation2d getWristAngle() {
-    switch (objectiveTracker.selectedLevel) {
+  public static Rotation2d getWristAngle(Objective objective) {
+    switch (objective.nodeLevel) {
       case HYBRID:
         return hybridWristAngle;
       case MID:
-        switch (objectiveTracker.gamePiece) {
+        switch (objective.gamePiece) {
           case CUBE:
             return midCubeWristAngle;
           case CONE:
@@ -228,7 +291,7 @@ public class AutoScore extends SequentialCommandGroup {
         }
         break;
       case HIGH:
-        switch (objectiveTracker.gamePiece) {
+        switch (objective.gamePiece) {
           case CUBE:
             return highCubeWristAngle;
           case CONE:

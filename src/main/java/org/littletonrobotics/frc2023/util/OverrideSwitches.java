@@ -62,7 +62,7 @@ public class OverrideSwitches {
 
   /** Returns a trigger for an operator-side switch (0-4 from left to right). */
   public Trigger operatorSwitch(int index) {
-    return new Trigger(() -> getDriverSwitch(index));
+    return new Trigger(() -> getOperatorSwitch(index));
   }
 
   /** Returns a trigger for when the multi-directional switch is pushed to the left. */

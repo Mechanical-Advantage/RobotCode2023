@@ -14,12 +14,12 @@ import org.littletonrobotics.frc2023.subsystems.arm.Arm;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmPose;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
 import org.littletonrobotics.frc2023.subsystems.gripper.Gripper;
-import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker;
+import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.Objective;
 
 public class IntakeSubstation extends SequentialCommandGroup {
   /** Holds the arm at the position for the a substation and runs the gripper. */
   public IntakeSubstation(
-      boolean single, Arm arm, Drive drive, Gripper gripper, ObjectiveTracker objectiveTracker) {
+      boolean single, Arm arm, Drive drive, Gripper gripper, Objective objective) {
     var armCommand =
         new HoldFlippableArmPreset(
             arm,
@@ -31,6 +31,6 @@ public class IntakeSubstation extends SequentialCommandGroup {
     addCommands(
         armCommand.alongWith(
             gripper.intakeCommand(),
-            Commands.run(() -> objectiveTracker.lastIntakeFront = !armCommand.isFlipped())));
+            Commands.run(() -> objective.lastIntakeFront = !armCommand.isFlipped())));
   }
 }

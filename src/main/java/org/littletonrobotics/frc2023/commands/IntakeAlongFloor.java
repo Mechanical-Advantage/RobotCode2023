@@ -18,7 +18,7 @@ import java.util.function.Supplier;
 import org.littletonrobotics.frc2023.subsystems.arm.Arm;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmPose;
 import org.littletonrobotics.frc2023.subsystems.gripper.Gripper;
-import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker;
+import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.Objective;
 
 public class IntakeAlongFloor extends SequentialCommandGroup {
   public static final double height = 0.15;
@@ -34,7 +34,7 @@ public class IntakeAlongFloor extends SequentialCommandGroup {
       boolean isFront,
       Arm arm,
       Gripper gripper,
-      ObjectiveTracker objectiveTracker,
+      Objective objective,
       Supplier<Double> axisSupplier) {
 
     var limiter = new SlewRateLimiter(1.0);
@@ -69,6 +69,6 @@ public class IntakeAlongFloor extends SequentialCommandGroup {
             .andThen(
                 armCommand.alongWith(
                     gripper.intakeCommand(),
-                    Commands.run(() -> objectiveTracker.lastIntakeFront = true))));
+                    Commands.run(() -> objective.lastIntakeFront = true))));
   }
 }

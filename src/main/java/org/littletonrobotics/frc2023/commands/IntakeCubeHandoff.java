@@ -13,19 +13,18 @@ import org.littletonrobotics.frc2023.subsystems.arm.Arm;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmPose;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntake;
 import org.littletonrobotics.frc2023.subsystems.gripper.Gripper;
-import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker;
+import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.Objective;
 
 public class IntakeCubeHandoff extends SequentialCommandGroup {
   /** Runs the cube intake with the gripper to hand off immediately. */
-  public IntakeCubeHandoff(
-      CubeIntake intake, Arm arm, Gripper gripper, ObjectiveTracker objectiveTracker) {
+  public IntakeCubeHandoff(CubeIntake intake, Arm arm, Gripper gripper, Objective objective) {
     addCommands(
         intake
             .runCommand()
             .deadlineWith(
                 arm.runPathCommand(ArmPose.Preset.CUBE_HANDOFF),
                 gripper.intakeCommand(),
-                Commands.run(() -> objectiveTracker.lastIntakeFront = true))
+                Commands.run(() -> objective.lastIntakeFront = true))
             .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
   }
 }

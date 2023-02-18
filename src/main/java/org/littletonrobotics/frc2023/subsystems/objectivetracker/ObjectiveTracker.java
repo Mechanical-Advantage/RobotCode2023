@@ -21,12 +21,30 @@ public class ObjectiveTracker extends SubsystemBase {
   private final NodeSelectorIO selectorIO;
   private final NodeSelectorIOInputsAutoLogged selectorInputs =
       new NodeSelectorIOInputsAutoLogged();
+  public final Objective objective = new Objective();
 
-  public GamePiece gamePiece = GamePiece.CUBE; // The selected game piece for intaking and scoring
-  public boolean lastIntakeFront =
-      true; // Whether the last game piece was grabbed from the front or back of the robot
-  public int selectedRow = 0; // The row of the selected target node
-  public NodeLevel selectedLevel = NodeLevel.HYBRID; // The level of the selected target node
+  public static class Objective {
+    public int nodeRow; // The row of the selected target node
+    public NodeLevel nodeLevel; // The level of the selected target node
+    public GamePiece gamePiece; // The selected game piece for intaking and scoring
+    public boolean
+        lastIntakeFront; // Whether the last game piece was grabbed from the front of the robot
+
+    public Objective(
+        int nodeRow, NodeLevel nodeLevel, GamePiece gamePiece, boolean lastIntakeFront) {
+      this.nodeRow = nodeRow;
+      this.nodeLevel = nodeLevel;
+      this.gamePiece = gamePiece;
+      this.lastIntakeFront = lastIntakeFront;
+    }
+
+    public Objective() {
+      this.nodeRow = 0;
+      this.nodeLevel = NodeLevel.HYBRID;
+      this.gamePiece = GamePiece.CUBE;
+      lastIntakeFront = true;
+    }
+  }
 
   public ObjectiveTracker(NodeSelectorIO selectorIO) {
     this.selectorIO = selectorIO;
@@ -38,21 +56,21 @@ public class ObjectiveTracker extends SubsystemBase {
     Logger.getInstance().processInputs("NodeSelector", selectorInputs);
 
     // Send selected game piece
-    SmartDashboard.putBoolean("Cube Selected", gamePiece == GamePiece.CUBE);
+    SmartDashboard.putBoolean("Cube Selected", objective.gamePiece == GamePiece.CUBE);
 
     // Read updates from node selector
     if (selectorInputs.selected != -1) {
       if (DriverStation.getAlliance() == Alliance.Blue) {
-        selectedRow = 8 - ((int) selectorInputs.selected % 9);
+        objective.nodeRow = 8 - ((int) selectorInputs.selected % 9);
       } else {
-        selectedRow = (int) selectorInputs.selected % 9;
+        objective.nodeRow = (int) selectorInputs.selected % 9;
       }
       if (selectorInputs.selected < 9) {
-        selectedLevel = NodeLevel.HYBRID;
+        objective.nodeLevel = NodeLevel.HYBRID;
       } else if (selectorInputs.selected < 18) {
-        selectedLevel = NodeLevel.MID;
+        objective.nodeLevel = NodeLevel.MID;
       } else {
-        selectedLevel = NodeLevel.HIGH;
+        objective.nodeLevel = NodeLevel.HIGH;
       }
       selectorInputs.selected = -1;
     }
@@ -61,11 +79,11 @@ public class ObjectiveTracker extends SubsystemBase {
     {
       int selected;
       if (DriverStation.getAlliance() == Alliance.Blue) {
-        selected = 8 - selectedRow;
+        selected = 8 - objective.nodeRow;
       } else {
-        selected = selectedRow;
+        selected = objective.nodeRow;
       }
-      switch (selectedLevel) {
+      switch (objective.nodeLevel) {
         case HYBRID -> selected += 0;
         case MID -> selected += 9;
         case HIGH -> selected += 18;
@@ -76,38 +94,39 @@ public class ObjectiveTracker extends SubsystemBase {
     // Send current node as text
     {
       String text = "";
-      switch (selectedLevel) {
+      switch (objective.nodeLevel) {
         case HYBRID -> text += "HYBRID";
         case MID -> text += "MID";
         case HIGH -> text += "HIGH";
       }
       text += ", ";
-      if (selectedRow < 3) {
+      if (objective.nodeRow < 3) {
         text += DriverStation.getAlliance() == Alliance.Red ? "LEFT" : "RIGHT";
-      } else if (selectedRow < 6) {
+      } else if (objective.nodeRow < 6) {
         text += "CO-OP";
       } else {
         text += DriverStation.getAlliance() == Alliance.Red ? "RIGHT" : "LEFT";
       }
       text += " grid, ";
-      if (selectedRow == 1 || selectedRow == 4 || selectedRow == 7) {
-        text += selectedLevel == NodeLevel.HYBRID ? "CENTER" : "CUBE";
-      } else if (selectedRow == 0 || selectedRow == 3 || selectedRow == 6) {
+      if (objective.nodeRow == 1 || objective.nodeRow == 4 || objective.nodeRow == 7) {
+        text += objective.nodeLevel == NodeLevel.HYBRID ? "CENTER" : "CUBE";
+      } else if (objective.nodeRow == 0 || objective.nodeRow == 3 || objective.nodeRow == 6) {
         text += DriverStation.getAlliance() == Alliance.Red ? "LEFT" : "RIGHT";
-        text += selectedLevel == NodeLevel.HYBRID ? "" : " CONE";
+        text += objective.nodeLevel == NodeLevel.HYBRID ? "" : " CONE";
       } else {
         text += DriverStation.getAlliance() == Alliance.Red ? "RIGHT" : "LEFT";
-        text += selectedLevel == NodeLevel.HYBRID ? "" : " CONE";
+        text += objective.nodeLevel == NodeLevel.HYBRID ? "" : " CONE";
       }
       text += " node";
       SmartDashboard.putString("Selected Node", text);
     }
 
     // Log state
-    Logger.getInstance().recordOutput("ObjectiveTracker/GamePiece", gamePiece.toString());
-    Logger.getInstance().recordOutput("ObjectiveTracker/LastIntakeFront", lastIntakeFront);
-    Logger.getInstance().recordOutput("ObjectiveTracker/SelectedRow", selectedRow);
-    Logger.getInstance().recordOutput("ObjectiveTracker/SelectedLevel", selectedLevel.toString());
+    Logger.getInstance().recordOutput("ObjectiveTracker/NodeRow", objective.nodeRow);
+    Logger.getInstance().recordOutput("ObjectiveTracker/NodeLevel", objective.nodeLevel.toString());
+    Logger.getInstance().recordOutput("ObjectiveTracker/GamePiece", objective.gamePiece.toString());
+    Logger.getInstance()
+        .recordOutput("ObjectiveTracker/LastIntakeFront", objective.lastIntakeFront);
   }
 
   /** Shifts the selected node in the selector by one position. */
@@ -115,40 +134,40 @@ public class ObjectiveTracker extends SubsystemBase {
     switch (direction) {
       case LEFT:
         if (DriverStation.getAlliance() == Alliance.Blue) {
-          if (selectedRow < 8) {
-            selectedRow += 1;
+          if (objective.nodeRow < 8) {
+            objective.nodeRow += 1;
           }
         } else {
-          if (selectedRow > 0) {
-            selectedRow -= 1;
+          if (objective.nodeRow > 0) {
+            objective.nodeRow -= 1;
           }
         }
         break;
 
       case RIGHT:
         if (DriverStation.getAlliance() == Alliance.Blue) {
-          if (selectedRow > 0) {
-            selectedRow -= 1;
+          if (objective.nodeRow > 0) {
+            objective.nodeRow -= 1;
           }
         } else {
-          if (selectedRow < 8) {
-            selectedRow += 1;
+          if (objective.nodeRow < 8) {
+            objective.nodeRow += 1;
           }
         }
         break;
 
       case UP:
-        switch (selectedLevel) {
+        switch (objective.nodeLevel) {
           case HYBRID -> {}
-          case MID -> selectedLevel = NodeLevel.HYBRID;
-          case HIGH -> selectedLevel = NodeLevel.MID;
+          case MID -> objective.nodeLevel = NodeLevel.HYBRID;
+          case HIGH -> objective.nodeLevel = NodeLevel.MID;
         }
         break;
 
       case DOWN:
-        switch (selectedLevel) {
-          case HYBRID -> selectedLevel = NodeLevel.MID;
-          case MID -> selectedLevel = NodeLevel.HIGH;
+        switch (objective.nodeLevel) {
+          case HYBRID -> objective.nodeLevel = NodeLevel.MID;
+          case MID -> objective.nodeLevel = NodeLevel.HIGH;
           case HIGH -> {}
         }
         break;
