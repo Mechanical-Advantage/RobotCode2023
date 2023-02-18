@@ -317,12 +317,7 @@ public class Arm extends SubsystemBase {
         io.setShoulderVoltage(0.0);
         io.setElbowVoltage(0.0);
       }
-      if (currentTrajectory == null) {
-        wristEffectiveArmPose =
-            setpointPose; // Move wrist based on current setpoint (no trajectory in queue)
-      } else {
-        wristEffectiveArmPose = queuedPose; // Move wrist based on queued trajectory
-      }
+      wristEffectiveArmPose = setpointPose;
     }
 
     // Run wrist

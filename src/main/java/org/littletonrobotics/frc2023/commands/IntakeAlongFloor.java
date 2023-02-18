@@ -37,7 +37,7 @@ public class IntakeAlongFloor extends SequentialCommandGroup {
       Objective objective,
       Supplier<Double> axisSupplier) {
 
-    var limiter = new SlewRateLimiter(1.0);
+    var limiter = new SlewRateLimiter(2.0);
     Supplier<Double> xSupplier =
         () ->
             MathUtil.interpolate(
