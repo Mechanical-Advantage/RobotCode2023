@@ -50,6 +50,7 @@ public class DriveToPose extends CommandBase {
 
   static {
     switch (Constants.getRobot()) {
+      case ROBOT_2023C:
       case ROBOT_2023P:
       case ROBOT_SIMBOT:
         driveKp.initDefault(2.5);

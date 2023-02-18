@@ -61,8 +61,12 @@ public class Drive extends SubsystemBase {
 
   static {
     switch (Constants.getRobot()) {
-      case ROBOT_2023P:
+      case ROBOT_2023C:
       case ROBOT_SIMBOT:
+        maxLinearSpeed.initDefault(Units.feetToMeters(14.5));
+        trackWidthX.initDefault(Units.inchesToMeters(19.75));
+        trackWidthY.initDefault(Units.inchesToMeters(19.75));
+      case ROBOT_2023P:
         maxLinearSpeed.initDefault(Units.feetToMeters(14.5));
         trackWidthX.initDefault(Units.inchesToMeters(25.0));
         trackWidthY.initDefault(Units.inchesToMeters(24.0));

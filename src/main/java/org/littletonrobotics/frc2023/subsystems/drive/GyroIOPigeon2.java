@@ -20,6 +20,7 @@ public class GyroIOPigeon2 implements GyroIO {
 
   public GyroIOPigeon2() {
     switch (Constants.getRobot()) {
+      case ROBOT_2023C:
       case ROBOT_2023P:
         pigeon = new Pigeon2(0);
         break;
