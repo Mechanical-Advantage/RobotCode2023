@@ -130,12 +130,20 @@ public class AutoScore extends SequentialCommandGroup {
       Supplier<Boolean> reachScoreDisable) {
     driveTargetSupplier =
         () ->
-            AllianceFlipUtil.apply(
-                getDriveTarget(poseSupplier.get(), objective, arm, !reachScoreDisable.get()));
+            AllianceFlipUtil.apply( // Flip
+                getDriveTarget(
+                    AllianceFlipUtil.apply(poseSupplier.get()), // Unflip
+                    objective,
+                    arm,
+                    !reachScoreDisable.get()));
     armTargetSupplier =
         () ->
             getArmTarget(
-                getDriveTarget(poseSupplier.get(), objective, arm, !reachScoreDisable.get()),
+                getDriveTarget(
+                    AllianceFlipUtil.apply(poseSupplier.get()), // Unflip
+                    objective,
+                    arm,
+                    !reachScoreDisable.get()),
                 objective,
                 arm,
                 !reachScoreDisable.get());
