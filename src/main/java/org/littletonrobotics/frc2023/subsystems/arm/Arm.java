@@ -297,7 +297,10 @@ public class Arm extends SubsystemBase {
       setpointPose = // If trajectory is interrupted, go to last setpoint
           new ArmPose(
               kinematics.forward(new Vector<>(state.extractColumnVector(0))),
-              queuedPose.globalWristAngle());
+              new Rotation2d(
+                  new Vector<>(state.extractColumnVector(0)).elementSum()
+                      + wristAngle) // Hold current wrist angle
+              );
       wristEffectiveArmPose = queuedPose; // Move wrist based on trajectory endpoint
       shoulderAngleSetpoint = state.get(0, 0);
       elbowAngleSetpoint = state.get(1, 0);
