@@ -75,7 +75,7 @@ public class TestAuto extends SequentialCommandGroup {
             Rotation2d.fromDegrees(180.0));
 
     addCommands(
-        Commands.runOnce(() -> drive.setPose(scorePosition0)),
+        Commands.runOnce(() -> drive.setPose(AllianceFlipUtil.apply(scorePosition0))),
         arm.runPathCommand(AutoScore.getArmTarget(scorePosition0, objective0, arm, false)),
         gripper.ejectCommand(),
         new DriveTrajectory(
