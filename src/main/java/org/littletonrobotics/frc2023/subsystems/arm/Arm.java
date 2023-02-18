@@ -538,7 +538,8 @@ public class Arm extends SubsystemBase {
               .getParameters()
               .finalJointPositions()
               .minus(closestTrajectory.getParameters().finalJointPositions());
-      if (forcePregeneratedSupplier.get()
+      if (DriverStation.isAutonomous()
+          || forcePregeneratedSupplier.get()
           || (Math.abs(initialDiff.get(0, 0)) <= trajectoryCacheMarginRadians
               && Math.abs(initialDiff.get(1, 0)) <= trajectoryCacheMarginRadians
               && Math.abs(finalDiff.get(0, 0)) <= trajectoryCacheMarginRadians
@@ -548,6 +549,11 @@ public class Arm extends SubsystemBase {
         queuedPose = pose;
         return;
       }
+    }
+
+    // Prevent generating new trajectories
+    if (DriverStation.isAutonomous() || forcePregeneratedSupplier.get()) {
+      return;
     }
 
     // Start new trajectory
