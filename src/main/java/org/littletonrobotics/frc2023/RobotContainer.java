@@ -15,12 +15,10 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import java.util.List;
 import java.util.function.Supplier;
 import org.littletonrobotics.frc2023.Constants.Mode;
 import org.littletonrobotics.frc2023.commands.AutoScore;
 import org.littletonrobotics.frc2023.commands.DriveToSubstation;
-import org.littletonrobotics.frc2023.commands.DriveTrajectory;
 import org.littletonrobotics.frc2023.commands.DriveWithJoysticks;
 import org.littletonrobotics.frc2023.commands.EjectHeld;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization;
@@ -30,6 +28,7 @@ import org.littletonrobotics.frc2023.commands.IntakeConeHandoff;
 import org.littletonrobotics.frc2023.commands.IntakeCubeHandoff;
 import org.littletonrobotics.frc2023.commands.IntakeSubstation;
 import org.littletonrobotics.frc2023.commands.MoveArmWithJoysticks;
+import org.littletonrobotics.frc2023.commands.TestAuto;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVision;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIO;
 import org.littletonrobotics.frc2023.subsystems.arm.Arm;
@@ -62,7 +61,6 @@ import org.littletonrobotics.frc2023.util.Alert.AlertType;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
 import org.littletonrobotics.frc2023.util.OverrideSwitches;
 import org.littletonrobotics.frc2023.util.SparkMaxBurnManager;
-import org.littletonrobotics.frc2023.util.trajectory.Waypoint;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 public class RobotContainer {
@@ -196,17 +194,7 @@ public class RobotContainer {
             new FeedForwardCharacterizationData("drive"),
             drive::runCharacterizationVolts,
             drive::getCharacterizationVelocity));
-
-    autoChooser.addOption(
-        "Test Trajectory",
-        new InstantCommand(() -> drive.setPose(new Pose2d()))
-            .andThen(
-                new DriveTrajectory(
-                    drive,
-                    List.of(
-                        Waypoint.fromHolonomicPose(new Pose2d()),
-                        Waypoint.fromHolonomicPose(
-                            new Pose2d(3.0, 0.0, Rotation2d.fromDegrees(45.0)))))));
+    autoChooser.addOption("Test Auto", new TestAuto(drive, arm, gripper));
 
     // Alert if in tuning mode
     if (Constants.tuningMode) {

@@ -142,7 +142,7 @@ public class AutoScore extends SequentialCommandGroup {
   }
 
   /** Returns the best drive target for the selected node. */
-  private Pose2d getDriveTarget(
+  public static Pose2d getDriveTarget(
       Pose2d unflippedPose, Objective objective, Arm arm, boolean allowReach) {
     var pose = unflippedPose;
     var nodeTranslation = getNodeTranslation(objective);
@@ -161,11 +161,10 @@ public class AutoScore extends SequentialCommandGroup {
 
     // If reach not allowed, return target at minimum distance
     if (!allowReach) {
-      return AllianceFlipUtil.apply(
-          new Pose2d(
-              Math.max(minDriveX, nodeTranslation.getX() + minDistance),
-              nodeTranslation.getY(),
-              Rotation2d.fromDegrees(shouldScoreFront(pose, objective) ? 180.0 : 0.0)));
+      return new Pose2d(
+          Math.max(minDriveX, nodeTranslation.getX() + minDistance),
+          nodeTranslation.getY(),
+          Rotation2d.fromDegrees(shouldScoreFront(pose, objective) ? 180.0 : 0.0));
     }
 
     // Calculate angle from node
@@ -203,7 +202,7 @@ public class AutoScore extends SequentialCommandGroup {
   }
 
   /** Returns the best arm target for the selected node and drive position. */
-  private ArmPose getArmTarget(
+  public static ArmPose getArmTarget(
       Pose2d unflippedPose, Objective objective, Arm arm, boolean allowReach) {
     var nodeTranslation = getNodeTranslation(objective);
 
