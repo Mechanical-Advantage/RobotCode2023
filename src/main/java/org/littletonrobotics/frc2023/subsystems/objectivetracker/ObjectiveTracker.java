@@ -13,11 +13,11 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
+import org.littletonrobotics.frc2023.util.VirtualSubsystem;
 import org.littletonrobotics.junction.Logger;
 
-public class ObjectiveTracker extends SubsystemBase {
+public class ObjectiveTracker extends VirtualSubsystem {
   private final NodeSelectorIO selectorIO;
   private final NodeSelectorIOInputsAutoLogged selectorInputs =
       new NodeSelectorIOInputsAutoLogged();

@@ -16,7 +16,6 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,9 +28,10 @@ import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIO.
 import org.littletonrobotics.frc2023.util.GeomUtil;
 import org.littletonrobotics.frc2023.util.PolynomialRegression;
 import org.littletonrobotics.frc2023.util.PoseEstimator.TimestampedVisionUpdate;
+import org.littletonrobotics.frc2023.util.VirtualSubsystem;
 import org.littletonrobotics.junction.Logger;
 
-public class AprilTagVision extends SubsystemBase {
+public class AprilTagVision extends VirtualSubsystem {
   private static final double ambiguityThreshold = 0.15;
   private static final double targetLogTimeSecs = 0.1;
   private static final Pose3d[] cameraPoses;
