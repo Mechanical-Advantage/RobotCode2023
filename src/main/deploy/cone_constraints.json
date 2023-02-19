@@ -1,0 +1,20 @@
+{
+  "robotBody": {
+    "type": "rectangle",
+    "args": [
+      -0.6,
+      -1,
+      0.7,
+      0.45
+    ]
+  },
+  "coneIntake": {
+    "type": "rectangle",
+    "args": [
+      -0.6,
+      -1,
+      -0.25,
+      0.55
+    ]
+  }
+}

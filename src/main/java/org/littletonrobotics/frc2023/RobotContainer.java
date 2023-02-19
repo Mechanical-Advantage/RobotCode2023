@@ -25,7 +25,6 @@ import org.littletonrobotics.frc2023.commands.EjectHeld;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
 import org.littletonrobotics.frc2023.commands.IntakeAlongFloor;
-import org.littletonrobotics.frc2023.commands.IntakeConeHandoff;
 import org.littletonrobotics.frc2023.commands.IntakeCubeHandoff;
 import org.littletonrobotics.frc2023.commands.IntakeSubstation;
 import org.littletonrobotics.frc2023.commands.MoveArmWithJoysticks;
@@ -40,7 +39,6 @@ import org.littletonrobotics.frc2023.subsystems.arm.ArmSolverIO;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmSolverIOKairos;
 import org.littletonrobotics.frc2023.subsystems.coneintake.ConeIntake;
 import org.littletonrobotics.frc2023.subsystems.coneintake.ConeIntakeIO;
-import org.littletonrobotics.frc2023.subsystems.coneintake.ConeIntakeIOSim;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntake;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntakeIO;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntakeIOSim;
@@ -132,7 +130,6 @@ public class RobotContainer {
                   new ModuleIOSim());
           arm = new Arm(new ArmIOSim(), new ArmSolverIOKairos(1));
           cubeIntake = new CubeIntake(new CubeIntakeIOSim());
-          coneIntake = new ConeIntake(new ConeIntakeIOSim());
           objectiveTracker = new ObjectiveTracker(new NodeSelectorIOServer());
           break;
       }
@@ -320,13 +317,14 @@ public class RobotContainer {
         .whileTrue(new IntakeSubstation(false, arm, drive, gripper, objectiveTracker.objective));
     operator
         .b()
-        .and(() -> objectiveTracker.objective.gamePiece == GamePiece.CUBE)
+        // .and(() -> objectiveTracker.objective.gamePiece == GamePiece.CUBE)
         .whileTrue(new IntakeCubeHandoff(cubeIntake, arm, gripper, objectiveTracker.objective));
-    var coneIntakeTrigger =
-        operator.b().and(() -> objectiveTracker.objective.gamePiece == GamePiece.CONE);
-    coneIntakeTrigger.onTrue(
-        new IntakeConeHandoff(
-            coneIntake, arm, gripper, objectiveTracker.objective, coneIntakeTrigger::getAsBoolean));
+    // var coneIntakeTrigger =
+    //     operator.b().and(() -> objectiveTracker.objective.gamePiece == GamePiece.CONE);
+    // coneIntakeTrigger.onTrue(
+    //     new IntakeConeHandoff(
+    //         coneIntake, arm, gripper, objectiveTracker.objective,
+    // coneIntakeTrigger::getAsBoolean));
     operator
         .rightTrigger(0.0)
         .and(floorEjectOverride.negate())

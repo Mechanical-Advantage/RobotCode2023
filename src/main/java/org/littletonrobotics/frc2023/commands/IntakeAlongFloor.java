@@ -24,7 +24,7 @@ public class IntakeAlongFloor extends SequentialCommandGroup {
   public static final double height = 0.15;
   public static final double frontMinX = 0.75;
   public static final double frontMaxX = 1.3;
-  public static final double backMinX = -0.65;
+  public static final double backMinX = -0.45;
   public static final double backMaxX = -1.3;
 
   /**
