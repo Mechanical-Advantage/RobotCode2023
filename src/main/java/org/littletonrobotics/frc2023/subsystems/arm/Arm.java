@@ -51,6 +51,8 @@ public class Arm extends SubsystemBase {
   public static final double emergencyDisableMaxError = Units.degreesToRadians(10.0);
   public static final double emergencyDisableMaxErrorTime = 0.5;
   public static final double emergencyDisableBeyondLimitThreshold = Units.degreesToRadians(5.0);
+  public static final double maxVoltageNoTrajectory =
+      6.0; // Limit shoulder & elbow voltage when not following trajectory
 
   private final ArmIO io;
   private final ArmSolverIO solverIo;
@@ -321,9 +323,16 @@ public class Arm extends SubsystemBase {
       if (angles.isPresent()) {
         var voltages = dynamics.feedforward(angles.get());
         io.setShoulderVoltage(
-            voltages.get(0, 0) + shoulderFeedback.calculate(shoulderAngle, angles.get().get(0, 0)));
+            MathUtil.clamp(
+                voltages.get(0, 0)
+                    + shoulderFeedback.calculate(shoulderAngle, angles.get().get(0, 0)),
+                -maxVoltageNoTrajectory,
+                maxVoltageNoTrajectory));
         io.setElbowVoltage(
-            voltages.get(1, 0) + elbowFeedback.calculate(elbowAngle, angles.get().get(1, 0)));
+            MathUtil.clamp(
+                voltages.get(1, 0) + elbowFeedback.calculate(elbowAngle, angles.get().get(1, 0)),
+                -maxVoltageNoTrajectory,
+                maxVoltageNoTrajectory));
         shoulderAngleSetpoint = angles.get().get(0, 0);
         elbowAngleSetpoint = angles.get().get(1, 0);
       } else {
