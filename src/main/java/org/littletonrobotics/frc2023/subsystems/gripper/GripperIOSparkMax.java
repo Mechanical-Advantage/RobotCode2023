@@ -20,7 +20,7 @@ public class GripperIOSparkMax implements GripperIO {
   public GripperIOSparkMax() {
     switch (Constants.getRobot()) {
       case ROBOT_2023C:
-        motor = new CANSparkMax(4, MotorType.kBrushed);
+        motor = new CANSparkMax(13, MotorType.kBrushed);
         invert = false;
         break;
       default:

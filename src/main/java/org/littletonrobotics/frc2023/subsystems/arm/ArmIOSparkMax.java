@@ -48,8 +48,8 @@ public class ArmIOSparkMax implements ArmIO {
 
   public ArmIOSparkMax() {
     // Shoulder config
-    shoulderSparkMax = new CANSparkMax(15, MotorType.kBrushless);
-    shoulderSparkMaxFollower = new CANSparkMax(16, MotorType.kBrushless);
+    shoulderSparkMax = new CANSparkMax(4, MotorType.kBrushless);
+    shoulderSparkMaxFollower = new CANSparkMax(5, MotorType.kBrushless);
     shoulderAbsoluteEncoder = new PWM(0, false);
     shoulderRelativeEncoder = new Encoder(0, 1, false);
     isShoulderMotorInverted = false;
@@ -58,7 +58,7 @@ public class ArmIOSparkMax implements ArmIO {
     shoulderRelativeEncoder.setDistancePerPulse((2 * Math.PI) / 8192);
 
     // Elbow config
-    elbowSparkMax = new CANSparkMax(17, MotorType.kBrushless);
+    elbowSparkMax = new CANSparkMax(15, MotorType.kBrushless);
     elbowAbsoluteEncoder = new PWM(0, false);
     elbowRelativeEncoder = new Encoder(0, 1, false);
     isElbowMotorInverted = false;
@@ -67,7 +67,7 @@ public class ArmIOSparkMax implements ArmIO {
     elbowRelativeEncoder.setDistancePerPulse((2 * Math.PI) / 8192);
 
     // Wrist config
-    wristSparkMax = new CANSparkMax(18, MotorType.kBrushless);
+    wristSparkMax = new CANSparkMax(14, MotorType.kBrushless);
     wristAbsoluteEncoder = new PWM(0, false);
     wristRelativeEncoder = new Encoder(0, 1, false);
     isWristMotorInverted = false;
