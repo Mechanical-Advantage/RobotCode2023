@@ -51,7 +51,13 @@
     "floor": {
       "type": "minY",
       "args": [
-        0.2
+        0.0
+      ]
+    },
+    "floorRaised": {
+      "type": "minY",
+      "args": [
+        0.35
       ]
     },
     "robotBody": {
