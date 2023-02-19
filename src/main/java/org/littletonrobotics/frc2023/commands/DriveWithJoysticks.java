@@ -12,22 +12,29 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import java.util.function.Supplier;
+import org.littletonrobotics.frc2023.Constants;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
 import org.littletonrobotics.frc2023.util.GeomUtil;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 public class DriveWithJoysticks extends CommandBase {
   public static final double deadband = 0.1;
+  public static final double minExtensionMaxLinearAcceleration = Units.inchesToMeters(900.0);
+  public static final double fullExtensionMaxLinearAcceleration = Units.inchesToMeters(200.0);
+  public static final double fullExtensionMaxAngularVelocity = Units.degreesToRadians(45.0);
 
   private final Drive drive;
   private final Supplier<Double> leftXSupplier;
   private final Supplier<Double> leftYSupplier;
   private final Supplier<Double> rightYSupplier;
   private final Supplier<Boolean> robotRelativeOverride;
+  private final Supplier<Double> armExtensionPercentSupplier;
+  private ChassisSpeeds lastSpeeds = new ChassisSpeeds();
 
   private static final LoggedDashboardChooser<Double> linearSpeedLimitChooser =
       new LoggedDashboardChooser<>("Linear Speed Limit");
@@ -51,13 +58,20 @@ public class DriveWithJoysticks extends CommandBase {
       Supplier<Double> leftXSupplier,
       Supplier<Double> leftYSupplier,
       Supplier<Double> rightYSupplier,
-      Supplier<Boolean> robotRelativeOverride) {
+      Supplier<Boolean> robotRelativeOverride,
+      Supplier<Double> armExtensionPercentSupplier) {
     addRequirements(drive);
     this.drive = drive;
     this.leftXSupplier = leftXSupplier;
     this.leftYSupplier = leftYSupplier;
     this.rightYSupplier = rightYSupplier;
     this.robotRelativeOverride = robotRelativeOverride;
+    this.armExtensionPercentSupplier = armExtensionPercentSupplier;
+  }
+
+  @Override
+  public void initialize() {
+    lastSpeeds = new ChassisSpeeds();
   }
 
   @Override
@@ -109,6 +123,30 @@ public class DriveWithJoysticks extends CommandBase {
               speeds.omegaRadiansPerSecond,
               driveRotation);
     }
+
+    // Apply acceleration and velocity limits based on arm extension
+    double maxLinearAcceleration =
+        MathUtil.interpolate(
+            minExtensionMaxLinearAcceleration,
+            fullExtensionMaxLinearAcceleration,
+            armExtensionPercentSupplier.get());
+    double maxAngularVelocity =
+        MathUtil.interpolate(
+            fullExtensionMaxAngularVelocity,
+            drive.getMaxAngularSpeedRadPerSec(),
+            armExtensionPercentSupplier.get());
+    speeds =
+        new ChassisSpeeds(
+            MathUtil.clamp(
+                speeds.vxMetersPerSecond,
+                lastSpeeds.vxMetersPerSecond - maxLinearAcceleration * Constants.loopPeriodSecs,
+                lastSpeeds.vxMetersPerSecond + maxLinearAcceleration * Constants.loopPeriodSecs),
+            MathUtil.clamp(
+                speeds.vyMetersPerSecond,
+                lastSpeeds.vyMetersPerSecond - maxLinearAcceleration * Constants.loopPeriodSecs,
+                lastSpeeds.vyMetersPerSecond + maxLinearAcceleration * Constants.loopPeriodSecs),
+            MathUtil.clamp(speeds.omegaRadiansPerSecond, -maxAngularVelocity, maxAngularVelocity));
+    lastSpeeds = speeds;
 
     // Send to drive
     drive.runVelocity(speeds);

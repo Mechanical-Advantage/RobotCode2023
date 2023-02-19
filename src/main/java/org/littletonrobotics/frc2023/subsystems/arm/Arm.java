@@ -92,6 +92,7 @@ public class Arm extends SubsystemBase {
   private double shoulderAngle = 0.0;
   private double elbowAngle = 0.0;
   private double wristAngle = 0.0;
+  private double extensionPercent = 0.0;
 
   private final Map<Integer, ArmTrajectory> allTrajectories = new HashMap<>();
   private ArmTrajectory currentTrajectory = null;
@@ -408,6 +409,16 @@ public class Arm extends SubsystemBase {
     Logger.getInstance()
         .recordOutput("Arm/SetpointPose/Wrist", setpointPose.globalWristAngle().getRadians());
 
+    // Calculate extension percent (for acceleration limits)
+    extensionPercent =
+        ArmPose.Preset.HOMED
+                    .getPose()
+                    .endEffectorPosition()
+                    .getDistance(kinematics.forward(VecBuilder.fill(shoulderAngle, elbowAngle)))
+                / (config.shoulder().length()
+            + config.elbow().length());
+    Logger.getInstance().recordOutput("Arm/ExtensionPercent", extensionPercent);
+
     // Trigger emergency stop if necessary
     if (Constants.getMode() != Mode.SIM && isZeroed) {
       emergencyDisableMaxErrorTimer.start();
@@ -513,6 +524,11 @@ public class Arm extends SubsystemBase {
   /** Returns whether the current current is complete. */
   public boolean isTrajectoryFinished() {
     return currentTrajectory == null && wristFeedback.getGoal().equals(wristFeedback.getSetpoint());
+  }
+
+  /** Returns the approximate percentage for how extended the arm is (0-1). */
+  public double getExtensionPercent() {
+    return extensionPercent;
   }
 
   /** Starts navigating to a pose. */
@@ -636,7 +652,7 @@ public class Arm extends SubsystemBase {
 
     // Keep translation within arm inner and outer ranges
     double innerRadius = Math.abs(config.shoulder().length() - config.elbow().length());
-    double outerRadius = config.shoulder().length() + config.elbow().length();
+    double outerRadius = config.shoulder().length() + config.elbow().length(); // Approxixmate
     if (translation.getNorm() < innerRadius) {
       translation = translation.times(innerRadius / translation.getNorm());
     } else if (translation.getNorm() > outerRadius) {

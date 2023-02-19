@@ -227,7 +227,8 @@ public class RobotContainer {
             () -> -driver.getLeftY(),
             () -> -driver.getLeftX(),
             () -> -driver.getRightX(),
-            () -> robotRelativeOverride.getAsBoolean()));
+            () -> robotRelativeOverride.getAsBoolean(),
+            arm::getExtensionPercent));
     driver
         .start()
         .or(driver.back())
