@@ -412,11 +412,10 @@ public class Arm extends SubsystemBase {
     // Calculate extension percent (for acceleration limits)
     extensionPercent =
         ArmPose.Preset.HOMED
-                    .getPose()
-                    .endEffectorPosition()
-                    .getDistance(kinematics.forward(VecBuilder.fill(shoulderAngle, elbowAngle)))
-                / (config.shoulder().length()
-            + config.elbow().length());
+                .getPose()
+                .endEffectorPosition()
+                .getDistance(kinematics.forward(VecBuilder.fill(shoulderAngle, elbowAngle)))
+            / (config.shoulder().length() + config.elbow().length());
     Logger.getInstance().recordOutput("Arm/ExtensionPercent", extensionPercent);
 
     // Trigger emergency stop if necessary
