@@ -125,7 +125,7 @@ public class Arm extends SubsystemBase {
         shoulderKd.initDefault(0.0);
         elbowKp.initDefault(80.0);
         elbowKd.initDefault(0.0);
-        wristKp.initDefault(80.0);
+        wristKp.initDefault(40.0);
         wristKd.initDefault(2.0);
         wristMaxVelocity.initDefault(10.0);
         wristMaxAcceleration.initDefault(50.0);
