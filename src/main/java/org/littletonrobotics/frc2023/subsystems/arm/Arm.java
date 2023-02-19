@@ -328,8 +328,14 @@ public class Arm extends SubsystemBase {
         var shoulderFeedbackVolts =
             shoulderFeedback.calculate(shoulderAngle, angles.get().get(0, 0));
         var elbowFeedbackVolts = elbowFeedback.calculate(elbowAngle, angles.get().get(1, 0));
-        if (Math.abs(shoulderAngle - Math.PI / 2.0) < shoulderDeadband) shoulderFeedbackVolts = 0.0;
-        if (Math.abs(elbowAngle - Math.PI) < elbowDeadband) elbowFeedbackVolts = 0.0;
+        if (Math.abs(shoulderAngle - Math.PI / 2.0) < shoulderDeadband
+            && Math.abs(angles.get().get(0, 0) - Math.PI / 2.0) < shoulderDeadband) {
+          shoulderFeedbackVolts = 0.0;
+        }
+        if (Math.abs(elbowAngle - Math.PI) < elbowDeadband
+            && Math.abs(angles.get().get(1, 0) - Math.PI) < elbowDeadband) {
+          elbowFeedbackVolts = 0.0;
+        }
         io.setShoulderVoltage(
             MathUtil.clamp(
                 voltages.get(0, 0) + shoulderFeedbackVolts,
