@@ -42,6 +42,10 @@ import org.littletonrobotics.frc2023.util.LoggedTunableNumber;
 import org.littletonrobotics.junction.Logger;
 
 public class Arm extends SubsystemBase {
+  public static final double shoulderDeadband = Units.degreesToRadians(1.0);
+  public static final double elbowDeadband = Units.degreesToRadians(3.0);
+  public static final double maxVoltageNoTrajectory =
+      6.0; // Limit shoulder & elbow voltage when not following trajectory
   public static final double trajectoryCacheMarginRadians = Units.degreesToRadians(3.0);
   public static final double shiftCenterMarginMeters = 0.05;
   public static final double wristGroundMarginMeters = 0.05;
@@ -51,8 +55,6 @@ public class Arm extends SubsystemBase {
   public static final double emergencyDisableMaxError = Units.degreesToRadians(10.0);
   public static final double emergencyDisableMaxErrorTime = 0.5;
   public static final double emergencyDisableBeyondLimitThreshold = Units.degreesToRadians(5.0);
-  public static final double maxVoltageNoTrajectory =
-      6.0; // Limit shoulder & elbow voltage when not following trajectory
 
   private final ArmIO io;
   private final ArmSolverIO solverIo;
@@ -322,15 +324,19 @@ public class Arm extends SubsystemBase {
       Optional<Vector<N2>> angles = kinematics.inverse(setpointPose.endEffectorPosition());
       if (angles.isPresent()) {
         var voltages = dynamics.feedforward(angles.get());
+        var shoulderFeedbackVolts =
+            shoulderFeedback.calculate(shoulderAngle, angles.get().get(0, 0));
+        var elbowFeedbackVolts = elbowFeedback.calculate(elbowAngle, angles.get().get(1, 0));
+        if (Math.abs(shoulderAngle - Math.PI / 2.0) < shoulderDeadband) shoulderFeedbackVolts = 0.0;
+        if (Math.abs(elbowAngle - Math.PI) < elbowDeadband) elbowFeedbackVolts = 0.0;
         io.setShoulderVoltage(
             MathUtil.clamp(
-                voltages.get(0, 0)
-                    + shoulderFeedback.calculate(shoulderAngle, angles.get().get(0, 0)),
+                voltages.get(0, 0) + shoulderFeedbackVolts,
                 -maxVoltageNoTrajectory,
                 maxVoltageNoTrajectory));
         io.setElbowVoltage(
             MathUtil.clamp(
-                voltages.get(1, 0) + elbowFeedback.calculate(elbowAngle, angles.get().get(1, 0)),
+                voltages.get(1, 0) + elbowFeedbackVolts,
                 -maxVoltageNoTrajectory,
                 maxVoltageNoTrajectory));
         shoulderAngleSetpoint = angles.get().get(0, 0);
