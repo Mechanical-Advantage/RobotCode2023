@@ -66,10 +66,10 @@ public class Arm extends SubsystemBase {
   private Supplier<Boolean> disableSupplier = () -> false;
   private Supplier<Boolean> forcePregeneratedSupplier = () -> false;
   private boolean emergencyDisable = false;
-  private Timer emergencyDisableMaxErrorTimer = new Timer();
-  private Alert driverDisableAlert =
+  private final Timer emergencyDisableMaxErrorTimer = new Timer();
+  private final Alert driverDisableAlert =
       new Alert("Arm disabled due to driver override.", AlertType.WARNING);
-  private Alert emergencyDisableAlert =
+  private final Alert emergencyDisableAlert =
       new Alert(
           "Arm emergency disabled due to high position error. Disable the arm manually and reenable to reset.",
           AlertType.ERROR);
@@ -78,6 +78,10 @@ public class Arm extends SubsystemBase {
   private final ArmVisualizer visualizerSetpoint;
 
   private boolean isZeroed = false;
+  private final Alert notZeroedAlert =
+      new Alert(
+          "Arm not zeroed due to ambiguous position, movement disabled. Please reposition the arm.",
+          AlertType.WARNING);
   private double shoulderAngleOffset = 0.0;
   private double elbowAngleOffset = 0.0;
   private double wristAngleOffset = 0.0;
@@ -89,12 +93,13 @@ public class Arm extends SubsystemBase {
   private ArmTrajectory currentTrajectory = null;
   private ArmPose setpointPose = null; // Pose to revert to when not following trajectory
   private ArmPose queuedPose = null; // Use as setpoint once trajectory is completed
-  private Timer trajectoryTimer = new Timer();
+  private final Timer trajectoryTimer = new Timer();
 
-  private PIDController shoulderFeedback =
+  private final PIDController shoulderFeedback =
       new PIDController(0.0, 0.0, 0.0, Constants.loopPeriodSecs);
-  private PIDController elbowFeedback = new PIDController(0.0, 0.0, 0.0, Constants.loopPeriodSecs);
-  private ProfiledPIDController wristFeedback =
+  private final PIDController elbowFeedback =
+      new PIDController(0.0, 0.0, 0.0, Constants.loopPeriodSecs);
+  private final ProfiledPIDController wristFeedback =
       new ProfiledPIDController(
           0.0, 0.0, 0.0, new TrapezoidProfile.Constraints(0.0, 0.0), Constants.loopPeriodSecs);
   private static final LoggedTunableNumber shoulderKp = new LoggedTunableNumber("Arm/Shoulder/kP");
@@ -181,7 +186,7 @@ public class Arm extends SubsystemBase {
 
   /** Returns whether the arm should be prevented from moving. */
   private boolean isDisabled() {
-    return DriverStation.isDisabled() || disableSupplier.get() || emergencyDisable;
+    return DriverStation.isDisabled() || disableSupplier.get() || emergencyDisable || !isZeroed;
   }
 
   public void periodic() {
@@ -210,17 +215,22 @@ public class Arm extends SubsystemBase {
 
     // Zero with absolute encoders
     if (!isZeroed) {
-      shoulderAngleOffset =
-          MathUtil.inputModulus(inputs.shoulderAbsolutePositionRad, -Math.PI, Math.PI)
-              - inputs.shoulderRelativePositionRad;
-      elbowAngleOffset =
-          MathUtil.inputModulus(inputs.elbowAbsolutePositionRad, 0.0, Math.PI * 2.0)
-              - inputs.elbowRelativePositionRad;
-      wristAngleOffset =
-          MathUtil.inputModulus(inputs.wristAbsolutePositionRad, -Math.PI, Math.PI)
-              - inputs.wristRelativePositionRad;
-      isZeroed = true;
+      // Check if elbow is above horizontal (ambiguous, maybe we're past the limits)
+      double elbowAngle =
+          MathUtil.inputModulus(inputs.elbowAbsolutePositionRad, 0.0, Math.PI * 2.0);
+      if (elbowAngle > Math.PI / 2.0 && elbowAngle < 3.0 * Math.PI / 2.0) {
+        // Elbow angle is below horizontal, zero normally
+        shoulderAngleOffset =
+            MathUtil.inputModulus(inputs.shoulderAbsolutePositionRad, -Math.PI, Math.PI)
+                - inputs.shoulderRelativePositionRad;
+        elbowAngleOffset = elbowAngle - inputs.elbowRelativePositionRad;
+        wristAngleOffset =
+            MathUtil.inputModulus(inputs.wristAbsolutePositionRad, -Math.PI, Math.PI)
+                - inputs.wristRelativePositionRad;
+        isZeroed = true;
+      }
     }
+    notZeroedAlert.set(!isZeroed);
 
     // Get measured positions
     shoulderAngle = inputs.shoulderRelativePositionRad + shoulderAngleOffset;
@@ -384,7 +394,7 @@ public class Arm extends SubsystemBase {
         .recordOutput("Arm/SetpointPose/Wrist", setpointPose.globalWristAngle().getRadians());
 
     // Trigger emergency stop if necessary
-    if (Constants.getMode() != Mode.SIM) {
+    if (Constants.getMode() != Mode.SIM && isZeroed) {
       emergencyDisableMaxErrorTimer.start();
       if (isDisabled()) {
         emergencyDisableMaxErrorTimer.reset();
