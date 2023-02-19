@@ -1,6 +1,6 @@
 plugins {
     id "java"
-    id "edu.wpi.first.GradleRIO" version "2023.3.2"
+    id "edu.wpi.first.GradleRIO" version "2023.4.1"
     id "com.peterabeles.gversion" version "1.10"
     id "com.diffplug.spotless" version "6.12.0"
 }
@@ -127,7 +127,7 @@ tasks.withType(JavaCompile) {
 
 // Generate arm trajectory cache
 task(generateArmTrajectories, dependsOn: "classes", type: JavaExec) {
-    main = "org.littletonrobotics.frc2023.subsystems.arm.ArmTrajectoryCache"
+    mainClass = "org.littletonrobotics.frc2023.subsystems.arm.ArmTrajectoryCache"
     classpath = sourceSets.main.runtimeClasspath
 }
 compileJava.finalizedBy generateArmTrajectories
