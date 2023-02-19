@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import java.util.List;
 import java.util.function.Supplier;
 import org.littletonrobotics.frc2023.Constants.Mode;
 import org.littletonrobotics.frc2023.commands.AutoScore;
@@ -61,7 +62,6 @@ import org.littletonrobotics.frc2023.util.Alert.AlertType;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
 import org.littletonrobotics.frc2023.util.OverrideSwitches;
 import org.littletonrobotics.frc2023.util.SparkMaxBurnManager;
-import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 public class RobotContainer {
 
@@ -92,9 +92,8 @@ public class RobotContainer {
   private final Alert overrideDisconnected =
       new Alert("Override controller disconnected (port 5).", AlertType.INFO);
 
-  // Choosers
-  private final LoggedDashboardChooser<Command> autoChooser =
-      new LoggedDashboardChooser<>("Auto Routine");
+  // Auto selector
+  private final AutoSelector autoSelector = new AutoSelector("Auto");
 
   public RobotContainer() {
     // Check if flash should be burned
@@ -184,17 +183,18 @@ public class RobotContainer {
     aprilTagVision.setDataInterfaces(drive::getPose, drive::addVisionData);
 
     // Set up auto routines
-    autoChooser.addDefaultOption("Do Nothing", null);
-    autoChooser.addOption("Reset Odometry", new InstantCommand(() -> drive.setPose(new Pose2d())));
-    autoChooser.addOption(
+    autoSelector.addRoutine(
+        "Reset Odometry", List.of(), new InstantCommand(() -> drive.setPose(new Pose2d())));
+    autoSelector.addRoutine(
         "Drive Characterization",
+        List.of(),
         new FeedForwardCharacterization(
             drive,
             true,
             new FeedForwardCharacterizationData("drive"),
             drive::runCharacterizationVolts,
             drive::getCharacterizationVelocity));
-    autoChooser.addOption("Test Auto", new TestAuto(drive, arm, gripper));
+    autoSelector.addRoutine("Test Auto", List.of(), new TestAuto(drive, arm, gripper));
 
     // Alert if in tuning mode
     if (Constants.tuningMode) {
@@ -379,6 +379,6 @@ public class RobotContainer {
 
   /** Passes the autonomous command to the {@link Robot} class. */
   public Command getAutonomousCommand() {
-    return autoChooser.get();
+    return autoSelector.getCommand();
   }
 }
