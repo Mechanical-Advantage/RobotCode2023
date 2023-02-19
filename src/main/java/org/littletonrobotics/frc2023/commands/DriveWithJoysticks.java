@@ -26,7 +26,7 @@ public class DriveWithJoysticks extends CommandBase {
   public static final double deadband = 0.1;
   public static final double minExtensionMaxLinearAcceleration = Units.inchesToMeters(900.0);
   public static final double fullExtensionMaxLinearAcceleration = Units.inchesToMeters(200.0);
-  public static final double fullExtensionMaxAngularVelocity = Units.degreesToRadians(45.0);
+  public static final double fullExtensionMaxAngularVelocity = Units.degreesToRadians(90.0);
 
   private final Drive drive;
   private final Supplier<Double> leftXSupplier;
@@ -132,8 +132,8 @@ public class DriveWithJoysticks extends CommandBase {
             armExtensionPercentSupplier.get());
     double maxAngularVelocity =
         MathUtil.interpolate(
-            fullExtensionMaxAngularVelocity,
             drive.getMaxAngularSpeedRadPerSec(),
+            fullExtensionMaxAngularVelocity,
             armExtensionPercentSupplier.get());
     speeds =
         new ChassisSpeeds(
