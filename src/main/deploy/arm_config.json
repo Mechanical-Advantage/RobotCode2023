@@ -51,7 +51,7 @@
     "floor": {
       "type": "minY",
       "args": [
-        0
+        0.2
       ]
     },
     "robotBody": {
