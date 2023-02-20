@@ -16,11 +16,11 @@ SERVER_IP = "127.0.0.1"
 DEVICE_ID = 0
 
 solver = None
-result_sub = None
+result_pub = None
 
 
 def config_update(event):
-    global solver, result_sub
+    global solver
     print("Creating new solver...")
     config = json.loads(event.data.value.getString())
     solver = Solver(config)
@@ -28,7 +28,7 @@ def config_update(event):
 
 
 def request_update(event):
-    global solver, result_sub
+    global solver, result_pub
     if solver == None:
         print("Skipping request, solver not available")
     print("Solving trajectory...")
@@ -46,7 +46,7 @@ def request_update(event):
         for i in range(len(result[1])):
             points.append(result[1][i])
             points.append(result[2][i])
-        result_sub.set(points)
+        result_pub.set(points)
     else:
         print("Trajectory generation failed")
 
@@ -64,14 +64,20 @@ if __name__ == "__main__":
     request_sub = nt_inst.getStringTopic("/kairos/request").subscribe(
         "", ntcore.PubSubOptions(periodic=0)
     )
-    result_sub = nt_inst.getDoubleArrayTopic(
+    result_pub = nt_inst.getDoubleArrayTopic(
         "/kairos/result/" + str(DEVICE_ID)
     ).publish(ntcore.PubSubOptions(periodic=0))
+    ping_pub = nt_inst.getIntegerTopic("/kairos/ping/" + str(DEVICE_ID)).publish(
+        ntcore.PubSubOptions()
+    )
 
     # Create event listeners
     nt_inst.addListener(config_sub, ntcore.EventFlags.kValueRemote, config_update)
     nt_inst.addListener(request_sub, ntcore.EventFlags.kValueRemote, request_update)
 
     # Run forever
+    i = 0
     while True:
-        time.sleep(1)
+        time.sleep(0.1)
+        i = (i + 1) % 10
+        ping_pub.set(i)

@@ -10,9 +10,11 @@ package org.littletonrobotics.frc2023.subsystems.arm;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import edu.wpi.first.networktables.DoubleArraySubscriber;
+import edu.wpi.first.networktables.IntegerSubscriber;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.PubSubOption;
 import edu.wpi.first.networktables.StringPublisher;
+import edu.wpi.first.wpilibj.Timer;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -21,10 +23,14 @@ import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
 
 public class ArmSolverIOKairos implements ArmSolverIO {
+  private static final double disconnectedTimeout = 0.5;
+
   private final int instanceCount;
   private final StringPublisher configPublisher;
   private final StringPublisher requestPublisher;
   private final List<DoubleArraySubscriber> resultSubscribers = new ArrayList<>();
+  private final List<IntegerSubscriber> pingSubscribers = new ArrayList<>();
+  private final double[] lastPing;
   private final Alert disconnectedAlert = new Alert("", AlertType.ERROR);
 
   private int parameterHash = 0;
@@ -32,6 +38,7 @@ public class ArmSolverIOKairos implements ArmSolverIO {
 
   public ArmSolverIOKairos(int instanceCount) {
     this.instanceCount = instanceCount;
+    lastPing = new double[instanceCount];
 
     // Create NT publishers and subscribers
     var kairosTable = NetworkTableInstance.getDefault().getTable("kairos");
@@ -45,6 +52,7 @@ public class ArmSolverIOKairos implements ArmSolverIO {
           kairosTable
               .getDoubleArrayTopic("result/" + Integer.toString(i))
               .subscribe(new double[] {}, PubSubOption.periodic(0.0)));
+      pingSubscribers.add(kairosTable.getIntegerTopic("ping/" + Integer.toString(i)).subscribe(0));
     }
   }
 
@@ -52,12 +60,14 @@ public class ArmSolverIOKairos implements ArmSolverIO {
     // Update disconnected alert
     boolean[] connected = new boolean[instanceCount];
     int connectedCount = 0;
-    for (var connection : NetworkTableInstance.getDefault().getConnections()) {
-      for (int i = 0; i < instanceCount; i++) {
-        if (!connected[i] && connection.remote_id.equals("kairos_" + Integer.toString(i))) {
-          connected[i] = true;
-          connectedCount++;
-        }
+    for (int i = 0; i < instanceCount; i++) {
+      var pingSubscriber = pingSubscribers.get(i);
+      if (pingSubscriber.readQueueValues().length > 0) {
+        lastPing[i] = Timer.getFPGATimestamp();
+      }
+      connected[i] = Timer.getFPGATimestamp() - lastPing[i] < disconnectedTimeout;
+      if (connected[i]) {
+        connectedCount++;
       }
     }
     if (connectedCount < instanceCount) {
