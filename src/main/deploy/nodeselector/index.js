@@ -65,7 +65,6 @@ window.addEventListener("load", () => {
   // Add touch listeners
   ["touchstart", "touchmove"].forEach((eventString) => {
     document.body.addEventListener(eventString, (event) => {
-      event.preventDefault();
       if (event.touches.length > 0) {
         let x = event.touches[0].clientX;
         let y = event.touches[0].clientY;
