@@ -114,8 +114,14 @@ public class Arm extends SubsystemBase {
           0.0, 0.0, 0.0, new TrapezoidProfile.Constraints(0.0, 0.0), Constants.loopPeriodSecs);
   private static final LoggedTunableNumber shoulderKp = new LoggedTunableNumber("Arm/Shoulder/kP");
   private static final LoggedTunableNumber shoulderKd = new LoggedTunableNumber("Arm/Shoulder/kD");
+  private static final LoggedTunableNumber shoulderKs = new LoggedTunableNumber("Arm/Shoulder/kS");
+  private static final LoggedTunableNumber shoulderKsDeadband =
+      new LoggedTunableNumber("Arm/Shoulder/kSDeadband");
   private static final LoggedTunableNumber elbowKp = new LoggedTunableNumber("Arm/Elbow/kP");
   private static final LoggedTunableNumber elbowKd = new LoggedTunableNumber("Arm/Elbow/kD");
+  private static final LoggedTunableNumber elbowKs = new LoggedTunableNumber("Arm/Elbow/kS");
+  private static final LoggedTunableNumber elbowKsDeadband =
+      new LoggedTunableNumber("Arm/Elbow/kSDeadband");
   private static final LoggedTunableNumber wristKp = new LoggedTunableNumber("Arm/Wrist/kP");
   private static final LoggedTunableNumber wristKd = new LoggedTunableNumber("Arm/Wrist/kD");
   private static final LoggedTunableNumber wristMaxVelocity =
@@ -127,14 +133,18 @@ public class Arm extends SubsystemBase {
     if (!Constants.disableHAL) { // Don't run during trajectory cache generation
       switch (Constants.getRobot()) {
         case ROBOT_2023C:
-          shoulderKp.initDefault(6.0);
+          shoulderKp.initDefault(10.0);
           shoulderKd.initDefault(0.3);
+          shoulderKs.initDefault(0.2);
+          shoulderKsDeadband.initDefault(0.05);
           elbowKp.initDefault(8.0);
-          elbowKd.initDefault(0.6);
+          elbowKd.initDefault(0.8);
+          elbowKs.initDefault(0.0);
+          elbowKsDeadband.initDefault(0.05);
           wristKp.initDefault(90.0);
           wristKd.initDefault(0.0);
-          wristMaxVelocity.initDefault(1.67);
-          wristMaxAcceleration.initDefault(3.34);
+          wristMaxVelocity.initDefault(12.0);
+          wristMaxAcceleration.initDefault(2.0);
           break;
         case ROBOT_SIMBOT:
           shoulderKp.initDefault(80.0);
@@ -345,8 +355,16 @@ public class Arm extends SubsystemBase {
       elbowVoltageFeedforward = voltages.get(1, 0);
       shoulderVoltageFeedback = shoulderFeedback.calculate(shoulderAngle, state.get(0, 0));
       elbowVoltageFeedback = elbowFeedback.calculate(elbowAngle, state.get(1, 0));
-      io.setShoulderVoltage(shoulderVoltageFeedforward + shoulderVoltageFeedback);
-      io.setElbowVoltage(elbowVoltageFeedforward + elbowVoltageFeedback);
+      io.setShoulderVoltage(
+          applyKs(
+              shoulderVoltageFeedforward + shoulderVoltageFeedback,
+              shoulderKs.get(),
+              shoulderKsDeadband.get()));
+      io.setElbowVoltage(
+          applyKs(
+              elbowVoltageFeedforward + elbowVoltageFeedback,
+              elbowKs.get(),
+              elbowKsDeadband.get()));
       setpointPose = // If trajectory is interrupted, go to last setpoint
           new ArmPose(
               kinematics.forward(new Vector<>(state.extractColumnVector(0))),
@@ -370,12 +388,18 @@ public class Arm extends SubsystemBase {
         elbowVoltageFeedback = elbowFeedback.calculate(elbowAngle, angles.get().get(1, 0));
         io.setShoulderVoltage(
             MathUtil.clamp(
-                shoulderVoltageFeedforward + shoulderVoltageFeedback,
+                applyKs(
+                    shoulderVoltageFeedforward + shoulderVoltageFeedback,
+                    shoulderKs.get(),
+                    shoulderKsDeadband.get()),
                 -maxVoltageNoTrajectory,
                 maxVoltageNoTrajectory));
         io.setElbowVoltage(
             MathUtil.clamp(
-                elbowVoltageFeedforward + elbowVoltageFeedback,
+                applyKs(
+                    elbowVoltageFeedforward + elbowVoltageFeedback,
+                    elbowKs.get(),
+                    elbowKsDeadband.get()),
                 -maxVoltageNoTrajectory,
                 maxVoltageNoTrajectory));
       } else {
@@ -498,6 +522,14 @@ public class Arm extends SubsystemBase {
     emergencyDisableAlert.set(emergencyDisable);
   }
 
+  /** Applies a static friction and deadband to an applied voltage. */
+  private static double applyKs(double volts, double kS, double kSDeadband) {
+    if (Math.abs(volts) < kSDeadband) {
+      return volts;
+    }
+    return volts + Math.copySign(kS, volts);
+  }
+
   /** Returns whether the arm is current in or will pass through the provided region. */
   private boolean checkAvoidanceRegion(double[] region) {
     // Check setpoint
@@ -565,7 +597,13 @@ public class Arm extends SubsystemBase {
 
   /** Returns whether the current current is complete. */
   public boolean isTrajectoryFinished() {
-    return currentTrajectory == null && wristFeedback.getGoal().equals(wristFeedback.getSetpoint());
+    return isTrajectoryFinished(true);
+  }
+
+  /** Returns whether the current current is complete. */
+  public boolean isTrajectoryFinished(boolean includeWrist) {
+    return currentTrajectory == null
+        && (!includeWrist || wristFeedback.getGoal().equals(wristFeedback.getSetpoint()));
   }
 
   /** Returns the approximate percentage for how extended the arm is (0-1). */
@@ -608,7 +646,7 @@ public class Arm extends SubsystemBase {
             currentAngles.get(),
             targetAngles.get(),
             kinematics.forward(currentAngles.get()).getY() < nodeConstraintMinY
-                    && kinematics.forward(targetAngles.get()).getY() < nodeConstraintMinY
+                    || kinematics.forward(targetAngles.get()).getY() < nodeConstraintMinY
                 ? nodeConstraints
                 : Set.of());
     var trajectory = new ArmTrajectory(parameters);

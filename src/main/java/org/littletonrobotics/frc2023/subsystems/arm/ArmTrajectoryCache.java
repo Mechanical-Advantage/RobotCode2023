@@ -110,7 +110,7 @@ public class ArmTrajectoryCache {
                     new double[] {preset0Angles.get().get(0, 0), preset0Angles.get().get(1, 0)},
                     new double[] {preset1Angles.get().get(0, 0), preset1Angles.get().get(1, 0)},
                     kinematics.forward(preset0Angles.get()).getY() < Arm.nodeConstraintMinY
-                            && kinematics.forward(preset1Angles.get()).getY()
+                            || kinematics.forward(preset1Angles.get()).getY()
                                 < Arm.nodeConstraintMinY
                         ? nodeConstraints
                         : new String[] {},
@@ -158,7 +158,7 @@ public class ArmTrajectoryCache {
                 // Add trajectories between homed and target
                 String[] constraintOverrides =
                     kinematics.forward(homedAngles).getY() < Arm.nodeConstraintMinY
-                            && kinematics.forward(targetAngles.get()).getY()
+                            || kinematics.forward(targetAngles.get()).getY()
                                 < Arm.nodeConstraintMinY
                         ? nodeConstraints
                         : new String[] {};

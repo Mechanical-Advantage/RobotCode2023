@@ -389,7 +389,7 @@ public class RobotContainer {
                 Math.abs(operator.getLeftX()) > DriveWithJoysticks.deadband
                     || Math.abs(operator.getLeftY()) > DriveWithJoysticks.deadband
                     || Math.abs(operator.getRightY()) > DriveWithJoysticks.deadband)
-        .and(new Trigger(() -> arm.isTrajectoryFinished()))
+        .and(new Trigger(() -> arm.isTrajectoryFinished(false)))
         .and(autoScoreTrigger.negate())
         .whileTrue(moveArmWithJoysticksFactory.get());
     operator

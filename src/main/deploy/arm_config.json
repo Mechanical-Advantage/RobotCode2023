@@ -13,7 +13,7 @@
     "motor": {
       "type": "neo",
       "count": 2,
-      "reduction": 108.4938272
+      "reduction": 204.9327846365
     }
   },
   "elbow": {
@@ -44,10 +44,10 @@
   },
   "solver": {
     "interiorPoints": 15,
-    "maxVoltageShoulder": 6,
+    "maxVoltageShoulder": 8,
     "maxVoltageElbow": 8,
-    "maxAccelerationShoulder": 2.0,
-    "maxAccelerationElbow": 2.0,
+    "maxAccelerationShoulder": 5.0,
+    "maxAccelerationElbow": 8.0,
     "maxJerk": 30
   },
   "constraints": {
