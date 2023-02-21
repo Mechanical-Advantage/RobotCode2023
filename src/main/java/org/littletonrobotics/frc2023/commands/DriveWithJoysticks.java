@@ -27,11 +27,14 @@ public class DriveWithJoysticks extends CommandBase {
   public static final double minExtensionMaxLinearAcceleration = Units.inchesToMeters(900.0);
   public static final double fullExtensionMaxLinearAcceleration = Units.inchesToMeters(200.0);
   public static final double fullExtensionMaxAngularVelocity = Units.degreesToRadians(90.0);
+  public static final double sniperModeLinearPercent = 0.5;
+  public static final double sniperModeAngularPercent = 0.5;
 
   private final Drive drive;
   private final Supplier<Double> leftXSupplier;
   private final Supplier<Double> leftYSupplier;
   private final Supplier<Double> rightYSupplier;
+  private final Supplier<Boolean> sniperModeSupplier;
   private final Supplier<Boolean> robotRelativeOverride;
   private final Supplier<Double> armExtensionPercentSupplier;
   private ChassisSpeeds lastSpeeds = new ChassisSpeeds();
@@ -58,6 +61,7 @@ public class DriveWithJoysticks extends CommandBase {
       Supplier<Double> leftXSupplier,
       Supplier<Double> leftYSupplier,
       Supplier<Double> rightYSupplier,
+      Supplier<Boolean> sniperModeSupplier,
       Supplier<Boolean> robotRelativeOverride,
       Supplier<Double> armExtensionPercentSupplier) {
     addRequirements(drive);
@@ -65,6 +69,7 @@ public class DriveWithJoysticks extends CommandBase {
     this.leftXSupplier = leftXSupplier;
     this.leftYSupplier = leftYSupplier;
     this.rightYSupplier = rightYSupplier;
+    this.sniperModeSupplier = sniperModeSupplier;
     this.robotRelativeOverride = robotRelativeOverride;
     this.armExtensionPercentSupplier = armExtensionPercentSupplier;
   }
@@ -96,6 +101,10 @@ public class DriveWithJoysticks extends CommandBase {
     // Apply speed limits
     linearMagnitude *= linearSpeedLimitChooser.get();
     rightY *= angularSpeedLimitChooser.get();
+    if (sniperModeSupplier.get()) {
+      linearMagnitude *= sniperModeLinearPercent;
+      rightY *= sniperModeAngularPercent;
+    }
 
     // Calcaulate new linear components
     Translation2d linearVelocity =

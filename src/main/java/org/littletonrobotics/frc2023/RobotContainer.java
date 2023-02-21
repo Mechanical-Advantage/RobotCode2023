@@ -253,6 +253,7 @@ public class RobotContainer {
             () -> -driver.getLeftY(),
             () -> -driver.getLeftX(),
             () -> -driver.getRightX(),
+            () -> driver.getHID().getLeftBumper(),
             () -> robotRelativeOverride.getAsBoolean(),
             arm::getExtensionPercent));
     driver
