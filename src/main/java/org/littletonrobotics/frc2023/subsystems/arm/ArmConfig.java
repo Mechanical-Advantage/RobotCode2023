@@ -41,11 +41,14 @@ public record ArmConfig(
       double cgRadius,
       double minAngle,
       double maxAngle,
-      double reduction,
-      DCMotor motor) {}
+      MotorConfig motor) {}
+
+  /** Physics constants for a joint motor. */
+  public static record MotorConfig(DCMotor physics, double reduction) {}
 
   /** Config fields for solver. */
-  public static record SolverConfig(int interiorPoints, double maxVoltage) {}
+  public static record SolverConfig(
+      int interiorPoints, double maxVoltageShoulder, double maxVoltageElbow, double maxJerk) {}
 
   /** Arbitrary solver constraint. */
   public static record Constraint(String type, double[] args) {}
@@ -70,18 +73,18 @@ public record ArmConfig(
     }
   }
 
-  /** Converts motor type, count, and reduction to DCMotor instance. */
-  private static class DCMotorDeserializer extends StdDeserializer<DCMotor> {
-    public DCMotorDeserializer() {
+  /** Converts motor type, count, and reduction to DCMotor instance and reduction. */
+  private static class MotorConfigDeserializer extends StdDeserializer<MotorConfig> {
+    public MotorConfigDeserializer() {
       this(null);
     }
 
-    public DCMotorDeserializer(Class<?> vc) {
+    public MotorConfigDeserializer(Class<?> vc) {
       super(vc);
     }
 
     @Override
-    public DCMotor deserialize(JsonParser jp, DeserializationContext ctxt)
+    public MotorConfig deserialize(JsonParser jp, DeserializationContext ctxt)
         throws IOException, JsonProcessingException {
       JsonNode node = jp.getCodec().readTree(jp);
       String type = node.get("type").asText();
@@ -90,9 +93,9 @@ public record ArmConfig(
 
       switch (type) {
         case "neo":
-          return DCMotor.getNEO(count).withReduction(reduction);
+          return new MotorConfig(DCMotor.getNEO(count).withReduction(reduction), reduction);
         case "neo550":
-          return DCMotor.getNeo550(count).withReduction(reduction);
+          return new MotorConfig(DCMotor.getNeo550(count).withReduction(reduction), reduction);
         default:
           return null;
       }
@@ -106,7 +109,7 @@ public record ArmConfig(
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     SimpleModule module = new SimpleModule();
     module.addDeserializer(Translation2d.class, new Translation2dDeserializer());
-    module.addDeserializer(DCMotor.class, new DCMotorDeserializer());
+    module.addDeserializer(MotorConfig.class, new MotorConfigDeserializer());
     mapper.registerModule(module);
 
     // Read config data

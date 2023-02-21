@@ -17,23 +17,26 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import java.util.List;
 import java.util.function.Supplier;
+import org.littletonrobotics.frc2023.AutoSelector.AutoQuestion;
+import org.littletonrobotics.frc2023.AutoSelector.AutoQuestionResponse;
 import org.littletonrobotics.frc2023.Constants.Mode;
+import org.littletonrobotics.frc2023.commands.AutoCommands;
 import org.littletonrobotics.frc2023.commands.AutoScore;
 import org.littletonrobotics.frc2023.commands.DriveToSubstation;
 import org.littletonrobotics.frc2023.commands.DriveWithJoysticks;
 import org.littletonrobotics.frc2023.commands.EjectHeld;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
-import org.littletonrobotics.frc2023.commands.IntakeAlongFloor;
 import org.littletonrobotics.frc2023.commands.IntakeCubeHandoff;
+import org.littletonrobotics.frc2023.commands.IntakeFromFloorSimple;
 import org.littletonrobotics.frc2023.commands.IntakeSubstation;
 import org.littletonrobotics.frc2023.commands.MoveArmWithJoysticks;
-import org.littletonrobotics.frc2023.commands.TestAuto;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVision;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIO;
 import org.littletonrobotics.frc2023.subsystems.arm.Arm;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmIO;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmIOSim;
+import org.littletonrobotics.frc2023.subsystems.arm.ArmIOSparkMax;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmPose;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmSolverIO;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmSolverIOKairos;
@@ -50,6 +53,7 @@ import org.littletonrobotics.frc2023.subsystems.drive.ModuleIOSim;
 import org.littletonrobotics.frc2023.subsystems.drive.ModuleIOSparkMax;
 import org.littletonrobotics.frc2023.subsystems.gripper.Gripper;
 import org.littletonrobotics.frc2023.subsystems.gripper.GripperIO;
+import org.littletonrobotics.frc2023.subsystems.gripper.GripperIOSparkMax;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.NodeSelectorIO;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.NodeSelectorIOServer;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker;
@@ -78,6 +82,7 @@ public class RobotContainer {
   private final OverrideSwitches overrides = new OverrideSwitches(5);
   private final Trigger robotRelativeOverride = overrides.driverSwitch(0);
   private final Trigger armDisableOverride = overrides.driverSwitch(1);
+  private final Trigger armCoastOverride = overrides.driverSwitch(2);
   private final Trigger manualDriveAlignOverride = overrides.operatorSwitch(0);
   private final Trigger manualArmAdjustOverride = overrides.operatorSwitch(1);
   private final Trigger reachScoringDisableOverride = overrides.operatorSwitch(2);
@@ -108,6 +113,8 @@ public class RobotContainer {
                   new ModuleIOSparkMax(1),
                   new ModuleIOSparkMax(2),
                   new ModuleIOSparkMax(3));
+          arm = new Arm(new ArmIOSparkMax(), new ArmSolverIOKairos(1));
+          gripper = new Gripper(new GripperIOSparkMax());
           objectiveTracker = new ObjectiveTracker(new NodeSelectorIOServer());
           break;
         case ROBOT_2023P:
@@ -174,14 +181,34 @@ public class RobotContainer {
 
     // Set up subsystems
     arm.setOverrides(
-        () -> armDisableOverride.getAsBoolean(), () -> forcePregenPathsOverride.getAsBoolean());
+        () -> armDisableOverride.getAsBoolean(),
+        () -> armCoastOverride.getAsBoolean(),
+        () -> forcePregenPathsOverride.getAsBoolean());
     cubeIntake.setForceExtendSupplier(arm::cubeIntakeShouldExtend);
     coneIntake.setForceExtendSupplier(arm::coneIntakeShouldExtend);
     aprilTagVision.setDataInterfaces(drive::getPose, drive::addVisionData);
 
     // Set up auto routines
+    AutoCommands autoCommands =
+        new AutoCommands(drive, arm, gripper, cubeIntake, coneIntake, autoSelector::getResponses);
     autoSelector.addRoutine(
         "Reset Odometry", List.of(), new InstantCommand(() -> drive.setPose(new Pose2d())));
+    autoSelector.addRoutine(
+        "Score Link",
+        List.of(
+            new AutoQuestion(
+                "Which side of the field?",
+                List.of(AutoQuestionResponse.WALL_SIDE, AutoQuestionResponse.FIELD_SIDE)),
+            new AutoQuestion(
+                "Which level?",
+                List.of(
+                    AutoQuestionResponse.HIGH,
+                    AutoQuestionResponse.MID,
+                    AutoQuestionResponse.HYBRID)),
+            new AutoQuestion(
+                "Finish with balance?",
+                List.of(AutoQuestionResponse.YES, AutoQuestionResponse.NO))),
+        autoCommands.scoreLink());
     autoSelector.addRoutine(
         "Drive Characterization",
         List.of(),
@@ -191,7 +218,6 @@ public class RobotContainer {
             new FeedForwardCharacterizationData("drive"),
             drive::runCharacterizationVolts,
             drive::getCharacterizationVelocity));
-    autoSelector.addRoutine("Test Auto", List.of(), new TestAuto(drive, arm, gripper));
 
     // Alert if in tuning mode
     if (Constants.tuningMode) {
@@ -327,17 +353,13 @@ public class RobotContainer {
     //         coneIntake, arm, gripper, objectiveTracker.objective,
     // coneIntakeTrigger::getAsBoolean));
     operator
-        .rightTrigger(0.0)
+        .rightTrigger()
         .and(floorEjectOverride.negate())
-        .whileTrue(
-            new IntakeAlongFloor(
-                true, arm, gripper, objectiveTracker.objective, operator::getRightTriggerAxis));
+        .whileTrue(new IntakeFromFloorSimple(true, arm, gripper, objectiveTracker.objective));
     operator
-        .leftTrigger(0.0)
+        .leftTrigger()
         .and(floorEjectOverride.negate())
-        .whileTrue(
-            new IntakeAlongFloor(
-                false, arm, gripper, objectiveTracker.objective, operator::getLeftTriggerAxis));
+        .whileTrue(new IntakeFromFloorSimple(false, arm, gripper, objectiveTracker.objective));
     operator.rightTrigger().and(floorEjectOverride).onTrue(new EjectHeld(true, arm, gripper));
     operator.leftTrigger().and(floorEjectOverride).whileTrue(new EjectHeld(false, arm, gripper));
 

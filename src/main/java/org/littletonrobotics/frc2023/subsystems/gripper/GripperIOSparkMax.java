@@ -12,6 +12,7 @@ import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import org.littletonrobotics.frc2023.Constants;
 import org.littletonrobotics.frc2023.util.SparkMaxBurnManager;
+import org.littletonrobotics.frc2023.util.SparkMaxPeriodicFrameConfig;
 
 public class GripperIOSparkMax implements GripperIO {
   private boolean invert = false;
@@ -21,7 +22,7 @@ public class GripperIOSparkMax implements GripperIO {
     switch (Constants.getRobot()) {
       case ROBOT_2023C:
         motor = new CANSparkMax(13, MotorType.kBrushed);
-        invert = false;
+        invert = true;
         break;
       default:
         throw new RuntimeException("Invalid robot for GripperIOSparkMax!");
@@ -31,8 +32,10 @@ public class GripperIOSparkMax implements GripperIO {
       motor.restoreFactoryDefaults();
     }
 
+    SparkMaxPeriodicFrameConfig.configNotLeader(motor);
+
     motor.setInverted(invert);
-    motor.setSmartCurrentLimit(10);
+    motor.setSmartCurrentLimit(20);
     motor.enableVoltageCompensation(12.0);
 
     motor.setCANTimeout(0);

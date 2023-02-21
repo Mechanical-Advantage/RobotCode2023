@@ -4,47 +4,50 @@
     0.654
   ],
   "shoulder": {
-    "mass": 1.036005,
+    "mass": 1.790329,
     "length": 0.686,
-    "moi": 0.08,
+    "moi": 0.216988,
     "cgRadius": 0.4318,
     "minAngle": 0.0,
     "maxAngle": 3.1415926536,
     "motor": {
       "type": "neo",
       "count": 2,
-      "reduction": 197.0
+      "reduction": 108.4938272
     }
   },
   "elbow": {
-    "mass": 1.036005,
+    "mass": 4.036065,
     "length": 0.84,
-    "moi": 0.08,
+    "moi": 0.21851,
     "cgRadius": 0.4318,
-    "minAngle": 0.5235987756,
-    "maxAngle": 5.7595865316,
+    "minAngle": 0.2617994,
+    "maxAngle": 6.0213859072,
     "motor": {
       "type": "neo",
       "count": 1,
-      "reduction": 200.0
+      "reduction": 150.0
     }
   },
   "wrist": {
-    "mass": 2.721554,
+    "mass": 3.08,
     "length": 0.261,
-    "moi": 0.039538,
-    "cgRadius": 0.0574802,
+    "moi": 0.036998,
+    "cgRadius": 0.03556,
     "minAngle": -2.0943951024,
     "maxAngle": 2.0943951024,
     "motor": {
       "type": "neo",
       "count": 1,
-      "reduction": 120.0
+      "reduction": 240.0
     }
   },
   "solver": {
     "interiorPoints": 15,
-    "maxVoltage": 10,
+    "maxVoltageShoulder": 6,
+    "maxVoltageElbow": 8,
+    "maxAccelerationShoulder": 2.0,
+    "maxAccelerationElbow": 2.0,
     "maxJerk": 30
   },
   "constraints": {
@@ -64,6 +67,15 @@
       "type": "rectangle",
       "args": [
         -0.4,
+        -1,
+        0.4,
+        0.4
+      ]
+    },
+    "robotBodyExtended": {
+      "type": "rectangle",
+      "args": [
+        -0.45,
         -1,
         0.7,
         0.45

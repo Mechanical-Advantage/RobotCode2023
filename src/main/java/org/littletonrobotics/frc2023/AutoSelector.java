@@ -80,8 +80,12 @@ public class AutoSelector extends VirtualSubsystem {
     }
 
     // Update the list of questions
-    if (!routineChooser.get().equals(lastRoutine)) {
-      var questions = routineChooser.get().questions();
+    var selectedRoutine = routineChooser.get();
+    if (selectedRoutine == null) {
+      return;
+    }
+    if (!selectedRoutine.equals(lastRoutine)) {
+      var questions = selectedRoutine.questions();
       for (int i = 0; i < maxQuestions; i++) {
         if (i < questions.size()) {
           questionPublishers.get(i).set(questions.get(i).question());
@@ -92,14 +96,14 @@ public class AutoSelector extends VirtualSubsystem {
                       .map((AutoQuestionResponse response) -> response.toString())
                       .toArray(String[]::new));
         } else {
-          questionPublishers.get(i).set("NA");
+          questionPublishers.get(i).set("");
           questionChoosers.get(i).setOptions(new String[] {});
         }
       }
     }
 
     // Update the routine and responses
-    lastRoutine = routineChooser.get();
+    lastRoutine = selectedRoutine;
     lastResponses = new ArrayList<>();
     for (int i = 0; i < lastRoutine.questions().size(); i++) {
       String responseString = questionChoosers.get(i).get();
@@ -123,6 +127,9 @@ public class AutoSelector extends VirtualSubsystem {
     NO,
     CUBE,
     CONE,
+    HYBRID,
+    MID,
+    HIGH,
     WALL_SIDE,
     FIELD_SIDE
   }

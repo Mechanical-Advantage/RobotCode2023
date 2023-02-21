@@ -26,6 +26,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.littletonrobotics.frc2023.Constants;
 
 public class ArmTrajectoryCache {
@@ -58,7 +59,8 @@ public class ArmTrajectoryCache {
                       trajectoryCache.initialJointPositions()[1]),
                   VecBuilder.fill(
                       trajectoryCache.finalJointPositions()[0],
-                      trajectoryCache.finalJointPositions()[1])));
+                      trajectoryCache.finalJointPositions()[1]),
+                  Set.of(trajectoryCache.constraintOverrides)));
       List<Vector<N2>> points = new ArrayList<>();
       for (int i = 0; i < trajectoryCache.points().length / 2; i++) {
         points.add(
@@ -85,6 +87,7 @@ public class ArmTrajectoryCache {
     ArmConfig config = ArmConfig.loadJson(configFile);
     ArmKinematics kinematics = new ArmKinematics(config);
     ArmPose.Preset.updateHomedPreset(config);
+    String[] nodeConstraints = Arm.nodeConstraints.toArray(new String[Arm.nodeConstraints.size()]);
 
     // Create set of trajectories between presets
     List<TrajectoryCache> allTrajectories = new ArrayList<>();
@@ -95,7 +98,7 @@ public class ArmTrajectoryCache {
     }
     for (var pose0 : allPoses) {
       for (var pose1 : allPoses) {
-        if (!pose0.equals(pose1)) {
+        if (!pose0.endEffectorPosition().equals(pose1.endEffectorPosition())) {
           Optional<Vector<N2>> preset0Angles = kinematics.inverse(pose0.endEffectorPosition());
           Optional<Vector<N2>> preset1Angles = kinematics.inverse(pose1.endEffectorPosition());
           if (preset0Angles.isPresent() && preset1Angles.isPresent()) {
@@ -104,6 +107,11 @@ public class ArmTrajectoryCache {
                 new TrajectoryCache(
                     new double[] {preset0Angles.get().get(0, 0), preset0Angles.get().get(1, 0)},
                     new double[] {preset1Angles.get().get(0, 0), preset1Angles.get().get(1, 0)},
+                    kinematics.forward(preset0Angles.get()).getY() < Arm.nodeConstraintMinY
+                            && kinematics.forward(preset1Angles.get()).getY()
+                                < Arm.nodeConstraintMinY
+                        ? nodeConstraints
+                        : new String[] {},
                     0,
                     new double[] {}));
           }
@@ -146,16 +154,24 @@ public class ArmTrajectoryCache {
                 }
 
                 // Add trajectories between homed and target
+                String[] constraintOverrides =
+                    kinematics.forward(homedAngles).getY() < Arm.nodeConstraintMinY
+                            && kinematics.forward(targetAngles.get()).getY()
+                                < Arm.nodeConstraintMinY
+                        ? nodeConstraints
+                        : new String[] {};
                 allTrajectories.add(
                     new TrajectoryCache(
                         new double[] {homedAngles.get(0, 0), homedAngles.get(1, 0)},
                         new double[] {targetAngles.get().get(0, 0), targetAngles.get().get(1, 0)},
+                        constraintOverrides,
                         0,
                         new double[] {}));
                 allTrajectories.add(
                     new TrajectoryCache(
                         new double[] {targetAngles.get().get(0, 0), targetAngles.get().get(1, 0)},
                         new double[] {homedAngles.get(0, 0), homedAngles.get(1, 0)},
+                        constraintOverrides,
                         0,
                         new double[] {}));
 
@@ -284,6 +300,7 @@ public class ArmTrajectoryCache {
   private static record TrajectoryCache(
       double[] initialJointPositions,
       double[] finalJointPositions,
+      String[] constraintOverrides,
       double totalTime,
       double[] points) {}
 }

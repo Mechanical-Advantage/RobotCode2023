@@ -27,7 +27,7 @@ public class AprilTagVisionIONorthstar implements AprilTagVisionIO {
   private final DoubleArraySubscriber observationSubscriber;
   private final IntegerSubscriber fpsSubscriber;
 
-  private static final double disconnectedTimeout = 1.5;
+  private static final double disconnectedTimeout = 0.5;
   private final Alert disconnectedAlert;
   private final Timer disconnectedTimer = new Timer();
 

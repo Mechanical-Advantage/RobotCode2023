@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 import org.littletonrobotics.frc2023.Constants;
 import org.littletonrobotics.frc2023.Constants.Mode;
@@ -42,8 +43,6 @@ import org.littletonrobotics.frc2023.util.LoggedTunableNumber;
 import org.littletonrobotics.junction.Logger;
 
 public class Arm extends SubsystemBase {
-  public static final double shoulderDeadband = Units.degreesToRadians(1.0);
-  public static final double elbowDeadband = Units.degreesToRadians(3.0);
   public static final double maxVoltageNoTrajectory =
       6.0; // Limit shoulder & elbow voltage when not following trajectory
   public static final double trajectoryCacheMarginRadians = Units.degreesToRadians(3.0);
@@ -51,6 +50,10 @@ public class Arm extends SubsystemBase {
   public static final double wristGroundMarginMeters = 0.05;
   public static final double[] cubeIntakeAvoidanceRect = new double[] {0.05, 0.0, 0.75, 0.65};
   public static final double[] coneIntakeAvoidanceRect = new double[] {-0.65, 0.0, -0.05, 0.6};
+  public static final double nodeConstraintMinY =
+      0.75; // If target or start is below this y, disable node constraints
+  public static final Set<String> nodeConstraints =
+      Set.of("nodeMidFront", "nodeHighFront", "nodeMidBack", "nodeHighBack");
   public static final double avoidanceLookaheadSecs = 0.25;
   public static final double emergencyDisableMaxError = Units.degreesToRadians(10.0);
   public static final double emergencyDisableMaxErrorTime = 0.5;
@@ -68,7 +71,9 @@ public class Arm extends SubsystemBase {
   private final ArmDynamics dynamics;
 
   private Supplier<Boolean> disableSupplier = () -> false;
+  private Supplier<Boolean> coastSupplier = () -> false;
   private Supplier<Boolean> forcePregeneratedSupplier = () -> false;
+  private boolean lastCoast = false;
   private boolean emergencyDisable = false;
   private final Timer emergencyDisableMaxErrorTimer = new Timer();
   private final Alert driverDisableAlert =
@@ -119,19 +124,31 @@ public class Arm extends SubsystemBase {
       new LoggedTunableNumber("Arm/Wrist/MaxAcceleration");
 
   static {
-    switch (Constants.getRobot()) {
-      case ROBOT_SIMBOT:
-        shoulderKp.initDefault(80.0);
-        shoulderKd.initDefault(0.0);
-        elbowKp.initDefault(80.0);
-        elbowKd.initDefault(0.0);
-        wristKp.initDefault(40.0);
-        wristKd.initDefault(2.0);
-        wristMaxVelocity.initDefault(10.0);
-        wristMaxAcceleration.initDefault(50.0);
-        break;
-      default:
-        break;
+    if (!Constants.disableHAL) { // Don't run during trajectory cache generation
+      switch (Constants.getRobot()) {
+        case ROBOT_2023C:
+          shoulderKp.initDefault(6.0);
+          shoulderKd.initDefault(0.3);
+          elbowKp.initDefault(8.0);
+          elbowKd.initDefault(0.6);
+          wristKp.initDefault(90.0);
+          wristKd.initDefault(0.0);
+          wristMaxVelocity.initDefault(1.67);
+          wristMaxAcceleration.initDefault(3.34);
+          break;
+        case ROBOT_SIMBOT:
+          shoulderKp.initDefault(80.0);
+          shoulderKd.initDefault(0.0);
+          elbowKp.initDefault(80.0);
+          elbowKd.initDefault(0.0);
+          wristKp.initDefault(40.0);
+          wristKd.initDefault(2.0);
+          wristMaxVelocity.initDefault(10.0);
+          wristMaxAcceleration.initDefault(50.0);
+          break;
+        default:
+          break;
+      }
     }
   }
 
@@ -171,8 +188,11 @@ public class Arm extends SubsystemBase {
   }
 
   public void setOverrides(
-      Supplier<Boolean> disableSupplier, Supplier<Boolean> forcePregeneratedSupplier) {
+      Supplier<Boolean> disableSupplier,
+      Supplier<Boolean> coastSupplier,
+      Supplier<Boolean> forcePregeneratedSupplier) {
     this.disableSupplier = disableSupplier;
+    this.coastSupplier = coastSupplier;
     this.forcePregeneratedSupplier = forcePregeneratedSupplier;
   }
 
@@ -216,6 +236,13 @@ public class Arm extends SubsystemBase {
     if (wristMaxVelocity.hasChanged(hashCode()) && wristMaxAcceleration.hasChanged(hashCode())) {
       wristFeedback.setConstraints(
           new TrapezoidProfile.Constraints(wristMaxVelocity.get(), wristMaxAcceleration.get()));
+    }
+
+    // Update coast mode
+    boolean coast = coastSupplier.get() && DriverStation.isDisabled();
+    if (coast != lastCoast) {
+      lastCoast = coast;
+      io.setBrakeMode(!coast, !coast, !coast);
     }
 
     // Zero with absolute encoders
@@ -291,6 +318,11 @@ public class Arm extends SubsystemBase {
     double shoulderAngleSetpoint = Math.PI / 2.0;
     double elbowAngleSetpoint = Math.PI;
     double wristAngleSetpoint = 0.0;
+    double shoulderVoltageFeedforward = 0.0;
+    double elbowVoltageFeedforward = 0.0;
+    double shoulderVoltageFeedback = 0.0;
+    double elbowVoltageFeedback = 0.0;
+    double wristVoltageFeedback = 0.0;
 
     // Run shoulder and elbow
     ArmPose wristEffectiveArmPose = null; // The arm pose to use for wrist calculations
@@ -305,10 +337,16 @@ public class Arm extends SubsystemBase {
       // Follow trajectory
       trajectoryTimer.start();
       var state = currentTrajectory.sample(trajectoryTimer.get());
+      shoulderAngleSetpoint = state.get(0, 0);
+      elbowAngleSetpoint = state.get(1, 0);
+
       var voltages = dynamics.feedforward(state);
-      io.setShoulderVoltage(
-          voltages.get(0, 0) + shoulderFeedback.calculate(shoulderAngle, state.get(0, 0)));
-      io.setElbowVoltage(voltages.get(1, 0) + elbowFeedback.calculate(elbowAngle, state.get(1, 0)));
+      shoulderVoltageFeedforward = voltages.get(0, 0);
+      elbowVoltageFeedforward = voltages.get(1, 0);
+      shoulderVoltageFeedback = shoulderFeedback.calculate(shoulderAngle, state.get(0, 0));
+      elbowVoltageFeedback = elbowFeedback.calculate(elbowAngle, state.get(1, 0));
+      io.setShoulderVoltage(shoulderVoltageFeedforward + shoulderVoltageFeedback);
+      io.setElbowVoltage(elbowVoltageFeedforward + elbowVoltageFeedback);
       setpointPose = // If trajectory is interrupted, go to last setpoint
           new ArmPose(
               kinematics.forward(new Vector<>(state.extractColumnVector(0))),
@@ -317,37 +355,29 @@ public class Arm extends SubsystemBase {
                       + wristAngle) // Hold current wrist angle
               );
       wristEffectiveArmPose = queuedPose; // Move wrist based on trajectory endpoint
-      shoulderAngleSetpoint = state.get(0, 0);
-      elbowAngleSetpoint = state.get(1, 0);
 
     } else {
       // Go to setpoint
       Optional<Vector<N2>> angles = kinematics.inverse(setpointPose.endEffectorPosition());
       if (angles.isPresent()) {
+        shoulderAngleSetpoint = angles.get().get(0, 0);
+        elbowAngleSetpoint = angles.get().get(1, 0);
+
         var voltages = dynamics.feedforward(angles.get());
-        var shoulderFeedbackVolts =
-            shoulderFeedback.calculate(shoulderAngle, angles.get().get(0, 0));
-        var elbowFeedbackVolts = elbowFeedback.calculate(elbowAngle, angles.get().get(1, 0));
-        if (Math.abs(shoulderAngle - Math.PI / 2.0) < shoulderDeadband
-            && Math.abs(angles.get().get(0, 0) - Math.PI / 2.0) < shoulderDeadband) {
-          shoulderFeedbackVolts = 0.0;
-        }
-        if (Math.abs(elbowAngle - Math.PI) < elbowDeadband
-            && Math.abs(angles.get().get(1, 0) - Math.PI) < elbowDeadband) {
-          elbowFeedbackVolts = 0.0;
-        }
+        shoulderVoltageFeedforward = voltages.get(0, 0);
+        elbowVoltageFeedforward = voltages.get(1, 0);
+        shoulderVoltageFeedback = shoulderFeedback.calculate(shoulderAngle, angles.get().get(0, 0));
+        elbowVoltageFeedback = elbowFeedback.calculate(elbowAngle, angles.get().get(1, 0));
         io.setShoulderVoltage(
             MathUtil.clamp(
-                voltages.get(0, 0) + shoulderFeedbackVolts,
+                shoulderVoltageFeedforward + shoulderVoltageFeedback,
                 -maxVoltageNoTrajectory,
                 maxVoltageNoTrajectory));
         io.setElbowVoltage(
             MathUtil.clamp(
-                voltages.get(1, 0) + elbowFeedbackVolts,
+                elbowVoltageFeedforward + elbowVoltageFeedback,
                 -maxVoltageNoTrajectory,
                 maxVoltageNoTrajectory));
-        shoulderAngleSetpoint = angles.get().get(0, 0);
-        elbowAngleSetpoint = angles.get().get(1, 0);
       } else {
         io.setShoulderVoltage(0.0);
         io.setElbowVoltage(0.0);
@@ -394,8 +424,9 @@ public class Arm extends SubsystemBase {
         wristSetpoint = MathUtil.angleModulus(wristSetpoint);
         wristSetpoint =
             MathUtil.clamp(wristSetpoint, config.wrist().minAngle(), config.wrist().maxAngle());
-        io.setWristVoltage(wristFeedback.calculate(wristAngle, wristSetpoint));
         wristAngleSetpoint = wristFeedback.getSetpoint().position;
+        wristVoltageFeedback = wristFeedback.calculate(wristAngle, wristSetpoint);
+        io.setWristVoltage(wristVoltageFeedback);
       }
     }
 
@@ -414,6 +445,12 @@ public class Arm extends SubsystemBase {
         .recordOutput("Arm/SetpointPose/Y", setpointPose.endEffectorPosition().getY());
     Logger.getInstance()
         .recordOutput("Arm/SetpointPose/Wrist", setpointPose.globalWristAngle().getRadians());
+    Logger.getInstance()
+        .recordOutput("Arm/Voltages/ShoulderFeedforward", shoulderVoltageFeedforward);
+    Logger.getInstance().recordOutput("Arm/Voltages/ElbowFeedforward", elbowVoltageFeedforward);
+    Logger.getInstance().recordOutput("Arm/Voltages/ShoulderFeedback", shoulderVoltageFeedback);
+    Logger.getInstance().recordOutput("Arm/Voltages/ElbowFeedback", elbowVoltageFeedback);
+    Logger.getInstance().recordOutput("Arm/Voltages/WristFeedback", wristVoltageFeedback);
 
     // Calculate extension percent (for acceleration limits)
     extensionPercent =
@@ -566,7 +603,14 @@ public class Arm extends SubsystemBase {
     trajectoryTimer.reset();
 
     // Create trajectory and search for similar
-    var parameters = new ArmTrajectory.Parameters(currentAngles.get(), targetAngles.get());
+    var parameters =
+        new ArmTrajectory.Parameters(
+            currentAngles.get(),
+            targetAngles.get(),
+            kinematics.forward(currentAngles.get()).getY() < nodeConstraintMinY
+                    && kinematics.forward(targetAngles.get()).getY() < nodeConstraintMinY
+                ? nodeConstraints
+                : Set.of());
     var trajectory = new ArmTrajectory(parameters);
     ArmTrajectory closestTrajectory = trajectory.findClosest(allTrajectories.values());
 
@@ -613,7 +657,13 @@ public class Arm extends SubsystemBase {
     if (Math.abs(diff.get(0, 0)) > trajectoryCacheMarginRadians
         || Math.abs(diff.get(1, 0)) > trajectoryCacheMarginRadians) {
       var returnTrajectory =
-          new ArmTrajectory(new ArmTrajectory.Parameters(targetAngles.get(), homedAngles));
+          new ArmTrajectory(
+              new ArmTrajectory.Parameters(
+                  targetAngles.get(),
+                  homedAngles,
+                  kinematics.forward(targetAngles.get()).getY() < nodeConstraintMinY
+                      ? nodeConstraints
+                      : Set.of()));
       ArmTrajectory closestReturnTrajectory =
           returnTrajectory.findClosest(allTrajectories.values());
       var initialDiff =

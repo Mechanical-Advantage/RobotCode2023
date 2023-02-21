@@ -17,7 +17,7 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardString;
 
 /** A string chooser for the dashboard where the options can be changed on-the-fly. */
 public class SwitchableChooser implements LoggedDashboardInput {
-  private static final String placeholder = "NA";
+  private static final String placeholder = "<NA>";
 
   private String[] options = new String[] {placeholder};
   private String active = placeholder;

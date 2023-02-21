@@ -32,7 +32,7 @@ public class ArmIOSim implements ArmIO {
     dynamics = new ArmDynamics(config);
     wristSim =
         new SingleJointedArmSim(
-            config.wrist().motor(),
+            config.wrist().motor().physics(),
             1.0, // Reduction is included in the motor
             config.wrist().moi(),
             config.wrist().length(),
@@ -64,7 +64,11 @@ public class ArmIOSim implements ArmIO {
     inputs.shoulderAppliedVolts = shoulderAppliedVolts;
     inputs.shoulderCurrentAmps =
         new double[] {
-          config.shoulder().motor().getCurrent(shoulderElbowStates.get(2, 0), shoulderAppliedVolts)
+          config
+              .shoulder()
+              .motor()
+              .physics()
+              .getCurrent(shoulderElbowStates.get(2, 0), shoulderAppliedVolts)
         };
     inputs.shoulderTempCelcius = new double[] {};
 
@@ -76,7 +80,11 @@ public class ArmIOSim implements ArmIO {
     inputs.elbowAppliedVolts = elbowAppliedVolts;
     inputs.elbowCurrentAmps =
         new double[] {
-          config.elbow().motor().getCurrent(shoulderElbowStates.get(3, 0), elbowAppliedVolts)
+          config
+              .elbow()
+              .motor()
+              .physics()
+              .getCurrent(shoulderElbowStates.get(3, 0), elbowAppliedVolts)
         };
     inputs.elbowTempCelcius = new double[] {};
 

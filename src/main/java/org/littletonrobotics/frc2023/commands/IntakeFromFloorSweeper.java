@@ -20,7 +20,7 @@ import org.littletonrobotics.frc2023.subsystems.arm.ArmPose;
 import org.littletonrobotics.frc2023.subsystems.gripper.Gripper;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.Objective;
 
-public class IntakeAlongFloor extends SequentialCommandGroup {
+public class IntakeFromFloorSweeper extends SequentialCommandGroup {
   public static final double height = 0.15;
   public static final double frontMinX = 0.75;
   public static final double frontMaxX = 1.3;
@@ -30,7 +30,7 @@ public class IntakeAlongFloor extends SequentialCommandGroup {
   /**
    * Moves the arm along the floor based on the position of a joystick while running the gripper.
    */
-  public IntakeAlongFloor(
+  public IntakeFromFloorSweeper(
       boolean isFront,
       Arm arm,
       Gripper gripper,
@@ -69,6 +69,6 @@ public class IntakeAlongFloor extends SequentialCommandGroup {
             .andThen(
                 armCommand.alongWith(
                     gripper.intakeCommand(),
-                    Commands.run(() -> objective.lastIntakeFront = true))));
+                    Commands.run(() -> objective.lastIntakeFront = isFront))));
   }
 }

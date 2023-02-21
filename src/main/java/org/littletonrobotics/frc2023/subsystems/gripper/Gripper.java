@@ -23,9 +23,9 @@ public class Gripper extends SubsystemBase {
   private static final LoggedTunableNumber intakeVolts =
       new LoggedTunableNumber("Gripper/IntakeVolts", 10.0);
   private static final LoggedTunableNumber ejectVolts =
-      new LoggedTunableNumber("Gripper/EjectVolts", 6.0);
+      new LoggedTunableNumber("Gripper/EjectVolts", -10.0);
   private static final LoggedTunableNumber ejectSecs =
-      new LoggedTunableNumber("Gripper/EjectSecs", 0.2);
+      new LoggedTunableNumber("Gripper/EjectSecs", 0.25);
 
   public Gripper(GripperIO io) {
     this.io = io;

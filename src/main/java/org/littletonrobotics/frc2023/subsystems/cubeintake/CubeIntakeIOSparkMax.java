@@ -13,16 +13,17 @@ import com.revrobotics.RelativeEncoder;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.Encoder;
-import edu.wpi.first.wpilibj.PWM;
 import org.littletonrobotics.frc2023.Constants;
 import org.littletonrobotics.frc2023.util.SparkMaxBurnManager;
+import org.littletonrobotics.frc2023.util.SparkMaxPeriodicFrameConfig;
 
 public class CubeIntakeIOSparkMax implements CubeIntakeIO {
   private final CANSparkMax armSparkMax;
   private final CANSparkMax rollerSparkMax;
 
-  private final PWM armAbsoluteEncoder;
+  private final DutyCycleEncoder armAbsoluteEncoder;
   private final Encoder armRelativeEncoder;
   private final RelativeEncoder armInternalEncoder;
 
@@ -44,7 +45,8 @@ public class CubeIntakeIOSparkMax implements CubeIntakeIO {
         armInternalEncoderReduction = 1.0;
         armAbsoluteEncoderOffset = new Rotation2d(0.0);
 
-        armAbsoluteEncoder = new PWM(0, false);
+        armAbsoluteEncoder = new DutyCycleEncoder(0);
+        armAbsoluteEncoder.setDutyCycleRange(1.0 / 1025.0, 1024.0 / 1025.0);
         armRelativeEncoder = new Encoder(0, 1, false);
         armRelativeEncoder.setDistancePerPulse((2 * Math.PI) / 8192);
         break;
@@ -56,6 +58,9 @@ public class CubeIntakeIOSparkMax implements CubeIntakeIO {
       armSparkMax.restoreFactoryDefaults();
       rollerSparkMax.restoreFactoryDefaults();
     }
+
+    SparkMaxPeriodicFrameConfig.configNotLeader(armSparkMax);
+    SparkMaxPeriodicFrameConfig.configNotLeader(rollerSparkMax);
 
     armInternalEncoder = armSparkMax.getEncoder();
     armInternalEncoder.setPosition(0.0);
@@ -84,7 +89,7 @@ public class CubeIntakeIOSparkMax implements CubeIntakeIO {
   public void updateInputs(CubeIntakeIOInputs inputs) {
     inputs.armAbsolutePositionRad =
         MathUtil.angleModulus(
-            armAbsoluteEncoder.getPosition() * 2 * Math.PI * (armExternalEncoderInvert ? -1 : 1)
+            Units.rotationsToRadians(armAbsoluteEncoder.get()) * (armExternalEncoderInvert ? -1 : 1)
                 - armAbsoluteEncoderOffset.getRadians());
     inputs.armRelativePositionRad =
         armRelativeEncoder.getDistance() * (armExternalEncoderInvert ? -1 : 1);

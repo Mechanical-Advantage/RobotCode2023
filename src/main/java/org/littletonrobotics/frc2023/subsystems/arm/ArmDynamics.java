@@ -51,7 +51,6 @@ public class ArmDynamics {
             elbowCgRadius,
             config.elbow().minAngle(),
             config.elbow().maxAngle(),
-            config.elbow().reduction(),
             config.elbow().motor());
   }
 
@@ -79,8 +78,8 @@ public class ArmDynamics {
             .plus(C(position, velocity).times(velocity))
             .plus(Tg(position));
     return VecBuilder.fill(
-        shoulder.motor().getVoltage(torque.get(0, 0), velocity.get(0, 0)),
-        elbow.motor().getVoltage(torque.get(1, 0), velocity.get(1, 0)));
+        shoulder.motor().physics().getVoltage(torque.get(0, 0), velocity.get(0, 0)),
+        elbow.motor().physics().getVoltage(torque.get(1, 0), velocity.get(1, 0)));
   }
 
   /**
@@ -105,11 +104,15 @@ public class ArmDynamics {
               var shoulderTorque =
                   shoulder
                       .motor()
-                      .getTorque(shoulder.motor().getCurrent(velocity.get(0, 0), u.get(0, 0)));
+                      .physics()
+                      .getTorque(
+                          shoulder.motor().physics().getCurrent(velocity.get(0, 0), u.get(0, 0)));
               var elbowTorque =
                   elbow
                       .motor()
-                      .getTorque(elbow.motor().getCurrent(velocity.get(1, 0), u.get(1, 0)));
+                      .physics()
+                      .getTorque(
+                          elbow.motor().physics().getCurrent(velocity.get(1, 0), u.get(1, 0)));
               var torque = VecBuilder.fill(shoulderTorque, elbowTorque);
 
               // Apply limits

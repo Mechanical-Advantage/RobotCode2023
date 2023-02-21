@@ -18,6 +18,7 @@ import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.RobotController;
 import org.littletonrobotics.frc2023.Constants;
 import org.littletonrobotics.frc2023.util.SparkMaxBurnManager;
+import org.littletonrobotics.frc2023.util.SparkMaxPeriodicFrameConfig;
 
 public class ModuleIOSparkMax implements ModuleIO {
   private final CANSparkMax driveSparkMax;
@@ -103,6 +104,9 @@ public class ModuleIOSparkMax implements ModuleIO {
       driveSparkMax.restoreFactoryDefaults();
       turnSparkMax.restoreFactoryDefaults();
     }
+
+    SparkMaxPeriodicFrameConfig.configNotLeader(driveSparkMax);
+    SparkMaxPeriodicFrameConfig.configNotLeader(turnSparkMax);
 
     turnSparkMax.setInverted(isTurnMotorInverted);
 

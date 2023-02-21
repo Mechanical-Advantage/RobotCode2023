@@ -15,13 +15,17 @@ import org.littletonrobotics.frc2023.util.Alert.AlertType;
 public final class Constants {
   private static final RobotType robot = RobotType.ROBOT_2023C;
   public static final double loopPeriodSecs = 0.02;
-  public static final boolean tuningMode = false;
+  public static final boolean tuningMode = true;
+  public static boolean invalidRobotAlertSent = false;
 
   public static RobotType getRobot() {
     if (!disableHAL && RobotBase.isReal()) {
       if (robot == RobotType.ROBOT_SIMBOT) { // Invalid robot selected
-        new Alert("Invalid robot selected, using competition robot as default.", AlertType.ERROR)
-            .set(true);
+        if (!invalidRobotAlertSent) {
+          new Alert("Invalid robot selected, using competition robot as default.", AlertType.ERROR)
+              .set(true);
+          invalidRobotAlertSent = true;
+        }
         return RobotType.ROBOT_2023C;
       } else {
         return robot;
@@ -61,7 +65,7 @@ public final class Constants {
   }
 
   // Function to disable HAL interaction when running without native libs
-  private static boolean disableHAL = false;
+  public static boolean disableHAL = false;
 
   public static void disableHAL() {
     disableHAL = true;

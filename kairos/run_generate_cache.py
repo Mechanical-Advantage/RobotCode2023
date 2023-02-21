@@ -32,7 +32,7 @@ def calculate_func(trajectory):
         {
             "initial": trajectory["initialJointPositions"],
             "final": trajectory["finalJointPositions"],
-            "constraintOverrides": [],
+            "constraintOverrides": trajectory["constraintOverrides"],
         }
     )
 

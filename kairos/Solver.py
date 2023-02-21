@@ -29,6 +29,8 @@ class Solver:
         n = config["solver"]["interiorPoints"]
         max_voltage_shoulder = config["solver"]["maxVoltageShoulder"]
         max_voltage_elbow = config["solver"]["maxVoltageElbow"]
+        max_acceleration_shoulder = config["solver"]["maxAccelerationShoulder"]
+        max_acceleration_elbow = config["solver"]["maxAccelerationElbow"]
         max_jerk = config["solver"]["maxJerk"]
         elbow_cg_radius = (
             config["elbow"]["cgRadius"] * config["elbow"]["mass"]
@@ -124,6 +126,18 @@ class Solver:
             jerk = (
                 (acceleration[0] - last_acceleration[0]) / (2 * dt),
                 (acceleration[1] - last_acceleration[1]) / (2 * dt),
+            )
+            opti.subject_to(
+                opti.bounded(
+                    -max_acceleration_shoulder,
+                    acceleration[0],
+                    max_acceleration_shoulder,
+                )
+            )
+            opti.subject_to(
+                opti.bounded(
+                    -max_acceleration_elbow, acceleration[1], max_acceleration_elbow
+                )
             )
             voltage = ff_model.calculate(current_theta, last_velocity, acceleration)
             opti.subject_to(
