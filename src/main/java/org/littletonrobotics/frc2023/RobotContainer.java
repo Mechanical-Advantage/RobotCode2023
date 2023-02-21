@@ -267,6 +267,25 @@ public class RobotContainer {
                               AllianceFlipUtil.apply(new Rotation2d())));
                     })
                 .ignoringDisable(true));
+    driver
+        .b()
+        .and(DriverStation::isDisabled)
+        .whileTrue(
+            Commands.run(
+                    () -> {
+                      drive.setPose(
+                          new Pose2d(
+                              drive.getPose().getTranslation().getX()
+                                  + (driver.getLeftX() * Constants.loopPeriodSecs * 2.0),
+                              drive.getPose().getTranslation().getY()
+                                  - (driver.getLeftY() * Constants.loopPeriodSecs * 2.0),
+                              drive
+                                  .getRotation()
+                                  .plus(
+                                      new Rotation2d(
+                                          -driver.getRightX() * Constants.loopPeriodSecs * 2.0))));
+                    })
+                .ignoringDisable(true));
 
     // Auto align controls
     driver.leftTrigger().whileTrue(new DriveToSubstation(drive));
