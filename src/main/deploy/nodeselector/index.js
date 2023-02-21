@@ -10,12 +10,21 @@ import { NT4_Client } from "./NT4.js";
 const robotToDashboardTopic = "/nodeselector/robot_to_dashboard";
 const dashboardToRobotTopic = "/nodeselector/dashboard_to_robot";
 
-function setActive(index) {
+let active = null;
+
+function displayActive(index) {
+  active = index;
   Array.from(document.getElementsByClassName("active")).forEach((element) => {
     element.classList.remove("active");
   });
   if (index !== null) {
     document.getElementsByTagName("td")[index].classList.add("active");
+  }
+}
+
+function sendActive(index) {
+  if (index !== active) {
+    client.addSample(dashboardToRobotTopic, index);
   }
 }
 
@@ -32,7 +41,7 @@ let client = new NT4_Client(
     // New data
     if (topic.name === robotToDashboardTopic) {
       document.body.style.backgroundColor = "white";
-      setActive(value);
+      displayActive(value);
     }
   },
   () => {
@@ -41,7 +50,7 @@ let client = new NT4_Client(
   () => {
     // Disconnected
     document.body.style.backgroundColor = "red";
-    setActive(null);
+    displayActive(null);
   }
 );
 
@@ -54,11 +63,11 @@ window.addEventListener("load", () => {
   // Add click listeners
   Array.from(document.getElementsByTagName("td")).forEach((cell, index) => {
     cell.addEventListener("click", () => {
-      client.addSample(dashboardToRobotTopic, index);
+      sendActive(index);
     });
     cell.addEventListener("contextmenu", (event) => {
       event.preventDefault();
-      client.addSample(dashboardToRobotTopic, index);
+      sendActive(index);
     });
   });
 
@@ -77,7 +86,7 @@ window.addEventListener("load", () => {
               y >= rect.top &&
               y <= rect.bottom
             ) {
-              client.addSample(dashboardToRobotTopic, index);
+              sendActive(index);
             }
           }
         );
