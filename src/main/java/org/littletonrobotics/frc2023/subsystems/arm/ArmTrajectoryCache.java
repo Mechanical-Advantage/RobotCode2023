@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -88,6 +89,7 @@ public class ArmTrajectoryCache {
     ArmKinematics kinematics = new ArmKinematics(config);
     ArmPose.Preset.updateHomedPreset(config);
     String[] nodeConstraints = Arm.nodeConstraints.toArray(new String[Arm.nodeConstraints.size()]);
+    Arrays.sort(nodeConstraints);
 
     // Create set of trajectories between presets
     List<TrajectoryCache> allTrajectories = new ArrayList<>();
