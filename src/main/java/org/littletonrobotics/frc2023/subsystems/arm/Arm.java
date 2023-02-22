@@ -103,6 +103,7 @@ public class Arm extends SubsystemBase {
   private final Map<Integer, ArmTrajectory> allTrajectories = new HashMap<>();
   private ArmTrajectory currentTrajectory = null;
   private ArmPose setpointPose = null; // Pose to revert to when not following trajectory
+  private ArmPose lastSetpointPose = null; // Used for FF calculation when not following trajectory
   private ArmPose queuedPose = null; // Use as setpoint once trajectory is completed
   private final Timer trajectoryTimer = new Timer();
 
@@ -311,6 +312,7 @@ public class Arm extends SubsystemBase {
           new ArmPose(
               kinematics.forward(VecBuilder.fill(shoulderAngle, elbowAngle)),
               new Rotation2d(shoulderAngle + elbowAngle + wristAngle));
+      lastSetpointPose = setpointPose; // No velocity
       currentTrajectory = null;
       queuedPose = null;
     }
@@ -374,11 +376,14 @@ public class Arm extends SubsystemBase {
     } else {
       // Go to setpoint
       Optional<Vector<N2>> angles = kinematics.inverse(setpointPose.endEffectorPosition());
-      if (angles.isPresent()) {
+      Optional<Vector<N2>> lastAngles = kinematics.inverse(lastSetpointPose.endEffectorPosition());
+      if (angles.isPresent() && lastAngles.isPresent()) {
         shoulderAngleSetpoint = angles.get().get(0, 0);
         elbowAngleSetpoint = angles.get().get(1, 0);
+        Vector<N2> velocities =
+            new Vector<>(angles.get().minus(lastAngles.get()).div(Constants.loopPeriodSecs));
 
-        var voltages = dynamics.feedforward(angles.get());
+        var voltages = dynamics.feedforward(angles.get(), velocities);
         shoulderVoltageFeedforward = voltages.get(0, 0);
         elbowVoltageFeedforward = voltages.get(1, 0);
         shoulderVoltageFeedback = shoulderFeedback.calculate(shoulderAngle, angles.get().get(0, 0));
@@ -446,6 +451,9 @@ public class Arm extends SubsystemBase {
         io.setWristVoltage(wristVoltageFeedback);
       }
     }
+
+    // Update last setpoint pose
+    lastSetpointPose = setpointPose;
 
     // Log setpoints and measured positions
     visualizerMeasured.update(shoulderAngle, elbowAngle, wristAngle);

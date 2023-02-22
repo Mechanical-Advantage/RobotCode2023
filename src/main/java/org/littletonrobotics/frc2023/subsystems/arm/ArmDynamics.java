@@ -54,11 +54,6 @@ public class ArmDynamics {
             config.elbow().motor());
   }
 
-  /** Calculates the joint voltages based on the joint positions (feedforward). */
-  public Vector<N2> feedforward(Vector<N2> position) {
-    return feedforward(position, VecBuilder.fill(0.0, 0.0), VecBuilder.fill(0.0, 0.0));
-  }
-
   /**
    * Calculates the joint voltages based on the full joint states as a matrix (feedforward). The
    * rows represent each joint and the columns represent position, velocity, and acceleration.
@@ -68,6 +63,16 @@ public class ArmDynamics {
         new Vector<>(state.extractColumnVector(0)),
         new Vector<>(state.extractColumnVector(1)),
         new Vector<>(state.extractColumnVector(2)));
+  }
+
+  /** Calculates the joint voltages based on the joint positions (feedforward). */
+  public Vector<N2> feedforward(Vector<N2> position) {
+    return feedforward(position, VecBuilder.fill(0.0, 0.0), VecBuilder.fill(0.0, 0.0));
+  }
+
+  /** Calculates the joint voltages based on the joint positions and velocities (feedforward). */
+  public Vector<N2> feedforward(Vector<N2> position, Vector<N2> velocity) {
+    return feedforward(position, velocity, VecBuilder.fill(0.0, 0.0));
   }
 
   /** Calculates the joint voltages based on the full joint states as vectors (feedforward). */
