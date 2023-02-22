@@ -35,6 +35,9 @@ public class AutoScore extends SequentialCommandGroup {
   public static final double maxArmExtensionMid = 1.1;
   public static final double maxArmExtensionHigh = 1.35;
 
+  public static final double extendArmDriveTolerance = 1.0;
+  public static final Rotation2d extendArmThetaTolerance = Rotation2d.fromDegrees(45.0);
+
   public static final Translation2d hybridRelativePosition = new Translation2d(-0.2, 0.6);
   public static final Rotation2d hybridWristAngle = Rotation2d.fromDegrees(-60.0);
   public static final Translation2d midCubeRelativePosition = new Translation2d(-0.5, 0.5);
@@ -59,8 +62,12 @@ public class AutoScore extends SequentialCommandGroup {
     initTargetSuppliers(drive::getPose, arm, objective, reachScoreDisable);
     var driveCommand = new DriveToPose(drive, driveTargetSupplier);
     var armCommand =
-        arm.runPathCommand(armTargetSupplier)
-            .andThen(Commands.run(() -> arm.runDirect(armTargetSupplier.get()), arm));
+        Commands.waitUntil(
+                () ->
+                    driveCommand.withinTolerance(extendArmDriveTolerance, extendArmThetaTolerance))
+            .andThen(
+                arm.runPathCommand(armTargetSupplier),
+                Commands.run(() -> arm.runDirect(armTargetSupplier.get()), arm));
     addCommands(
         Commands.waitUntil(() -> driveCommand.atGoal() && arm.isTrajectoryFinished())
             .deadlineWith(driveCommand, armCommand)
@@ -98,7 +105,11 @@ public class AutoScore extends SequentialCommandGroup {
       MoveArmWithJoysticks moveArmCommand) {
     initTargetSuppliers(drive::getPose, arm, objective, reachScoreDisable);
     var driveCommand = new DriveToPose(drive, driveTargetSupplier);
-    var armCommand = arm.runPathCommand(armTargetSupplier).andThen(moveArmCommand);
+    var armCommand =
+        Commands.waitUntil(
+                () ->
+                    driveCommand.withinTolerance(extendArmDriveTolerance, extendArmThetaTolerance))
+            .andThen(arm.runPathCommand(armTargetSupplier), moveArmCommand);
     addCommands(
         Commands.waitUntil(
                 () -> driveCommand.atGoal() && arm.isTrajectoryFinished() && ejectButton.get())

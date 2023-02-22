@@ -9,6 +9,7 @@ package org.littletonrobotics.frc2023.commands;
 
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
@@ -31,6 +32,8 @@ public class DriveToPose extends CommandBase {
   private final ProfiledPIDController thetaController =
       new ProfiledPIDController(
           0.0, 0.0, 0.0, new TrapezoidProfile.Constraints(0.0, 0.0), Constants.loopPeriodSecs);
+  private double driveErrorAbs;
+  private double thetaErrorAbs;
 
   private static final LoggedTunableNumber driveKp = new LoggedTunableNumber("DriveToPose/DriveKp");
   private static final LoggedTunableNumber driveKd = new LoggedTunableNumber("DriveToPose/DriveKd");
@@ -116,15 +119,22 @@ public class DriveToPose extends CommandBase {
     var currentPose = drive.getPose();
     var targetPose = poseSupplier.get();
 
-    // Command speeds
-    double driveVelocityScalar =
-        driveController.calculate(
-            currentPose.getTranslation().getDistance(poseSupplier.get().getTranslation()), 0.0);
+    // Calculate drive speed
+    double currentDistance =
+        currentPose.getTranslation().getDistance(poseSupplier.get().getTranslation());
+    driveErrorAbs = currentDistance;
+    double driveVelocityScalar = driveController.calculate(driveErrorAbs, 0.0);
+    if (driveController.atGoal()) driveVelocityScalar = 0.0;
+
+    // Calculate theta speed
     double thetaVelocity =
         thetaController.calculate(
             currentPose.getRotation().getRadians(), targetPose.getRotation().getRadians());
-    if (driveController.atGoal()) driveVelocityScalar = 0.0;
+    thetaErrorAbs =
+        Math.abs(currentPose.getRotation().minus(targetPose.getRotation()).getRadians());
     if (thetaController.atGoal()) thetaVelocity = 0.0;
+
+    // Command speeds
     var driveVelocity =
         new Pose2d(
                 new Translation2d(),
@@ -142,7 +152,15 @@ public class DriveToPose extends CommandBase {
     drive.stop();
   }
 
+  /** Checks if the robot is stopped at the final pose. */
   public boolean atGoal() {
     return running && driveController.atGoal() && thetaController.atGoal();
+  }
+
+  /** Checks if the robot pose is within the allowed drive and theta tolerances. */
+  public boolean withinTolerance(double driveTolerance, Rotation2d thetaTolerance) {
+    return running
+        && Math.abs(driveErrorAbs) < driveTolerance
+        && Math.abs(thetaErrorAbs) < thetaTolerance.getRadians();
   }
 }
