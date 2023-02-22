@@ -27,10 +27,13 @@ import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
 import org.littletonrobotics.frc2023.util.GeomUtil;
 
 public class AutoScore extends SequentialCommandGroup {
-  public static final double minDriveX = FieldConstants.Grids.outerX + 0.5;
+  public static final double minDriveX = FieldConstants.Grids.outerX + 0.45;
   public static final double minDriveY = 0.5;
   public static final double maxDriveY = FieldConstants.Community.leftY - 0.5;
   public static final double minArmExtension = 0.6;
+  public static final double maxArmExtensionHybrid = 0.9;
+  public static final double maxArmExtensionMid = 1.1;
+  public static final double maxArmExtensionHigh = 1.35;
 
   public static final Translation2d hybridRelativePosition = new Translation2d(-0.2, 0.6);
   public static final Rotation2d hybridWristAngle = Rotation2d.fromDegrees(-60.0);
@@ -156,10 +159,20 @@ public class AutoScore extends SequentialCommandGroup {
     var nodeTranslation = getNodeTranslation(objective);
     var relativeArmPosition = getRelativeArmPosition(objective);
 
+    // Select max arm extension
+    double maxArmExtension = 0.0;
+    switch (objective.nodeLevel) {
+      case HYBRID -> maxArmExtension = maxArmExtensionHybrid;
+      case MID -> maxArmExtension = maxArmExtensionMid;
+      case HIGH -> maxArmExtension = maxArmExtensionHigh;
+    }
+
     // Calculate drive distance
     double minDistance = minArmExtension - relativeArmPosition.getX();
     double maxDistance =
-        arm.calcMaxReachAtHeight(nodeTranslation.getZ() + relativeArmPosition.getY())
+        Math.min(
+                maxArmExtension,
+                arm.calcMaxReachAtHeight(nodeTranslation.getZ() + relativeArmPosition.getY()))
             - relativeArmPosition.getX();
     double distanceFromNode =
         MathUtil.clamp(
