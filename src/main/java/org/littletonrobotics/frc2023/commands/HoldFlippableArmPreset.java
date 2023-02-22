@@ -7,6 +7,7 @@
 
 package org.littletonrobotics.frc2023.commands;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import org.littletonrobotics.frc2023.subsystems.arm.Arm;
@@ -15,12 +16,14 @@ import org.littletonrobotics.frc2023.subsystems.drive.Drive;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
 
 public class HoldFlippableArmPreset extends CommandBase {
+  private static final Rotation2d deadband = Rotation2d.fromDegrees(10.0);
+
   private final Arm arm;
   private final Drive drive;
   private final ArmPose pose;
   private final Rotation2d fieldRotation;
 
-  private boolean lastIsFlipped;
+  private boolean isFlipped = false;
 
   /**
    * Moves the arm to the specified pose while flipping to align with the specified direction on the
@@ -36,15 +39,16 @@ public class HoldFlippableArmPreset extends CommandBase {
 
   @Override
   public void initialize() {
-    lastIsFlipped = isFlipped();
-    arm.runPath(pose.withFlip(lastIsFlipped));
+    isFlipped = false;
+    updateFlip();
+    arm.runPath(pose.withFlip(isFlipped));
   }
 
   @Override
   public void execute() {
-    if (lastIsFlipped != isFlipped()) {
-      lastIsFlipped = !lastIsFlipped;
-      arm.runPath(pose.withFlip(lastIsFlipped));
+    boolean changed = updateFlip();
+    if (changed) {
+      arm.runPath(pose.withFlip(isFlipped));
     }
   }
 
@@ -53,7 +57,22 @@ public class HoldFlippableArmPreset extends CommandBase {
     arm.runPath(ArmPose.Preset.HOMED);
   }
 
+  private boolean updateFlip() {
+    Rotation2d relativeRotation = drive.getRotation().minus(AllianceFlipUtil.apply(fieldRotation));
+    double relativeRotationAbsRadians =
+        Math.abs(MathUtil.angleModulus(relativeRotation.getRadians()));
+    if (isFlipped && relativeRotationAbsRadians < Math.PI / 2.0 - deadband.getRadians()) {
+      isFlipped = false;
+      return true;
+    }
+    if (!isFlipped && relativeRotationAbsRadians > Math.PI / 2.0 + deadband.getRadians()) {
+      isFlipped = true;
+      return true;
+    }
+    return false;
+  }
+
   public boolean isFlipped() {
-    return drive.getRotation().minus(AllianceFlipUtil.apply(fieldRotation)).getCos() < 0.0;
+    return isFlipped;
   }
 }
