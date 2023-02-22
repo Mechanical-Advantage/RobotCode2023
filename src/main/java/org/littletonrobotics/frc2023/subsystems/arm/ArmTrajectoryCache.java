@@ -88,15 +88,15 @@ public class ArmTrajectoryCache {
     ArmConfig config = ArmConfig.loadJson(configFile);
     ArmKinematics kinematics = new ArmKinematics(config);
     ArmPose.Preset.updateHomedPreset(config);
-    String[] nodeConstraints = Arm.nodeConstraints.toArray(new String[Arm.nodeConstraints.size()]);
-    Arrays.sort(nodeConstraints);
 
     // Create set of trajectories between presets
     List<TrajectoryCache> allTrajectories = new ArrayList<>();
     List<ArmPose> allPoses = new ArrayList<>();
     for (var preset : ArmPose.Preset.values()) {
       allPoses.add(preset.getPose());
-      allPoses.add(preset.getPose().withFlip(true));
+      if (preset.shouldPregenerateFlip()) {
+        allPoses.add(preset.getPose().withFlip(true));
+      }
     }
     for (var pose0 : allPoses) {
       for (var pose1 : allPoses) {
@@ -109,11 +109,9 @@ public class ArmTrajectoryCache {
                 new TrajectoryCache(
                     new double[] {preset0Angles.get().get(0, 0), preset0Angles.get().get(1, 0)},
                     new double[] {preset1Angles.get().get(0, 0), preset1Angles.get().get(1, 0)},
-                    kinematics.forward(preset0Angles.get()).getY() < Arm.nodeConstraintMinY
-                            && kinematics.forward(preset1Angles.get()).getY()
-                                < Arm.nodeConstraintMinY
-                        ? nodeConstraints
-                        : new String[] {},
+                    stringSetToArray(
+                        Arm.getTrajectoryConstraintOverrides(
+                            kinematics, preset0Angles.get(), preset1Angles.get())),
                     0,
                     new double[] {}));
           }
@@ -157,11 +155,9 @@ public class ArmTrajectoryCache {
 
                 // Add trajectories between homed and target
                 String[] constraintOverrides =
-                    kinematics.forward(homedAngles).getY() < Arm.nodeConstraintMinY
-                            && kinematics.forward(targetAngles.get()).getY()
-                                < Arm.nodeConstraintMinY
-                        ? nodeConstraints
-                        : new String[] {};
+                    stringSetToArray(
+                        Arm.getTrajectoryConstraintOverrides(
+                            kinematics, targetAngles.get(), homedAngles));
                 allTrajectories.add(
                     new TrajectoryCache(
                         new double[] {homedAngles.get(0, 0), homedAngles.get(1, 0)},
@@ -294,6 +290,12 @@ public class ArmTrajectoryCache {
       }
       System.out.println("Error: " + line);
     }
+  }
+
+  private static String[] stringSetToArray(Set<String> set) {
+    String[] array = set.toArray(new String[set.size()]);
+    Arrays.sort(array);
+    return array;
   }
 
   private static record TrajectoryCacheStore(

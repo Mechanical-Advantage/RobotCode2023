@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -52,8 +53,8 @@ public class Arm extends SubsystemBase {
   public static final double[] coneIntakeAvoidanceRect = new double[] {-0.65, 0.0, -0.05, 0.6};
   public static final double nodeConstraintMinY =
       0.75; // If target or start is below this y, disable node constraints
-  public static final Set<String> nodeConstraints =
-      Set.of("nodeMidFront", "nodeHighFront", "nodeMidBack", "nodeHighBack");
+  public static final Set<String> frontNodeConstraints = Set.of("nodeMidFront", "nodeHighFront");
+  public static final Set<String> backNodeConstraints = Set.of("nodeMidBack", "nodeHighBack");
   public static final double avoidanceLookaheadSecs = 0.25;
   public static final double emergencyDisableMaxError = Units.degreesToRadians(10.0);
   public static final double emergencyDisableMaxErrorTime = 0.5;
@@ -151,10 +152,10 @@ public class Arm extends SubsystemBase {
           shoulderKd.initDefault(0.0);
           elbowKp.initDefault(80.0);
           elbowKd.initDefault(0.0);
-          wristKp.initDefault(40.0);
-          wristKd.initDefault(2.0);
-          wristMaxVelocity.initDefault(10.0);
-          wristMaxAcceleration.initDefault(50.0);
+          wristKp.initDefault(20.0);
+          wristKd.initDefault(0.0);
+          wristMaxVelocity.initDefault(8.0);
+          wristMaxAcceleration.initDefault(25.0);
           break;
         default:
           break;
@@ -637,10 +638,7 @@ public class Arm extends SubsystemBase {
         new ArmTrajectory.Parameters(
             currentAngles.get(),
             targetAngles.get(),
-            kinematics.forward(currentAngles.get()).getY() < nodeConstraintMinY
-                    && kinematics.forward(targetAngles.get()).getY() < nodeConstraintMinY
-                ? nodeConstraints
-                : Set.of());
+            getTrajectoryConstraintOverrides(kinematics, currentAngles.get(), targetAngles.get()));
     var trajectory = new ArmTrajectory(parameters);
     ArmTrajectory closestTrajectory = trajectory.findClosest(allTrajectories.values());
 
@@ -691,9 +689,7 @@ public class Arm extends SubsystemBase {
               new ArmTrajectory.Parameters(
                   targetAngles.get(),
                   homedAngles,
-                  kinematics.forward(targetAngles.get()).getY() < nodeConstraintMinY
-                      ? nodeConstraints
-                      : Set.of()));
+                  getTrajectoryConstraintOverrides(kinematics, targetAngles.get(), homedAngles)));
       ArmTrajectory closestReturnTrajectory =
           returnTrajectory.findClosest(allTrajectories.values());
       var initialDiff =
@@ -768,6 +764,40 @@ public class Arm extends SubsystemBase {
       currentTrajectory = null;
       setpointPose = new ArmPose(translation, pose.globalWristAngle());
     }
+  }
+
+  /**
+   * Returns the set of constraint overrides to use for a given start and end point of a trajectory.
+   * Can include overrides for front nodes, back nodes, both, or neither.
+   */
+  static Set<String> getTrajectoryConstraintOverrides(
+      ArmKinematics kinematics, Vector<N2> initialJointPositions, Vector<N2> finalJointPositions) {
+    boolean constrainFront = false;
+    boolean constrainBack = false;
+
+    Translation2d initialTranslation = kinematics.forward(initialJointPositions);
+    Translation2d finalTranslation = kinematics.forward(finalJointPositions);
+    if (initialTranslation.getX() > 0.0 && initialTranslation.getY() > nodeConstraintMinY) {
+      constrainFront = true;
+    }
+    if (finalTranslation.getX() > 0.0 && finalTranslation.getY() > nodeConstraintMinY) {
+      constrainFront = true;
+    }
+    if (initialTranslation.getX() < 0.0 && initialTranslation.getY() > nodeConstraintMinY) {
+      constrainBack = true;
+    }
+    if (finalTranslation.getX() < 0.0 && finalTranslation.getY() > nodeConstraintMinY) {
+      constrainBack = true;
+    }
+
+    Set<String> overrides = new HashSet<>();
+    if (!constrainFront) {
+      overrides.addAll(frontNodeConstraints);
+    }
+    if (!constrainBack) {
+      overrides.addAll(backNodeConstraints);
+    }
+    return overrides;
   }
 
   /**

@@ -13,7 +13,6 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import org.littletonrobotics.frc2023.FieldConstants;
 import org.littletonrobotics.frc2023.commands.AutoScore;
-import org.littletonrobotics.frc2023.commands.IntakeFromFloorSweeper;
 
 /** Represents a target position for the arm. */
 public record ArmPose(Translation2d endEffectorPosition, Rotation2d globalWristAngle) {
@@ -87,27 +86,38 @@ public record ArmPose(Translation2d endEffectorPosition, Rotation2d globalWristA
         new ArmPose(
             new Translation2d(0.49, FieldConstants.LoadingZone.doubleSubstationShelfZ + 0.1),
             new Rotation2d())),
-    CUBE_HANDOFF(new ArmPose(new Translation2d(0.3, 0.57), Rotation2d.fromDegrees(-75.0))),
-    CONE_HANDOFF(new ArmPose(new Translation2d(-0.31, 0.53), Rotation2d.fromDegrees(175.0))),
+    CUBE_HANDOFF(new ArmPose(new Translation2d(0.3, 0.57), Rotation2d.fromDegrees(-75.0)), false),
+    CONE_HANDOFF(new ArmPose(new Translation2d(-0.31, 0.53), Rotation2d.fromDegrees(175.0)), false),
     CONE_HANDOFF_RELEASED(
-        new ArmPose(new Translation2d(-0.45, 0.6), Rotation2d.fromDegrees(175.0))),
-    FLOOR_BACK_CUBE(new ArmPose(new Translation2d(-0.5, 0.3), Rotation2d.fromDegrees(-150.0))),
-    FLOOR_FRONT_CUBE(new ArmPose(new Translation2d(0.8, 0.3), Rotation2d.fromDegrees(-30.0))),
-    FLOOR_BACK_CONE(new ArmPose(new Translation2d(-0.5, 0.18), Rotation2d.fromDegrees(-165.0))),
-    FLOOR_FRONT_CONE(new ArmPose(new Translation2d(0.8, 0.22), Rotation2d.fromDegrees(-15.0))),
-    FLOOR_CENTER(
-        new ArmPose(new Translation2d(1.0, IntakeFromFloorSweeper.height), new Rotation2d())),
-    FLOOR_FAR(new ArmPose(new Translation2d(1.2, IntakeFromFloorSweeper.height), new Rotation2d())),
-    EJECT(new ArmPose(new Translation2d(0.17, 0.5), Rotation2d.fromDegrees(10.0)));
+        new ArmPose(new Translation2d(-0.45, 0.6), Rotation2d.fromDegrees(175.0)), false),
+    FLOOR_BACK_CUBE(
+        new ArmPose(new Translation2d(-0.5, 0.3), Rotation2d.fromDegrees(-150.0)), false),
+    FLOOR_FRONT_CUBE(
+        new ArmPose(new Translation2d(0.8, 0.3), Rotation2d.fromDegrees(-30.0)), false),
+    FLOOR_BACK_CONE(
+        new ArmPose(new Translation2d(-0.5, 0.18), Rotation2d.fromDegrees(-165.0)), false),
+    FLOOR_FRONT_CONE(
+        new ArmPose(new Translation2d(0.8, 0.22), Rotation2d.fromDegrees(-15.0)), false),
+    EJECT(new ArmPose(new Translation2d(0.25, 0.5), Rotation2d.fromDegrees(10.0)));
 
     private ArmPose pose;
+    private boolean pregenerateFlip;
 
     private Preset(ArmPose pose) {
+      this(pose, true);
+    }
+
+    private Preset(ArmPose pose, boolean pregenerateFlip) {
       this.pose = pose;
+      this.pregenerateFlip = pregenerateFlip;
     }
 
     public ArmPose getPose() {
       return pose;
+    }
+
+    public boolean shouldPregenerateFlip() {
+      return pregenerateFlip;
     }
 
     public static void updateHomedPreset(ArmConfig config) {
