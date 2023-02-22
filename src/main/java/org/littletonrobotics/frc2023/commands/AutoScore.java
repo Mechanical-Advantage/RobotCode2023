@@ -36,12 +36,12 @@ public class AutoScore extends SequentialCommandGroup {
   public static final Rotation2d hybridWristAngle = Rotation2d.fromDegrees(-60.0);
   public static final Translation2d midCubeRelativePosition = new Translation2d(-0.5, 0.5);
   public static final Rotation2d midCubeWristAngle = Rotation2d.fromDegrees(-30.0);
-  public static final Translation2d midConeRelativePosition = new Translation2d(-0.25, 0.15);
-  public static final Rotation2d midConeWristAngle = Rotation2d.fromDegrees(30.0);
+  public static final Translation2d midConeRelativePosition = new Translation2d(-0.2, 0.15);
+  public static final Rotation2d midConeWristAngle = Rotation2d.fromDegrees(10.0);
   public static final Translation2d highCubeRelativePosition = new Translation2d(-0.5, 0.5);
   public static final Rotation2d highCubeWristAngle = Rotation2d.fromDegrees(-30.0);
-  public static final Translation2d highConeRelativePosition = new Translation2d(-0.25, 0.15);
-  public static final Rotation2d highConeWristAngle = Rotation2d.fromDegrees(30.0);
+  public static final Translation2d highConeRelativePosition = new Translation2d(-0.2, 0.15);
+  public static final Rotation2d highConeWristAngle = Rotation2d.fromDegrees(10.0);
 
   private Supplier<Pose2d> driveTargetSupplier = null;
   private Supplier<ArmPose> armTargetSupplier = null;

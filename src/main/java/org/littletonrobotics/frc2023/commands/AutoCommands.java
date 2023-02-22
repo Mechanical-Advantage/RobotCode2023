@@ -275,7 +275,7 @@ public class AutoCommands {
                 holonomic(scorePose0),
                 wallSide ? transitWallSideOutWaypoint : transitFieldSideOutWaypoint,
                 holonomic(intakePose1Backoff))
-            .alongWith(armPathThroughHome(ArmPose.Preset.FLOOR_CLOSE)),
+            .alongWith(armPathThroughHome(ArmPose.Preset.FLOOR_FRONT_CONE)),
         path(holonomic(intakePose1Backoff), holonomic(intakePose1))
             .deadlineWith(gripper.intakeCommand()),
         path(

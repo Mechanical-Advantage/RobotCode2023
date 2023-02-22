@@ -133,18 +133,18 @@ public class Arm extends SubsystemBase {
     if (!Constants.disableHAL) { // Don't run during trajectory cache generation
       switch (Constants.getRobot()) {
         case ROBOT_2023C:
-          shoulderKp.initDefault(10.0);
+          shoulderKp.initDefault(6.0);
           shoulderKd.initDefault(0.3);
-          shoulderKs.initDefault(0.2);
+          shoulderKs.initDefault(0.1);
           shoulderKsDeadband.initDefault(0.05);
-          elbowKp.initDefault(8.0);
-          elbowKd.initDefault(0.8);
-          elbowKs.initDefault(0.0);
+          elbowKp.initDefault(2.0);
+          elbowKd.initDefault(0.5);
+          elbowKs.initDefault(0.1);
           elbowKsDeadband.initDefault(0.05);
-          wristKp.initDefault(90.0);
+          wristKp.initDefault(20.0);
           wristKd.initDefault(0.0);
-          wristMaxVelocity.initDefault(12.0);
-          wristMaxAcceleration.initDefault(2.0);
+          wristMaxVelocity.initDefault(8.0);
+          wristMaxAcceleration.initDefault(25.0);
           break;
         case ROBOT_SIMBOT:
           shoulderKp.initDefault(80.0);
@@ -243,7 +243,7 @@ public class Arm extends SubsystemBase {
       wristFeedback.setP(wristKp.get());
       wristFeedback.setD(wristKd.get());
     }
-    if (wristMaxVelocity.hasChanged(hashCode()) && wristMaxAcceleration.hasChanged(hashCode())) {
+    if (wristMaxVelocity.hasChanged(hashCode()) || wristMaxAcceleration.hasChanged(hashCode())) {
       wristFeedback.setConstraints(
           new TrapezoidProfile.Constraints(wristMaxVelocity.get(), wristMaxAcceleration.get()));
     }
@@ -356,15 +356,11 @@ public class Arm extends SubsystemBase {
       shoulderVoltageFeedback = shoulderFeedback.calculate(shoulderAngle, state.get(0, 0));
       elbowVoltageFeedback = elbowFeedback.calculate(elbowAngle, state.get(1, 0));
       io.setShoulderVoltage(
-          applyKs(
-              shoulderVoltageFeedforward + shoulderVoltageFeedback,
-              shoulderKs.get(),
-              shoulderKsDeadband.get()));
+          shoulderVoltageFeedforward
+              + applyKs(shoulderVoltageFeedback, shoulderKs.get(), shoulderKsDeadband.get()));
       io.setElbowVoltage(
-          applyKs(
-              elbowVoltageFeedforward + elbowVoltageFeedback,
-              elbowKs.get(),
-              elbowKsDeadband.get()));
+          elbowVoltageFeedforward
+              + applyKs(elbowVoltageFeedback, elbowKs.get(), elbowKsDeadband.get()));
       setpointPose = // If trajectory is interrupted, go to last setpoint
           new ArmPose(
               kinematics.forward(new Vector<>(state.extractColumnVector(0))),
@@ -388,18 +384,14 @@ public class Arm extends SubsystemBase {
         elbowVoltageFeedback = elbowFeedback.calculate(elbowAngle, angles.get().get(1, 0));
         io.setShoulderVoltage(
             MathUtil.clamp(
-                applyKs(
-                    shoulderVoltageFeedforward + shoulderVoltageFeedback,
-                    shoulderKs.get(),
-                    shoulderKsDeadband.get()),
+                shoulderVoltageFeedforward
+                    + applyKs(shoulderVoltageFeedback, shoulderKs.get(), shoulderKsDeadband.get()),
                 -maxVoltageNoTrajectory,
                 maxVoltageNoTrajectory));
         io.setElbowVoltage(
             MathUtil.clamp(
-                applyKs(
-                    elbowVoltageFeedforward + elbowVoltageFeedback,
-                    elbowKs.get(),
-                    elbowKsDeadband.get()),
+                elbowVoltageFeedforward
+                    + applyKs(elbowVoltageFeedback, elbowKs.get(), elbowKsDeadband.get()),
                 -maxVoltageNoTrajectory,
                 maxVoltageNoTrajectory));
       } else {
@@ -646,7 +638,7 @@ public class Arm extends SubsystemBase {
             currentAngles.get(),
             targetAngles.get(),
             kinematics.forward(currentAngles.get()).getY() < nodeConstraintMinY
-                    || kinematics.forward(targetAngles.get()).getY() < nodeConstraintMinY
+                    && kinematics.forward(targetAngles.get()).getY() < nodeConstraintMinY
                 ? nodeConstraints
                 : Set.of());
     var trajectory = new ArmTrajectory(parameters);

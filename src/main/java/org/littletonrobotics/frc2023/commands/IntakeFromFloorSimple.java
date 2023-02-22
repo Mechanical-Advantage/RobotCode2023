@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import org.littletonrobotics.frc2023.subsystems.arm.Arm;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmPose;
 import org.littletonrobotics.frc2023.subsystems.gripper.Gripper;
+import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.GamePiece;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.Objective;
 
 public class IntakeFromFloorSimple extends SequentialCommandGroup {
@@ -19,9 +20,21 @@ public class IntakeFromFloorSimple extends SequentialCommandGroup {
   public IntakeFromFloorSimple(boolean isFront, Arm arm, Gripper gripper, Objective objective) {
     addCommands(
         arm.runPathCommand(
-                isFront
-                    ? ArmPose.Preset.FLOOR_CLOSE.getPose()
-                    : ArmPose.Preset.FLOOR_VERY_CLOSE.getPose().withFlip(true))
+                () -> {
+                  if (isFront) {
+                    if (objective.gamePiece == GamePiece.CUBE) {
+                      return ArmPose.Preset.FLOOR_FRONT_CUBE.getPose();
+                    } else {
+                      return ArmPose.Preset.FLOOR_FRONT_CONE.getPose();
+                    }
+                  } else {
+                    if (objective.gamePiece == GamePiece.CUBE) {
+                      return ArmPose.Preset.FLOOR_BACK_CUBE.getPose();
+                    } else {
+                      return ArmPose.Preset.FLOOR_BACK_CONE.getPose();
+                    }
+                  }
+                })
             .alongWith(
                 gripper.intakeCommand(), Commands.run(() -> objective.lastIntakeFront = isFront))
             .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));

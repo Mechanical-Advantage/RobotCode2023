@@ -33,6 +33,7 @@ import org.littletonrobotics.frc2023.commands.IntakeSubstation;
 import org.littletonrobotics.frc2023.commands.MoveArmWithJoysticks;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVision;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIO;
+import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIONorthstar;
 import org.littletonrobotics.frc2023.subsystems.arm.Arm;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmIO;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmIOSim;
@@ -115,6 +116,7 @@ public class RobotContainer {
                   new ModuleIOSparkMax(3));
           arm = new Arm(new ArmIOSparkMax(), new ArmSolverIOKairos(1));
           gripper = new Gripper(new GripperIOSparkMax());
+          aprilTagVision = new AprilTagVision(new AprilTagVisionIONorthstar("northstar_0"));
           objectiveTracker = new ObjectiveTracker(new NodeSelectorIOServer());
           break;
         case ROBOT_2023P:

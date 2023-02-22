@@ -17,7 +17,7 @@
     }
   },
   "elbow": {
-    "mass": 4.036065,
+    "mass": 2.5,
     "length": 0.84,
     "moi": 0.21851,
     "cgRadius": 0.4318,
@@ -30,7 +30,7 @@
     }
   },
   "wrist": {
-    "mass": 3.08,
+    "mass": 1.5,
     "length": 0.261,
     "moi": 0.036998,
     "cgRadius": 0.03556,
@@ -39,7 +39,7 @@
     "motor": {
       "type": "neo",
       "count": 1,
-      "reduction": 240.0
+      "reduction": 60.0
     }
   },
   "solver": {

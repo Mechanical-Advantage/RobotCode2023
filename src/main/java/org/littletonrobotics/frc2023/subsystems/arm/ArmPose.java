@@ -81,8 +81,8 @@ public record ArmPose(Translation2d endEffectorPosition, Rotation2d globalWristA
             AutoScore.highCubeWristAngle)),
     SINGLE_SUBTATION(
         new ArmPose(
-            new Translation2d(0.49, FieldConstants.LoadingZone.singleSubstationCenterZ),
-            new Rotation2d())),
+            new Translation2d(0.49, FieldConstants.LoadingZone.singleSubstationCenterZ - 0.15),
+            Rotation2d.fromDegrees(20.0))),
     DOUBLE_SUBTATION(
         new ArmPose(
             new Translation2d(0.49, FieldConstants.LoadingZone.doubleSubstationShelfZ + 0.1),
@@ -91,10 +91,10 @@ public record ArmPose(Translation2d endEffectorPosition, Rotation2d globalWristA
     CONE_HANDOFF(new ArmPose(new Translation2d(-0.31, 0.53), Rotation2d.fromDegrees(175.0))),
     CONE_HANDOFF_RELEASED(
         new ArmPose(new Translation2d(-0.45, 0.6), Rotation2d.fromDegrees(175.0))),
-    FLOOR_VERY_CLOSE( // For grabbing from the back with no cone intake
-        new ArmPose(new Translation2d(0.5, IntakeFromFloorSweeper.height), new Rotation2d())),
-    FLOOR_CLOSE(
-        new ArmPose(new Translation2d(0.8, IntakeFromFloorSweeper.height), new Rotation2d())),
+    FLOOR_BACK_CUBE(new ArmPose(new Translation2d(-0.5, 0.3), Rotation2d.fromDegrees(-150.0))),
+    FLOOR_FRONT_CUBE(new ArmPose(new Translation2d(0.8, 0.3), Rotation2d.fromDegrees(-30.0))),
+    FLOOR_BACK_CONE(new ArmPose(new Translation2d(-0.5, 0.18), Rotation2d.fromDegrees(-165.0))),
+    FLOOR_FRONT_CONE(new ArmPose(new Translation2d(0.8, 0.22), Rotation2d.fromDegrees(-15.0))),
     FLOOR_CENTER(
         new ArmPose(new Translation2d(1.0, IntakeFromFloorSweeper.height), new Rotation2d())),
     FLOOR_FAR(new ArmPose(new Translation2d(1.2, IntakeFromFloorSweeper.height), new Rotation2d())),
@@ -116,7 +116,7 @@ public record ArmPose(Translation2d endEffectorPosition, Rotation2d globalWristA
               new Translation2d(
                   config.origin().getX(),
                   config.origin().getY() + config.shoulder().length() - config.elbow().length()),
-              Rotation2d.fromDegrees(-90.0));
+              Rotation2d.fromDegrees(-135.0));
     }
   }
 

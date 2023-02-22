@@ -21,7 +21,7 @@ public class AprilTagVisionIONorthstar implements AprilTagVisionIO {
   private static final int cameraResolutionWidth = 1600;
   private static final int cameraResolutionHeight = 1200;
   private static final int cameraAutoExposure = 1;
-  private static final int cameraExposure = 5;
+  private static final int cameraExposure = 15;
   private static final int cameraGain = 25;
 
   private final DoubleArraySubscriber observationSubscriber;
