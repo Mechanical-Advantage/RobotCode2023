@@ -132,6 +132,13 @@ task(generateArmTrajectories, dependsOn: "classes", type: JavaExec) {
 }
 compileJava.finalizedBy generateArmTrajectories
 
+// Check selected robot when deploying
+task(checkRobot, dependsOn: "classes", type: JavaExec) {
+    mainClass = "org.littletonrobotics.frc2023.Constants"
+    classpath = sourceSets.main.runtimeClasspath
+}
+deployroborio.dependsOn(checkRobot)
+
 // Create version file
 project.compileJava.dependsOn(createVersionFile)
 gversion {

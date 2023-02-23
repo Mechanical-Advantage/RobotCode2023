@@ -79,6 +79,7 @@ public class ArmTrajectoryCache {
     return trajectories;
   }
 
+  /** Pregenerates all trajectories between presets using Kairos. */
   public static void main(String... args) throws IOException, InterruptedException {
     Constants.disableHAL();
 
