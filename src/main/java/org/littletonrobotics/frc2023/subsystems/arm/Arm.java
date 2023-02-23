@@ -56,8 +56,8 @@ public class Arm extends SubsystemBase {
   public static final Set<String> frontNodeConstraints = Set.of("nodeMidFront", "nodeHighFront");
   public static final Set<String> backNodeConstraints = Set.of("nodeMidBack", "nodeHighBack");
   public static final double avoidanceLookaheadSecs = 0.25;
-  public static final double emergencyDisableMaxError = Units.degreesToRadians(10.0);
-  public static final double emergencyDisableMaxErrorTime = 0.5;
+  public static final double emergencyDisableMaxError = Units.degreesToRadians(20.0);
+  public static final double emergencyDisableMaxErrorTime = 1.0;
   public static final double emergencyDisableBeyondLimitThreshold = Units.degreesToRadians(5.0);
 
   private final ArmIO io;
@@ -135,12 +135,12 @@ public class Arm extends SubsystemBase {
     if (!Constants.disableHAL) { // Don't run during trajectory cache generation
       switch (Constants.getRobot()) {
         case ROBOT_2023C:
-          shoulderKp.initDefault(6.0);
-          shoulderKd.initDefault(0.3);
+          shoulderKp.initDefault(10.0);
+          shoulderKd.initDefault(0.8);
           shoulderKs.initDefault(0.1);
           shoulderKsDeadband.initDefault(0.05);
-          elbowKp.initDefault(2.0);
-          elbowKd.initDefault(0.5);
+          elbowKp.initDefault(8.0);
+          elbowKd.initDefault(0.8);
           elbowKs.initDefault(0.1);
           elbowKsDeadband.initDefault(0.05);
           wristKp.initDefault(20.0);

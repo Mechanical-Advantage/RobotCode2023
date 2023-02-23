@@ -218,6 +218,7 @@ public class ArmIOSparkMax implements ArmIO {
 
   public void setBrakeMode(boolean shoulderBrake, boolean elbowBrake, boolean wristBrake) {
     shoulderSparkMax.setIdleMode(shoulderBrake ? IdleMode.kBrake : IdleMode.kCoast);
+    shoulderSparkMaxFollower.setIdleMode(shoulderBrake ? IdleMode.kBrake : IdleMode.kCoast);
     elbowSparkMax.setIdleMode(elbowBrake ? IdleMode.kBrake : IdleMode.kCoast);
     wristSparkMax.setIdleMode(wristBrake ? IdleMode.kBrake : IdleMode.kCoast);
   }
