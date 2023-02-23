@@ -14,8 +14,11 @@ public interface GripperIO {
   /** Contains all of the input data received from hardware. */
   @AutoLog
   public static class GripperIOInputs {
+    public double positionRad = 0.0;
+    public double velocityRadPerSec = 0.0;
     public double appliedVolts = 0.0;
     public double[] currentAmps = new double[] {};
+    public double[] tempCelcius = new double[] {};
   }
 
   /** Updates the set of loggable inputs. */

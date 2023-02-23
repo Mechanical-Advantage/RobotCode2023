@@ -10,19 +10,25 @@ package org.littletonrobotics.frc2023.subsystems.gripper;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+import com.revrobotics.RelativeEncoder;
+import edu.wpi.first.math.util.Units;
 import org.littletonrobotics.frc2023.Constants;
 import org.littletonrobotics.frc2023.util.SparkMaxBurnManager;
 import org.littletonrobotics.frc2023.util.SparkMaxPeriodicFrameConfig;
 
 public class GripperIOSparkMax implements GripperIO {
   private boolean invert = false;
+  private double reduction = 1.0;
   private final CANSparkMax motor;
+  private final RelativeEncoder encoder;
 
   public GripperIOSparkMax() {
     switch (Constants.getRobot()) {
       case ROBOT_2023C:
-        motor = new CANSparkMax(13, MotorType.kBrushed);
         invert = true;
+        reduction = 1.0;
+        motor = new CANSparkMax(13, MotorType.kBrushless);
+        encoder = motor.getEncoder();
         break;
       default:
         throw new RuntimeException("Invalid robot for GripperIOSparkMax!");
@@ -47,8 +53,12 @@ public class GripperIOSparkMax implements GripperIO {
 
   @Override
   public void updateInputs(GripperIOInputs inputs) {
+    inputs.positionRad = Units.rotationsToRadians(encoder.getPosition()) / reduction;
+    inputs.velocityRadPerSec =
+        Units.rotationsPerMinuteToRadiansPerSecond(encoder.getVelocity()) / reduction;
     inputs.appliedVolts = motor.getAppliedOutput() * motor.getBusVoltage();
     inputs.currentAmps = new double[] {motor.getOutputCurrent()};
+    inputs.tempCelcius = new double[] {motor.getMotorTemperature()};
   }
 
   @Override
