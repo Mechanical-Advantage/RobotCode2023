@@ -26,7 +26,7 @@ public class GripperIOSparkMax implements GripperIO {
     switch (Constants.getRobot()) {
       case ROBOT_2023C:
         invert = true;
-        reduction = 3.0 * (40.0 / 18.0);
+        reduction = 4.0 * (40.0 / 18.0);
         motor = new CANSparkMax(13, MotorType.kBrushless);
         encoder = motor.getEncoder();
         break;
@@ -41,7 +41,7 @@ public class GripperIOSparkMax implements GripperIO {
     SparkMaxPeriodicFrameConfig.configNotLeader(motor);
 
     motor.setInverted(invert);
-    motor.setSmartCurrentLimit(20);
+    motor.setSmartCurrentLimit(40);
     motor.enableVoltageCompensation(12.0);
 
     motor.setCANTimeout(0);
