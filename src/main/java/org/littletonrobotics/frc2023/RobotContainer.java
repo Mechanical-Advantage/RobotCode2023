@@ -31,6 +31,7 @@ import org.littletonrobotics.frc2023.commands.IntakeCubeHandoff;
 import org.littletonrobotics.frc2023.commands.IntakeFromFloorSimple;
 import org.littletonrobotics.frc2023.commands.IntakeSubstation;
 import org.littletonrobotics.frc2023.commands.MoveArmWithJoysticks;
+import org.littletonrobotics.frc2023.commands.TheUltimateAuto;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVision;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIO;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIONorthstar;
@@ -211,6 +212,8 @@ public class RobotContainer {
                 "Finish with balance?",
                 List.of(AutoQuestionResponse.YES, AutoQuestionResponse.NO))),
         autoCommands.scoreLink());
+    autoSelector.addRoutine(
+        "The Ultimate Auto", List.of(), new TheUltimateAuto(drive, arm, gripper, objectiveTracker));
     autoSelector.addRoutine(
         "Drive Characterization",
         List.of(),

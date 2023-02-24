@@ -598,7 +598,7 @@ public class Arm extends SubsystemBase {
     return setpointPose != null ? setpointPose : ArmPose.Preset.HOMED.getPose();
   }
 
-  /** Returns whether the current current is complete. */
+  /** Returns whether the current trajectory is complete. */
   public boolean isTrajectoryFinished() {
     return isTrajectoryFinished(true);
   }
