@@ -77,7 +77,7 @@ public class ArmIOSparkMax implements ArmIO {
     wristRelativeEncoder = new Encoder(8, 7, false);
     isWristMotorInverted = false;
     isWristExternalEncoderInverted = true;
-    wristAbsoluteEncoderOffset = new Rotation2d(-1.857196);
+    wristAbsoluteEncoderOffset = new Rotation2d(-1.977401);
     wristRelativeEncoder.setDistancePerPulse((2 * Math.PI) / 2048);
 
     // Set remaining config

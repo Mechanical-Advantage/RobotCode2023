@@ -47,7 +47,7 @@
     "maxVoltageShoulder": 8,
     "maxVoltageElbow": 8,
     "maxAccelerationShoulder": 5.0,
-    "maxAccelerationElbow": 8.0,
+    "maxAccelerationElbow": 7.0,
     "maxJerk": 30
   },
   "constraints": {
@@ -63,10 +63,16 @@
         0.35
       ]
     },
+    "maxHeight": {
+      "type": "maxY",
+      "args": [
+        1.5
+      ]
+    },
     "robotBody": {
       "type": "rectangle",
       "args": [
-        -0.4,
+        -0.35,
         -1,
         0.4,
         0.4
@@ -75,10 +81,10 @@
     "robotBodyExtended": {
       "type": "rectangle",
       "args": [
-        -0.45,
+        -0.4,
         -1,
         0.7,
-        0.45
+        0.4
       ]
     },
     "cubeIntake": {

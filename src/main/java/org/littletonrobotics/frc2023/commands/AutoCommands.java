@@ -215,7 +215,7 @@ public class AutoCommands {
                 true)
             .transformBy(
                 translationToTransform(
-                    level == NodeLevel.HYBRID ? -0.75 : (level == NodeLevel.MID ? -0.25 : 0.0),
+                    level == NodeLevel.HYBRID ? -0.25 : (level == NodeLevel.MID ? -0.25 : 0.0),
                     0.0));
     var intakePose1 =
         new Pose2d(
@@ -232,7 +232,7 @@ public class AutoCommands {
                 true)
             .transformBy(
                 translationToTransform(
-                    level == NodeLevel.HYBRID ? -0.75 : (level == NodeLevel.MID ? 0.25 : 0.0),
+                    level == NodeLevel.HYBRID ? -0.25 : (level == NodeLevel.MID ? 0.25 : 0.0),
                     0.0));
     List<TrajectoryConstraint> constraints =
         List.of(

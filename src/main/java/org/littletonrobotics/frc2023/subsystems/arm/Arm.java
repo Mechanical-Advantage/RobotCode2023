@@ -52,7 +52,9 @@ public class Arm extends SubsystemBase {
   public static final double[] cubeIntakeAvoidanceRect = new double[] {0.05, 0.0, 0.75, 0.65};
   public static final double[] coneIntakeAvoidanceRect = new double[] {-0.65, 0.0, -0.05, 0.6};
   public static final double nodeConstraintMinY =
-      0.75; // If target or start is below this y, disable node constraints
+      0.8; // If target or start is above this y, enable node constraints
+  public static final double nodeConstraintMinX =
+      0.52; // If target or start is beyond this x, enable node constraints
   public static final Set<String> frontNodeConstraints = Set.of("nodeMidFront", "nodeHighFront");
   public static final Set<String> backNodeConstraints = Set.of("nodeMidBack", "nodeHighBack");
   public static final double avoidanceLookaheadSecs = 0.25;
@@ -785,16 +787,20 @@ public class Arm extends SubsystemBase {
 
     Translation2d initialTranslation = kinematics.forward(initialJointPositions);
     Translation2d finalTranslation = kinematics.forward(finalJointPositions);
-    if (initialTranslation.getX() > 0.0 && initialTranslation.getY() > nodeConstraintMinY) {
+    if (initialTranslation.getX() > nodeConstraintMinX
+        && initialTranslation.getY() > nodeConstraintMinY) {
       constrainFront = true;
     }
-    if (finalTranslation.getX() > 0.0 && finalTranslation.getY() > nodeConstraintMinY) {
+    if (finalTranslation.getX() > nodeConstraintMinX
+        && finalTranslation.getY() > nodeConstraintMinY) {
       constrainFront = true;
     }
-    if (initialTranslation.getX() < 0.0 && initialTranslation.getY() > nodeConstraintMinY) {
+    if (initialTranslation.getX() < -nodeConstraintMinX
+        && initialTranslation.getY() > nodeConstraintMinY) {
       constrainBack = true;
     }
-    if (finalTranslation.getX() < 0.0 && finalTranslation.getY() > nodeConstraintMinY) {
+    if (finalTranslation.getX() < -nodeConstraintMinX
+        && finalTranslation.getY() > nodeConstraintMinY) {
       constrainBack = true;
     }
 
