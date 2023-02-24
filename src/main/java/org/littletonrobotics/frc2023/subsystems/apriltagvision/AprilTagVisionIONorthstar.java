@@ -7,6 +7,8 @@
 
 package org.littletonrobotics.frc2023.subsystems.apriltagvision;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.wpi.first.networktables.DoubleArraySubscriber;
 import edu.wpi.first.networktables.IntegerSubscriber;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -21,7 +23,7 @@ public class AprilTagVisionIONorthstar implements AprilTagVisionIO {
   private static final int cameraResolutionWidth = 1600;
   private static final int cameraResolutionHeight = 1200;
   private static final int cameraAutoExposure = 1;
-  private static final int cameraExposure = 15;
+  private static final int cameraExposure = 5;
   private static final int cameraGain = 25;
 
   private final DoubleArraySubscriber observationSubscriber;
@@ -42,6 +44,14 @@ public class AprilTagVisionIONorthstar implements AprilTagVisionIO {
     configTable.getIntegerTopic("camera_exposure").publish().set(cameraExposure);
     configTable.getIntegerTopic("camera_gain").publish().set(cameraGain);
     configTable.getDoubleTopic("fiducial_size_m").publish().set(FieldConstants.aprilTagWidth);
+    try {
+      configTable
+          .getStringTopic("tag_layout")
+          .publish()
+          .set(new ObjectMapper().writeValueAsString(FieldConstants.aprilTags));
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException("Failed to serialize AprilTag layout JSON for Northstar");
+    }
 
     var outputTable = northstarTable.getSubTable("output");
     observationSubscriber =

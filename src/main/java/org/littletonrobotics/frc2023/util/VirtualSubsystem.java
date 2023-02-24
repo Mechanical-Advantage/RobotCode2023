@@ -7,14 +7,13 @@
 
 package org.littletonrobotics.frc2023.util;
 
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Represents a subsystem unit that requirse a periodic callback but not require a hardware mutex.
  */
-public abstract class VirtualSubsystem extends SubsystemBase {
+public abstract class VirtualSubsystem {
   private static List<VirtualSubsystem> subsystems = new ArrayList<>();
 
   public VirtualSubsystem() {
