@@ -126,7 +126,7 @@ public record ArmPose(Translation2d endEffectorPosition, Rotation2d globalWristA
               new Translation2d(
                   config.origin().getX(),
                   config.origin().getY() + config.shoulder().length() - config.elbow().length()),
-              Rotation2d.fromDegrees(-135.0));
+              Rotation2d.fromDegrees(-180.0));
     }
   }
 
