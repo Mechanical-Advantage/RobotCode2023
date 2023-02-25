@@ -15,7 +15,8 @@ import org.littletonrobotics.frc2023.util.Alert.AlertType;
 public final class Constants {
   private static final RobotType robot = RobotType.ROBOT_2023C;
   public static final double loopPeriodSecs = 0.02;
-  public static final boolean tuningMode = true;
+  public static final boolean tuningMode = false;
+
   public static boolean invalidRobotAlertSent = false;
 
   public static RobotType getRobot() {
