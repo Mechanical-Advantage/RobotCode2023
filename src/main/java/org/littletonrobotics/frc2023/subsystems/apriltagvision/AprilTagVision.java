@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import org.littletonrobotics.frc2023.Constants;
 import org.littletonrobotics.frc2023.FieldConstants;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIO.AprilTagVisionIOInputs;
@@ -31,7 +32,7 @@ import org.littletonrobotics.frc2023.util.VirtualSubsystem;
 import org.littletonrobotics.junction.Logger;
 
 public class AprilTagVision extends VirtualSubsystem {
-  private static final double ambiguityThreshold = 0.1;
+  private static final double ambiguityThreshold = 0.15;
   private static final double targetLogTimeSecs = 0.05;
   private static final Pose3d[] cameraPoses;
   private static final PolynomialRegression xyStdDevModel;
@@ -40,6 +41,7 @@ public class AprilTagVision extends VirtualSubsystem {
   private final AprilTagVisionIO[] io;
   private final AprilTagVisionIOInputs[] inputs;
 
+  private Supplier<Pose2d> poseSupplier = () -> new Pose2d();
   private Consumer<List<TimestampedVisionUpdate>> visionConsumer = (x) -> {};
   private Map<Integer, Double> lastFrameTimes = new HashMap<>();
   private Map<Integer, Double> lastTagDetectionTimes = new HashMap<>();
@@ -118,7 +120,9 @@ public class AprilTagVision extends VirtualSubsystem {
             });
   }
 
-  public void setDataInterface(Consumer<List<TimestampedVisionUpdate>> visionConsumer) {
+  public void setDataInterfaces(
+      Supplier<Pose2d> poseSupplier, Consumer<List<TimestampedVisionUpdate>> visionConsumer) {
+    this.poseSupplier = poseSupplier;
     this.visionConsumer = visionConsumer;
   }
 
@@ -129,6 +133,7 @@ public class AprilTagVision extends VirtualSubsystem {
     }
 
     // Loop over instances
+    Pose2d currentPose = poseSupplier.get();
     List<Pose2d> allRobotPoses = new ArrayList<>();
     List<TimestampedVisionUpdate> visionUpdates = new ArrayList<>();
     for (int instanceIndex = 0; instanceIndex < io.length; instanceIndex++) {
@@ -189,9 +194,15 @@ public class AprilTagVision extends VirtualSubsystem {
             } else if (error1 < error0 * ambiguityThreshold) {
               cameraPose = cameraPose1;
               robotPose = robotPose1;
+            } else if (Math.abs(
+                    robotPose0.getRotation().minus(currentPose.getRotation()).getRadians())
+                < Math.abs(
+                    robotPose1.getRotation().minus(currentPose.getRotation()).getRadians())) {
+              cameraPose = cameraPose0;
+              robotPose = robotPose0;
             } else {
-              cameraPose = null;
-              robotPose = null;
+              cameraPose = cameraPose1;
+              robotPose = robotPose1;
             }
             break;
         }

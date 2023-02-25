@@ -194,7 +194,7 @@ public class RobotContainer {
         () -> forcePregenPathsOverride.getAsBoolean());
     cubeIntake.setForceExtendSupplier(arm::cubeIntakeShouldExtend);
     coneIntake.setForceExtendSupplier(arm::coneIntakeShouldExtend);
-    aprilTagVision.setDataInterface(drive::addVisionData);
+    aprilTagVision.setDataInterfaces(drive::getPose, drive::addVisionData);
 
     // Set up auto routines
     AutoCommands autoCommands =

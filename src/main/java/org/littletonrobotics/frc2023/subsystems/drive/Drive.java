@@ -20,6 +20,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.littletonrobotics.frc2023.Constants;
@@ -55,9 +56,9 @@ public class Drive extends SubsystemBase {
   private double characterizationVolts = 0.0;
   private boolean isBrakeMode = false;
   private Timer lastMovementTimer = new Timer();
-  private Timer lastDisabledTimer = new Timer();
+  private Timer lastEnabledTimer = new Timer();
 
-  private PoseEstimator poseEstimator = new PoseEstimator(VecBuilder.fill(0.005, 0.005, 0.001));
+  private PoseEstimator poseEstimator = new PoseEstimator(VecBuilder.fill(0.005, 0.005, 0.0003));
   private double[] lastModulePositionsMeters = new double[] {0.0, 0.0, 0.0, 0.0};
   private Rotation2d lastGyroYaw = new Rotation2d();
   private Twist2d fieldVelocity = new Twist2d();
@@ -91,7 +92,7 @@ public class Drive extends SubsystemBase {
     modules[2] = new Module(blModuleIO, 2);
     modules[3] = new Module(brModuleIO, 3);
     lastMovementTimer.start();
-    lastDisabledTimer.start();
+    lastEnabledTimer.start();
     for (var module : modules) {
       module.setBrakeMode(false);
     }
@@ -117,15 +118,17 @@ public class Drive extends SubsystemBase {
                   .get();
     }
 
+    // Reset last enabled timer
+    if (DriverStation.isEnabled()) {
+      lastEnabledTimer.reset();
+    }
+
     // Run modules
     if (DriverStation.isDisabled()) {
       // Stop moving while disabled
       for (var module : modules) {
         module.stop();
       }
-
-      // Reset timer
-      lastDisabledTimer.reset();
 
       // Clear setpoint logs
       Logger.getInstance().recordOutput("SwerveStates/Setpoints", new double[] {});
@@ -282,19 +285,22 @@ public class Drive extends SubsystemBase {
 
   /** Adds vision data to the pose esimation. */
   public void addVisionData(List<TimestampedVisionUpdate> visionData) {
-    if (!lastDisabledTimer.hasElapsed(aprilTagGyroThresholdSecs)) {
+    if (lastEnabledTimer.hasElapsed(aprilTagGyroThresholdSecs)) {
+      poseEstimator.addVisionData(visionData);
+    } else {
+      List<TimestampedVisionUpdate> newVisionData = new ArrayList<>();
       for (var update : visionData) {
-        update =
+        newVisionData.add(
             new TimestampedVisionUpdate(
                 update.timestamp(),
                 update.pose(),
                 VecBuilder.fill(
                     update.stdDevs().get(0, 0),
                     update.stdDevs().get(1, 0),
-                    Double.POSITIVE_INFINITY));
+                    Double.POSITIVE_INFINITY)));
       }
+      poseEstimator.addVisionData(newVisionData);
     }
-    poseEstimator.addVisionData(visionData);
   }
 
   /** Returns an array of module translations. */
