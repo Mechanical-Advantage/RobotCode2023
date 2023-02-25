@@ -12,6 +12,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import java.util.function.Supplier;
@@ -25,6 +26,7 @@ import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracke
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.Objective;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
 import org.littletonrobotics.frc2023.util.GeomUtil;
+import org.littletonrobotics.frc2023.util.SuppliedWaitCommand;
 
 public class AutoScore extends SequentialCommandGroup {
   public static final double minDriveX = FieldConstants.Grids.outerX + 0.45;
@@ -37,17 +39,21 @@ public class AutoScore extends SequentialCommandGroup {
 
   public static final double extendArmDriveTolerance = 1.0;
   public static final Rotation2d extendArmThetaTolerance = Rotation2d.fromDegrees(45.0);
+  public static final double cubeHybridDriveTolerance = 0.1;
+  public static final Rotation2d cubeHybridThetaTolerance = Rotation2d.fromDegrees(5.0);
+  public static final double coneMidScoreDelay = 1.0;
+  public static final double coneHighScoreDelay = 1.5;
 
   public static final Translation2d hybridRelativePosition = new Translation2d(-0.2, 0.6);
   public static final Rotation2d hybridWristAngle = Rotation2d.fromDegrees(-60.0);
   public static final Translation2d midCubeRelativePosition = new Translation2d(-0.5, 0.5);
   public static final Rotation2d midCubeWristAngle = Rotation2d.fromDegrees(-30.0);
-  public static final Translation2d midConeRelativePosition = new Translation2d(-0.2, 0.15);
-  public static final Rotation2d midConeWristAngle = Rotation2d.fromDegrees(10.0);
   public static final Translation2d highCubeRelativePosition = new Translation2d(-0.5, 0.5);
   public static final Rotation2d highCubeWristAngle = Rotation2d.fromDegrees(-30.0);
-  public static final Translation2d highConeRelativePosition = new Translation2d(-0.2, 0.15);
-  public static final Rotation2d highConeWristAngle = Rotation2d.fromDegrees(10.0);
+  public static final Translation2d midConeRelativePosition = new Translation2d(-0.165, 0.0);
+  public static final Rotation2d midConeWristAngle = Rotation2d.fromDegrees(50.0);
+  public static final Translation2d highConeRelativePosition = new Translation2d(-0.165, 0.0);
+  public static final Rotation2d highConeWristAngle = Rotation2d.fromDegrees(50.0);
 
   private Supplier<Pose2d> driveTargetSupplier = null;
   private Supplier<ArmPose> armTargetSupplier = null;
@@ -69,9 +75,11 @@ public class AutoScore extends SequentialCommandGroup {
                 arm.runPathCommand(armTargetSupplier),
                 Commands.run(() -> arm.runDirect(armTargetSupplier.get()), arm));
     addCommands(
-        Commands.waitUntil(() -> driveCommand.atGoal() && arm.isTrajectoryFinished())
+        Commands.waitUntil(
+                () -> atGoalForObjective(driveCommand, objective) && arm.isTrajectoryFinished())
+            .andThen(waitToScore(objective))
             .deadlineWith(driveCommand, armCommand)
-            .andThen(gripper.ejectCommand())
+            .andThen(gripper.ejectCommand(objective))
             .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
   }
 
@@ -90,7 +98,7 @@ public class AutoScore extends SequentialCommandGroup {
     addCommands(
         Commands.waitUntil(() -> arm.isTrajectoryFinished() && ejectButton.get())
             .deadlineWith(armCommand)
-            .andThen(gripper.ejectCommand())
+            .andThen(gripper.ejectCommand(objective))
             .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
   }
 
@@ -112,9 +120,12 @@ public class AutoScore extends SequentialCommandGroup {
             .andThen(arm.runPathCommand(armTargetSupplier), moveArmCommand);
     addCommands(
         Commands.waitUntil(
-                () -> driveCommand.atGoal() && arm.isTrajectoryFinished() && ejectButton.get())
+                () ->
+                    atGoalForObjective(driveCommand, objective)
+                        && arm.isTrajectoryFinished()
+                        && ejectButton.get())
             .deadlineWith(driveCommand, armCommand)
-            .andThen(gripper.ejectCommand())
+            .andThen(gripper.ejectCommand(objective))
             .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
   }
 
@@ -131,8 +142,9 @@ public class AutoScore extends SequentialCommandGroup {
     var armCommand = arm.runPathCommand(armTargetSupplier).andThen(moveArmCommand);
     addCommands(
         Commands.waitUntil(() -> arm.isTrajectoryFinished() && ejectButton.get())
+            .andThen(waitToScore(objective))
             .deadlineWith(armCommand)
-            .andThen(gripper.ejectCommand())
+            .andThen(gripper.ejectCommand(objective))
             .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
   }
 
@@ -161,6 +173,35 @@ public class AutoScore extends SequentialCommandGroup {
                 objective,
                 arm,
                 !reachScoreDisable.get());
+  }
+
+  /**
+   * Returns whether the drive to pose command is within the tolerance for the selected objective.
+   */
+  public static boolean atGoalForObjective(DriveToPose driveToPose, Objective objective) {
+    if (objective.nodeLevel == NodeLevel.HYBRID || objective.gamePiece == GamePiece.CUBE) {
+      return driveToPose.withinTolerance(cubeHybridDriveTolerance, cubeHybridThetaTolerance);
+    } else {
+      return driveToPose.atGoal();
+    }
+  }
+
+  /** Returns a command to wait after alignment based on the objective. */
+  public static Command waitToScore(Objective objective) {
+    return new SuppliedWaitCommand(
+        () -> {
+          if (objective.gamePiece == GamePiece.CONE) {
+            switch (objective.nodeLevel) {
+              case HYBRID:
+                return 0.0;
+              case MID:
+                return coneMidScoreDelay;
+              case HIGH:
+                return coneHighScoreDelay;
+            }
+          }
+          return 0.0;
+        });
   }
 
   /** Returns the best drive target for the selected node. */

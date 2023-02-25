@@ -54,6 +54,7 @@ import org.littletonrobotics.frc2023.subsystems.drive.ModuleIO;
 import org.littletonrobotics.frc2023.subsystems.drive.ModuleIOSim;
 import org.littletonrobotics.frc2023.subsystems.drive.ModuleIOSparkMax;
 import org.littletonrobotics.frc2023.subsystems.gripper.Gripper;
+import org.littletonrobotics.frc2023.subsystems.gripper.Gripper.EjectSpeed;
 import org.littletonrobotics.frc2023.subsystems.gripper.GripperIO;
 import org.littletonrobotics.frc2023.subsystems.gripper.GripperIOSparkMax;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.NodeSelectorIO;
@@ -115,9 +116,13 @@ public class RobotContainer {
                   new ModuleIOSparkMax(1),
                   new ModuleIOSparkMax(2),
                   new ModuleIOSparkMax(3));
-          arm = new Arm(new ArmIOSparkMax(), new ArmSolverIOKairos(1));
+          arm = new Arm(new ArmIOSparkMax(), new ArmSolverIOKairos(3));
           gripper = new Gripper(new GripperIOSparkMax());
-          aprilTagVision = new AprilTagVision(new AprilTagVisionIONorthstar("northstar_0"));
+          aprilTagVision =
+              new AprilTagVision(
+                  new AprilTagVisionIONorthstar("northstar_0"),
+                  new AprilTagVisionIONorthstar("northstar_1"),
+                  new AprilTagVisionIONorthstar("northstar_2"));
           objectiveTracker = new ObjectiveTracker(new NodeSelectorIOServer());
           break;
         case ROBOT_2023P:
@@ -189,7 +194,7 @@ public class RobotContainer {
         () -> forcePregenPathsOverride.getAsBoolean());
     cubeIntake.setForceExtendSupplier(arm::cubeIntakeShouldExtend);
     coneIntake.setForceExtendSupplier(arm::coneIntakeShouldExtend);
-    aprilTagVision.setDataInterfaces(drive::getPose, drive::addVisionData);
+    aprilTagVision.setDataInterface(drive::addVisionData);
 
     // Set up auto routines
     AutoCommands autoCommands =
@@ -403,7 +408,7 @@ public class RobotContainer {
         .onTrue(Commands.runOnce(() -> arm.runPath(ArmPose.Preset.HOMED), arm));
     operatorEjectTrigger // Trigger defined above b/c used for auto scoring
         .and(autoScoreTrigger.negate())
-        .whileTrue(gripper.ejectCommand());
+        .whileTrue(gripper.ejectCommand(EjectSpeed.FAST));
     operator.start().and(autoScoreTrigger.negate()).whileTrue(gripper.intakeCommand());
 
     // Objective tracking controls

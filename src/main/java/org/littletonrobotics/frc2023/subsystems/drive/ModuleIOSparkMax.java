@@ -105,22 +105,29 @@ public class ModuleIOSparkMax implements ModuleIO {
       turnSparkMax.restoreFactoryDefaults();
     }
 
-    SparkMaxPeriodicFrameConfig.configNotLeader(driveSparkMax);
-    SparkMaxPeriodicFrameConfig.configNotLeader(turnSparkMax);
-
-    turnSparkMax.setInverted(isTurnMotorInverted);
-
-    driveSparkMax.setSmartCurrentLimit(30);
-    turnSparkMax.setSmartCurrentLimit(30);
-    driveSparkMax.enableVoltageCompensation(12.0);
-    turnSparkMax.enableVoltageCompensation(12.0);
+    driveSparkMax.setCANTimeout(SparkMaxBurnManager.configCANTimeout);
+    turnSparkMax.setCANTimeout(SparkMaxBurnManager.configCANTimeout);
 
     driveEncoder = driveSparkMax.getEncoder();
-    driveEncoder.setPosition(0.0);
-    driveEncoder.setMeasurementPeriod(10);
-    driveEncoder.setAverageDepth(2);
     turnRelativeEncoder = turnSparkMax.getEncoder();
-    turnRelativeEncoder.setPosition(0.0);
+
+    for (int i = 0; i < SparkMaxBurnManager.configCount; i++) {
+      SparkMaxPeriodicFrameConfig.configNotLeader(driveSparkMax);
+      SparkMaxPeriodicFrameConfig.configNotLeader(turnSparkMax);
+
+      turnSparkMax.setInverted(isTurnMotorInverted);
+
+      driveSparkMax.setSmartCurrentLimit(30);
+      turnSparkMax.setSmartCurrentLimit(30);
+      driveSparkMax.enableVoltageCompensation(12.0);
+      turnSparkMax.enableVoltageCompensation(12.0);
+
+      driveEncoder.setPosition(0.0);
+      driveEncoder.setMeasurementPeriod(10);
+      driveEncoder.setAverageDepth(2);
+
+      turnRelativeEncoder.setPosition(0.0);
+    }
 
     driveSparkMax.setCANTimeout(0);
     turnSparkMax.setCANTimeout(0);

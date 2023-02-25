@@ -48,25 +48,25 @@ public class DriveToPose extends CommandBase {
   private static final LoggedTunableNumber thetaMaxAcceleration =
       new LoggedTunableNumber("DriveToPose/ThetaMaxAcceleration");
   private static final LoggedTunableNumber driveTolerance =
-      new LoggedTunableNumber("HoldPose/DriveTolerance");
+      new LoggedTunableNumber("DriveToPose/DriveTolerance");
   private static final LoggedTunableNumber thetaTolerance =
-      new LoggedTunableNumber("HoldPose/ThetaTolerance");
+      new LoggedTunableNumber("DriveToPose/ThetaTolerance");
 
   static {
     switch (Constants.getRobot()) {
       case ROBOT_2023C:
       case ROBOT_2023P:
       case ROBOT_SIMBOT:
-        driveKp.initDefault(2.5);
+        driveKp.initDefault(2.0);
         driveKd.initDefault(0.0);
-        thetaKp.initDefault(7.0);
+        thetaKp.initDefault(5.0);
         thetaKd.initDefault(0.0);
         driveMaxVelocity.initDefault(Units.inchesToMeters(150.0));
         driveMaxAcceleration.initDefault(Units.inchesToMeters(450.0));
         thetaMaxVelocity.initDefault(Units.degreesToRadians(360.0));
         thetaMaxAcceleration.initDefault(Units.degreesToRadians(720.0));
         driveTolerance.initDefault(0.01);
-        thetaTolerance.initDefault(Units.degreesToRadians(2.0));
+        thetaTolerance.initDefault(Units.degreesToRadians(1.0));
       default:
         break;
     }

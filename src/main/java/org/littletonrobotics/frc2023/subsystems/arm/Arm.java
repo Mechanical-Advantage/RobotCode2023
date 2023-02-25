@@ -93,7 +93,7 @@ public class Arm extends SubsystemBase {
   private final Alert notZeroedAlert =
       new Alert(
           "Arm not zeroed due to ambiguous position, movement disabled. Please reposition the arm.",
-          AlertType.WARNING);
+          AlertType.ERROR);
   private double shoulderAngleOffset = 0.0;
   private double elbowAngleOffset = 0.0;
   private double wristAngleOffset = 0.0;
@@ -138,11 +138,11 @@ public class Arm extends SubsystemBase {
       switch (Constants.getRobot()) {
         case ROBOT_2023C:
           shoulderKp.initDefault(10.0);
-          shoulderKd.initDefault(0.8);
+          shoulderKd.initDefault(0.2);
           shoulderKs.initDefault(0.1);
           shoulderKsDeadband.initDefault(0.05);
           elbowKp.initDefault(8.0);
-          elbowKd.initDefault(0.8);
+          elbowKd.initDefault(0.4);
           elbowKs.initDefault(0.1);
           elbowKsDeadband.initDefault(0.05);
           wristKp.initDefault(20.0);

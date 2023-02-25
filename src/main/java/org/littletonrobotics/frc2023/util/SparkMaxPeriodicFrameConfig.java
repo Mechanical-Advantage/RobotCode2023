@@ -20,7 +20,8 @@ public class SparkMaxPeriodicFrameConfig {
     sparkMax.setPeriodicFramePeriod(PeriodicFrame.kStatus6, 65535);
   }
 
-  public static void configLeader(CANSparkMax sparkMax) {
+  public static void configLeaderFollower(CANSparkMax sparkMax) {
+    sparkMax.setPeriodicFramePeriod(PeriodicFrame.kStatus0, 10);
     sparkMax.setPeriodicFramePeriod(PeriodicFrame.kStatus3, 65535);
     sparkMax.setPeriodicFramePeriod(PeriodicFrame.kStatus4, 65535);
     sparkMax.setPeriodicFramePeriod(PeriodicFrame.kStatus5, 65535);

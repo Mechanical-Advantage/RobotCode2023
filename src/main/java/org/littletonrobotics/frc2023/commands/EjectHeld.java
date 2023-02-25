@@ -11,13 +11,14 @@ import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import org.littletonrobotics.frc2023.subsystems.arm.Arm;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmPose;
 import org.littletonrobotics.frc2023.subsystems.gripper.Gripper;
+import org.littletonrobotics.frc2023.subsystems.gripper.Gripper.EjectSpeed;
 
 public class EjectHeld extends SequentialCommandGroup {
   /** Ejects the current game piece out the front or back. */
   public EjectHeld(boolean isFront, Arm arm, Gripper gripper) {
     addCommands(
         arm.runPathCommand(ArmPose.Preset.EJECT.getPose().withFlip(!isFront))
-            .andThen(gripper.ejectCommand())
+            .andThen(gripper.ejectCommand(EjectSpeed.FAST))
             .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
   }
 }

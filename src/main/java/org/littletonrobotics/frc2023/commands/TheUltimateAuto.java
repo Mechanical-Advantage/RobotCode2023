@@ -27,7 +27,7 @@ import org.littletonrobotics.frc2023.util.GeomUtil;
 import org.littletonrobotics.frc2023.util.trajectory.Waypoint;
 
 public class TheUltimateAuto extends SequentialCommandGroup {
-  private static final boolean reachScore = true;
+  private static final boolean reachScore = false;
   private static final Translation2d transit =
       new Translation2d(
           FieldConstants.Community.midX,
@@ -58,8 +58,7 @@ public class TheUltimateAuto extends SequentialCommandGroup {
                       List.of(
                           Waypoint.fromHolonomicPose(DriveToSubstation.singleSubstationPose),
                           Waypoint.fromHolonomicPose(substationBackoff))))
-              .deadlineWith(
-                  new IntakeSubstation(reachScore, arm, drive, gripper, new Objective())));
+              .deadlineWith(new IntakeSubstation(true, arm, drive, gripper, new Objective())));
       Pose2d autoScorePose =
           AutoScore.getDriveTarget(
               new Pose2d(transit, Rotation2d.fromDegrees(180.0)),

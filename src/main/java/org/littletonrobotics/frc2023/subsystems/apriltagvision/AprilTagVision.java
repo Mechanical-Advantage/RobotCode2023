@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import org.littletonrobotics.frc2023.Constants;
 import org.littletonrobotics.frc2023.FieldConstants;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIO.AprilTagVisionIOInputs;
@@ -32,8 +31,8 @@ import org.littletonrobotics.frc2023.util.VirtualSubsystem;
 import org.littletonrobotics.junction.Logger;
 
 public class AprilTagVision extends VirtualSubsystem {
-  private static final double ambiguityThreshold = 0.15;
-  private static final double targetLogTimeSecs = 0.1;
+  private static final double ambiguityThreshold = 0.1;
+  private static final double targetLogTimeSecs = 0.05;
   private static final Pose3d[] cameraPoses;
   private static final PolynomialRegression xyStdDevModel;
   private static final PolynomialRegression thetaStdDevModel;
@@ -41,7 +40,6 @@ public class AprilTagVision extends VirtualSubsystem {
   private final AprilTagVisionIO[] io;
   private final AprilTagVisionIOInputs[] inputs;
 
-  private Supplier<Pose2d> poseSupplier = () -> new Pose2d();
   private Consumer<List<TimestampedVisionUpdate>> visionConsumer = (x) -> {};
   private Map<Integer, Double> lastFrameTimes = new HashMap<>();
   private Map<Integer, Double> lastTagDetectionTimes = new HashMap<>();
@@ -52,10 +50,21 @@ public class AprilTagVision extends VirtualSubsystem {
         cameraPoses =
             new Pose3d[] {
               new Pose3d(
-                  Units.inchesToMeters(4.5),
-                  Units.inchesToMeters(-12.0),
-                  Units.inchesToMeters(11),
-                  new Rotation3d(0.0, Units.degreesToRadians(18.0), 0.0))
+                  Units.inchesToMeters(4.0),
+                  Units.inchesToMeters(-12.5),
+                  Units.inchesToMeters(19.75),
+                  new Rotation3d(0.0, Units.degreesToRadians(15.0), 0.0)),
+              new Pose3d(
+                  Units.inchesToMeters(-4.0),
+                  Units.inchesToMeters(-11.5),
+                  Units.inchesToMeters(19.0),
+                  new Rotation3d(0.0, 0.0, Units.degreesToRadians(-90.0))),
+              new Pose3d(
+                  Units.inchesToMeters(-11.5),
+                  Units.inchesToMeters(7.5),
+                  Units.inchesToMeters(6.5),
+                  new Rotation3d(0.0, 0.0, Units.degreesToRadians(180.0))
+                      .rotateBy(new Rotation3d(0.0, Units.degreesToRadians(-14.0), 0.0)))
             };
         xyStdDevModel =
             new PolynomialRegression(
@@ -109,9 +118,7 @@ public class AprilTagVision extends VirtualSubsystem {
             });
   }
 
-  public void setDataInterfaces(
-      Supplier<Pose2d> poseSupplier, Consumer<List<TimestampedVisionUpdate>> visionConsumer) {
-    this.poseSupplier = poseSupplier;
+  public void setDataInterface(Consumer<List<TimestampedVisionUpdate>> visionConsumer) {
     this.visionConsumer = visionConsumer;
   }
 
@@ -122,7 +129,6 @@ public class AprilTagVision extends VirtualSubsystem {
     }
 
     // Loop over instances
-    Pose2d currentPose = poseSupplier.get();
     List<Pose2d> allRobotPoses = new ArrayList<>();
     List<TimestampedVisionUpdate> visionUpdates = new ArrayList<>();
     for (int instanceIndex = 0; instanceIndex < io.length; instanceIndex++) {
@@ -176,22 +182,16 @@ public class AprilTagVision extends VirtualSubsystem {
                     .transformBy(GeomUtil.pose3dToTransform3d(cameraPoses[instanceIndex]).inverse())
                     .toPose2d();
 
-            // Select pose using projection errors and current rotation
+            // Select pose using projection errors
             if (error0 < error1 * ambiguityThreshold) {
               cameraPose = cameraPose0;
               robotPose = robotPose0;
             } else if (error1 < error0 * ambiguityThreshold) {
               cameraPose = cameraPose1;
               robotPose = robotPose1;
-            } else if (Math.abs(
-                    robotPose0.getRotation().minus(currentPose.getRotation()).getRadians())
-                < Math.abs(
-                    robotPose1.getRotation().minus(currentPose.getRotation()).getRadians())) {
-              cameraPose = cameraPose0;
-              robotPose = robotPose0;
             } else {
-              cameraPose = cameraPose1;
-              robotPose = robotPose1;
+              cameraPose = null;
+              robotPose = null;
             }
             break;
         }

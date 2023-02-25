@@ -38,11 +38,15 @@ public class GripperIOSparkMax implements GripperIO {
       motor.restoreFactoryDefaults();
     }
 
-    SparkMaxPeriodicFrameConfig.configNotLeader(motor);
+    motor.setCANTimeout(SparkMaxBurnManager.configCANTimeout);
 
-    motor.setInverted(invert);
-    motor.setSmartCurrentLimit(40);
-    motor.enableVoltageCompensation(12.0);
+    for (int i = 0; i < SparkMaxBurnManager.configCount; i++) {
+      SparkMaxPeriodicFrameConfig.configNotLeader(motor);
+
+      motor.setInverted(invert);
+      motor.setSmartCurrentLimit(40);
+      motor.enableVoltageCompensation(12.0);
+    }
 
     motor.setCANTimeout(0);
 

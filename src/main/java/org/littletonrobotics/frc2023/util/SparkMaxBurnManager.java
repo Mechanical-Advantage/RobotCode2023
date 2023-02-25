@@ -18,6 +18,8 @@ import org.littletonrobotics.frc2023.BuildConstants;
 
 /** Determines whether to burn SparkMax configs to flash. */
 public class SparkMaxBurnManager {
+  public static final int configCANTimeout = 2000;
+  public static final int configCount = 10; // How many times to set the config on init
   private static final String buildDateFile = "/home/lvuser/build-date.txt";
   private static boolean shouldBurn = false;
 

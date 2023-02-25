@@ -33,6 +33,8 @@ public class Drive extends SubsystemBase {
       0.05; // Need to be under this to switch to coast when disabling
   private static final double coastThresholdSecs =
       6.0; // Need to be under the above speed for this length of time to switch to coast
+  private static final double aprilTagGyroThresholdSecs =
+      6.0; // Must be disabled for this time to start using AprilTag gyro data
 
   private final GyroIO gyroIO;
   private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
@@ -53,8 +55,9 @@ public class Drive extends SubsystemBase {
   private double characterizationVolts = 0.0;
   private boolean isBrakeMode = false;
   private Timer lastMovementTimer = new Timer();
+  private Timer lastDisabledTimer = new Timer();
 
-  private PoseEstimator poseEstimator = new PoseEstimator(VecBuilder.fill(0.005, 0.005, 0.0005));
+  private PoseEstimator poseEstimator = new PoseEstimator(VecBuilder.fill(0.005, 0.005, 0.001));
   private double[] lastModulePositionsMeters = new double[] {0.0, 0.0, 0.0, 0.0};
   private Rotation2d lastGyroYaw = new Rotation2d();
   private Twist2d fieldVelocity = new Twist2d();
@@ -88,6 +91,7 @@ public class Drive extends SubsystemBase {
     modules[2] = new Module(blModuleIO, 2);
     modules[3] = new Module(brModuleIO, 3);
     lastMovementTimer.start();
+    lastDisabledTimer.start();
     for (var module : modules) {
       module.setBrakeMode(false);
     }
@@ -119,6 +123,9 @@ public class Drive extends SubsystemBase {
       for (var module : modules) {
         module.stop();
       }
+
+      // Reset timer
+      lastDisabledTimer.reset();
 
       // Clear setpoint logs
       Logger.getInstance().recordOutput("SwerveStates/Setpoints", new double[] {});
@@ -275,6 +282,18 @@ public class Drive extends SubsystemBase {
 
   /** Adds vision data to the pose esimation. */
   public void addVisionData(List<TimestampedVisionUpdate> visionData) {
+    if (!lastDisabledTimer.hasElapsed(aprilTagGyroThresholdSecs)) {
+      for (var update : visionData) {
+        update =
+            new TimestampedVisionUpdate(
+                update.timestamp(),
+                update.pose(),
+                VecBuilder.fill(
+                    update.stdDevs().get(0, 0),
+                    update.stdDevs().get(1, 0),
+                    Double.POSITIVE_INFINITY));
+      }
+    }
     poseEstimator.addVisionData(visionData);
   }
 

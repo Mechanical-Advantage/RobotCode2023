@@ -253,7 +253,7 @@ public class AutoCommands {
                 level == NodeLevel.HYBRID
                     ? path(holonomic(startingPose), holonomic(hybridBackupPose))
                     : none()),
-        gripper.ejectCommand(),
+        gripper.ejectCommand(objective0),
         path(
                 constraints,
                 holonomic(level == NodeLevel.HYBRID ? hybridBackupPose : startingPose),
@@ -269,7 +269,7 @@ public class AutoCommands {
                 holonomic(scorePose0))
             .alongWith(
                 armPathThroughHome(AutoScore.getArmTarget(scorePose0, objective1, arm, true))),
-        gripper.ejectCommand(),
+        gripper.ejectCommand(objective1),
         path(
                 constraints,
                 holonomic(scorePose0),
@@ -292,7 +292,7 @@ public class AutoCommands {
                     .andThen(
                         arm.runPathCommand(
                             AutoScore.getArmTarget(scorePose1, objective2, arm, true)))),
-        gripper.ejectCommand(),
+        gripper.ejectCommand(objective2),
         either(balance(scorePose1), none(), () -> balance.get()).alongWith(armToHome()));
   }
 }

@@ -59,22 +59,28 @@ public class CubeIntakeIOSparkMax implements CubeIntakeIO {
       rollerSparkMax.restoreFactoryDefaults();
     }
 
-    SparkMaxPeriodicFrameConfig.configNotLeader(armSparkMax);
-    SparkMaxPeriodicFrameConfig.configNotLeader(rollerSparkMax);
+    armSparkMax.setCANTimeout(SparkMaxBurnManager.configCANTimeout);
+    rollerSparkMax.setCANTimeout(SparkMaxBurnManager.configCANTimeout);
 
     armInternalEncoder = armSparkMax.getEncoder();
-    armInternalEncoder.setPosition(0.0);
-    armInternalEncoder.setMeasurementPeriod(10);
-    armInternalEncoder.setAverageDepth(2);
 
-    armSparkMax.setInverted(armInvert);
-    rollerSparkMax.setInverted(rollerInvert);
+    for (int i = 0; i < SparkMaxBurnManager.configCount; i++) {
+      SparkMaxPeriodicFrameConfig.configNotLeader(armSparkMax);
+      SparkMaxPeriodicFrameConfig.configNotLeader(rollerSparkMax);
 
-    armSparkMax.setSmartCurrentLimit(30);
-    rollerSparkMax.setSmartCurrentLimit(30);
+      armInternalEncoder.setPosition(0.0);
+      armInternalEncoder.setMeasurementPeriod(10);
+      armInternalEncoder.setAverageDepth(2);
 
-    armSparkMax.enableVoltageCompensation(12.0);
-    rollerSparkMax.enableVoltageCompensation(12.0);
+      armSparkMax.setInverted(armInvert);
+      rollerSparkMax.setInverted(rollerInvert);
+
+      armSparkMax.setSmartCurrentLimit(30);
+      rollerSparkMax.setSmartCurrentLimit(30);
+
+      armSparkMax.enableVoltageCompensation(12.0);
+      rollerSparkMax.enableVoltageCompensation(12.0);
+    }
 
     armSparkMax.setCANTimeout(0);
     rollerSparkMax.setCANTimeout(0);

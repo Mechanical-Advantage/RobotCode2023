@@ -11,6 +11,9 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import java.util.Map;
+import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.GamePiece;
+import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.Objective;
 import org.littletonrobotics.frc2023.util.LoggedTunableNumber;
 import org.littletonrobotics.frc2023.util.SuppliedWaitCommand;
 import org.littletonrobotics.junction.Logger;
@@ -24,13 +27,17 @@ public class Gripper extends SubsystemBase {
   private static final LoggedTunableNumber intakeVolts =
       new LoggedTunableNumber("Gripper/IntakeVolts", 10.0);
   private static final LoggedTunableNumber intakeStopVelocityWait =
-      new LoggedTunableNumber("Gripper/IntakeStopVelocityWait", 0.5);
+      new LoggedTunableNumber("Gripper/IntakeStopVelocityWait", 0.2);
   private static final LoggedTunableNumber intakeStopVelocity =
       new LoggedTunableNumber("Gripper/IntakeStopVelocity", 25.0);
-  private static final LoggedTunableNumber ejectVolts =
-      new LoggedTunableNumber("Gripper/EjectVolts", -12.0);
-  private static final LoggedTunableNumber ejectSecs =
-      new LoggedTunableNumber("Gripper/EjectSecs", 0.4);
+  private static final LoggedTunableNumber ejectVoltsFast =
+      new LoggedTunableNumber("Gripper/EjectVoltsFast", -12.0);
+  private static final LoggedTunableNumber ejectSecsFast =
+      new LoggedTunableNumber("Gripper/EjectSecsFast", 0.4);
+  private static final LoggedTunableNumber ejectVoltsSlow =
+      new LoggedTunableNumber("Gripper/EjectVoltsSlow", -1.5);
+  private static final LoggedTunableNumber ejectSecsSlow =
+      new LoggedTunableNumber("Gripper/EjectSecsSlow", 0.75);
 
   public Gripper(GripperIO io) {
     this.io = io;
@@ -58,12 +65,34 @@ public class Gripper extends SubsystemBase {
         .raceWith(
             new SuppliedWaitCommand(() -> intakeStopVelocityWait.get())
                 .andThen(
-                    Commands.waitUntil(() -> inputs.velocityRadPerSec < intakeStopVelocity.get())));
+                    Commands.waitUntil(() -> inputs.velocityRadPerSec < intakeStopVelocity.get()),
+                    Commands.print("STOPPING THE INTAKE!!!")))
+        .finallyDo((interrupted) -> io.setVoltage(holdVolts.get()));
   }
 
   /** Command factory to run the gripper wheels back and eject a game piece. */
-  public Command ejectCommand() {
-    return run(() -> io.setVoltage(ejectVolts.get()))
-        .raceWith(new SuppliedWaitCommand(() -> ejectSecs.get()));
+  public Command ejectCommand(Objective objective) {
+    return Commands.select(
+        Map.of(
+            GamePiece.CUBE,
+            ejectCommand(EjectSpeed.FAST),
+            GamePiece.CONE,
+            ejectCommand(EjectSpeed.SLOW)),
+        () -> objective.gamePiece);
+  }
+
+  /** Command factory to run the gripper wheels back and eject a game piece. */
+  public Command ejectCommand(EjectSpeed speed) {
+    return run(() ->
+            io.setVoltage(speed == EjectSpeed.FAST ? ejectVoltsFast.get() : ejectVoltsSlow.get()))
+        .raceWith(
+            new SuppliedWaitCommand(
+                () -> speed == EjectSpeed.FAST ? ejectSecsFast.get() : ejectSecsSlow.get()))
+        .finallyDo((interrupted) -> io.setVoltage(holdVolts.get()));
+  }
+
+  public static enum EjectSpeed {
+    FAST,
+    SLOW
   }
 }

@@ -88,39 +88,47 @@ public class ArmIOSparkMax implements ArmIO {
       wristSparkMax.restoreFactoryDefaults();
     }
 
-    SparkMaxPeriodicFrameConfig.configLeader(shoulderSparkMax);
-    SparkMaxPeriodicFrameConfig.configNotLeader(shoulderSparkMaxFollower);
-    SparkMaxPeriodicFrameConfig.configNotLeader(elbowSparkMax);
-    SparkMaxPeriodicFrameConfig.configNotLeader(wristSparkMax);
-
-    shoulderSparkMaxFollower.follow(shoulderSparkMax);
-    shoulderSparkMax.setInverted(isShoulderMotorInverted);
-    elbowSparkMax.setInverted(isElbowMotorInverted);
-    wristSparkMax.setInverted(isWristMotorInverted);
-
-    shoulderSparkMax.setSmartCurrentLimit(40);
-    shoulderSparkMaxFollower.setSmartCurrentLimit(40);
-    elbowSparkMax.setSmartCurrentLimit(40);
-    wristSparkMax.setSmartCurrentLimit(40);
-
-    shoulderSparkMax.enableVoltageCompensation(12.0);
-    elbowSparkMax.enableVoltageCompensation(12.0);
-    wristSparkMax.enableVoltageCompensation(12.0);
+    shoulderSparkMax.setCANTimeout(SparkMaxBurnManager.configCANTimeout);
+    shoulderSparkMaxFollower.setCANTimeout(SparkMaxBurnManager.configCANTimeout);
+    elbowSparkMax.setCANTimeout(SparkMaxBurnManager.configCANTimeout);
+    wristSparkMax.setCANTimeout(SparkMaxBurnManager.configCANTimeout);
 
     shoulderInternalEncoder = shoulderSparkMax.getEncoder();
-    shoulderInternalEncoder.setMeasurementPeriod(10);
-    shoulderInternalEncoder.setAverageDepth(2);
-    shoulderInternalEncoder.setPosition(0.0);
-
     elbowInternalEncoder = elbowSparkMax.getEncoder();
-    elbowInternalEncoder.setMeasurementPeriod(10);
-    elbowInternalEncoder.setAverageDepth(2);
-    elbowInternalEncoder.setPosition(0.0);
-
     wristInternalEncoder = wristSparkMax.getEncoder();
-    wristInternalEncoder.setMeasurementPeriod(10);
-    wristInternalEncoder.setAverageDepth(2);
-    wristInternalEncoder.setPosition(0.0);
+
+    for (int i = 0; i < SparkMaxBurnManager.configCount; i++) {
+      SparkMaxPeriodicFrameConfig.configLeaderFollower(shoulderSparkMax);
+      SparkMaxPeriodicFrameConfig.configLeaderFollower(shoulderSparkMaxFollower);
+      SparkMaxPeriodicFrameConfig.configNotLeader(elbowSparkMax);
+      SparkMaxPeriodicFrameConfig.configNotLeader(wristSparkMax);
+
+      shoulderSparkMaxFollower.follow(shoulderSparkMax);
+      shoulderSparkMax.setInverted(isShoulderMotorInverted);
+      elbowSparkMax.setInverted(isElbowMotorInverted);
+      wristSparkMax.setInverted(isWristMotorInverted);
+
+      shoulderSparkMax.setSmartCurrentLimit(40);
+      shoulderSparkMaxFollower.setSmartCurrentLimit(40);
+      elbowSparkMax.setSmartCurrentLimit(40);
+      wristSparkMax.setSmartCurrentLimit(40);
+
+      shoulderSparkMax.enableVoltageCompensation(12.0);
+      elbowSparkMax.enableVoltageCompensation(12.0);
+      wristSparkMax.enableVoltageCompensation(12.0);
+
+      shoulderInternalEncoder.setMeasurementPeriod(10);
+      shoulderInternalEncoder.setAverageDepth(2);
+      shoulderInternalEncoder.setPosition(0.0);
+
+      elbowInternalEncoder.setMeasurementPeriod(10);
+      elbowInternalEncoder.setAverageDepth(2);
+      elbowInternalEncoder.setPosition(0.0);
+
+      wristInternalEncoder.setMeasurementPeriod(10);
+      wristInternalEncoder.setAverageDepth(2);
+      wristInternalEncoder.setPosition(0.0);
+    }
 
     shoulderSparkMax.setCANTimeout(0);
     shoulderSparkMaxFollower.setCANTimeout(0);
