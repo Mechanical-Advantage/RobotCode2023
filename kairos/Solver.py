@@ -29,8 +29,8 @@ class Solver:
         n = config["solver"]["interiorPoints"]
         max_voltage_shoulder = config["solver"]["maxVoltageShoulder"]
         max_voltage_elbow = config["solver"]["maxVoltageElbow"]
-        max_acceleration_shoulder = config["solver"]["maxAccelerationShoulder"]
-        max_acceleration_elbow = config["solver"]["maxAccelerationElbow"]
+        max_acceleration_min_extension = config["solver"]["maxAccelerationMinExtension"]
+        max_acceleration_max_extension = config["solver"]["maxAccelerationMaxExtension"]
         max_jerk = config["solver"]["maxJerk"]
         elbow_cg_radius = (
             config["elbow"]["cgRadius"] * config["elbow"]["mass"]
@@ -102,7 +102,7 @@ class Solver:
             current_theta = theta_points[i]
             next_theta = theta_points[i if i == n + 1 else i + 1]
 
-            # Apply voltage constraints
+            # Apply constraints to joints
             last_velocity_2 = (
                 (last_theta[0] - last_theta_2[0]) / dt,
                 (last_theta[1] - last_theta_2[1]) / dt,
@@ -127,18 +127,6 @@ class Solver:
                 (acceleration[0] - last_acceleration[0]) / (2 * dt),
                 (acceleration[1] - last_acceleration[1]) / (2 * dt),
             )
-            opti.subject_to(
-                opti.bounded(
-                    -max_acceleration_shoulder,
-                    acceleration[0],
-                    max_acceleration_shoulder,
-                )
-            )
-            opti.subject_to(
-                opti.bounded(
-                    -max_acceleration_elbow, acceleration[1], max_acceleration_elbow
-                )
-            )
             voltage = ff_model.calculate(current_theta, last_velocity, acceleration)
             opti.subject_to(
                 opti.bounded(-max_voltage_shoulder, voltage[0], max_voltage_shoulder)
@@ -148,6 +136,63 @@ class Solver:
             )
             opti.subject_to(opti.bounded(-max_jerk, jerk[0], max_jerk))
             opti.subject_to(opti.bounded(-max_jerk, jerk[1], max_jerk))
+
+            # Apply acceleration constraint to position
+            last_position = (
+                config["origin"][0]
+                + config["shoulder"]["length"] * cos(last_theta[0])
+                + config["elbow"]["length"] * cos(last_theta[0] + last_theta[1]),
+                config["origin"][1]
+                + config["shoulder"]["length"] * sin(last_theta[0])
+                + config["elbow"]["length"] * sin(last_theta[0] + last_theta[1]),
+            )
+            current_position = (
+                config["origin"][0]
+                + config["shoulder"]["length"] * cos(current_theta[0])
+                + config["elbow"]["length"] * cos(current_theta[0] + current_theta[1]),
+                config["origin"][1]
+                + config["shoulder"]["length"] * sin(current_theta[0])
+                + config["elbow"]["length"] * sin(current_theta[0] + current_theta[1]),
+            )
+            next_position = (
+                config["origin"][0]
+                + config["shoulder"]["length"] * cos(next_theta[0])
+                + config["elbow"]["length"] * cos(next_theta[0] + next_theta[1]),
+                config["origin"][1]
+                + config["shoulder"]["length"] * sin(next_theta[0])
+                + config["elbow"]["length"] * sin(next_theta[0] + next_theta[1]),
+            )
+            last_position_velocity = (
+                current_position[0] - last_position[0] / dt,
+                current_position[1] - last_position[1] / dt,
+            )
+            next_position_velocity = (
+                next_position[0] - current_position[0] / dt,
+                next_position[1] - current_position[1] / dt,
+            )
+            position_acceleration = (
+                sqrt(
+                    (next_position_velocity[0] - last_position_velocity[0]) ** 2.0
+                    + (next_position_velocity[1] - last_position_velocity[1]) ** 2.0
+                )
+                / dt
+            )
+            max_position_acceleration = (
+                sqrt(
+                    (current_position[0] - config["origin"][0]) ** 2.0
+                    + (current_position[1] - config["origin"][1]) ** 2.0
+                )
+                / (config["shoulder"]["length"] + config["elbow"]["length"])
+                * (max_acceleration_max_extension - max_acceleration_min_extension)
+                + max_acceleration_min_extension
+            )
+            opti.subject_to(
+                opti.bounded(
+                    -max_position_acceleration,
+                    position_acceleration,
+                    max_position_acceleration,
+                )
+            )
 
             # Apply position constraints
             if i != 0 and i != n + 1:

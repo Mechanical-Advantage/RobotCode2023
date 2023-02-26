@@ -46,8 +46,8 @@
     "interiorPoints": 15,
     "maxVoltageShoulder": 8,
     "maxVoltageElbow": 8,
-    "maxAccelerationShoulder": 5.0,
-    "maxAccelerationElbow": 7.0,
+    "maxAccelerationMinExtension": 30,
+    "maxAccelerationMaxExtension": 3,
     "maxJerk": 30
   },
   "constraints": {
