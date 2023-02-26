@@ -42,8 +42,6 @@ import org.littletonrobotics.frc2023.subsystems.arm.ArmIOSparkMax;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmPose;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmSolverIO;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmSolverIOKairos;
-import org.littletonrobotics.frc2023.subsystems.coneintake.ConeIntake;
-import org.littletonrobotics.frc2023.subsystems.coneintake.ConeIntakeIO;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntake;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntakeIO;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntakeIOSim;
@@ -76,7 +74,6 @@ public class RobotContainer {
   private Arm arm;
   private Gripper gripper;
   private CubeIntake cubeIntake;
-  private ConeIntake coneIntake;
   private AprilTagVision aprilTagVision;
   private ObjectiveTracker objectiveTracker;
 
@@ -171,9 +168,6 @@ public class RobotContainer {
     if (cubeIntake == null) {
       cubeIntake = new CubeIntake(new CubeIntakeIO() {});
     }
-    if (coneIntake == null) {
-      coneIntake = new ConeIntake(new ConeIntakeIO() {});
-    }
     if (aprilTagVision == null) {
       // In replay, match the number of instances for each robot
       switch (Constants.getRobot()) {
@@ -195,12 +189,11 @@ public class RobotContainer {
         () -> armCoastOverride.getAsBoolean(),
         () -> forcePregenPathsOverride.getAsBoolean());
     cubeIntake.setForceExtendSupplier(arm::cubeIntakeShouldExtend);
-    coneIntake.setForceExtendSupplier(arm::coneIntakeShouldExtend);
     aprilTagVision.setDataInterfaces(drive::getPose, drive::addVisionData);
 
     // Set up auto routines
     AutoCommands autoCommands =
-        new AutoCommands(drive, arm, gripper, cubeIntake, coneIntake, autoSelector::getResponses);
+        new AutoCommands(drive, arm, gripper, cubeIntake, autoSelector::getResponses);
     autoSelector.addRoutine(
         "Reset Odometry", List.of(), new InstantCommand(() -> drive.setPose(new Pose2d())));
     autoSelector.addRoutine(

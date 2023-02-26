@@ -29,7 +29,6 @@ import org.littletonrobotics.frc2023.FieldConstants.Grids;
 import org.littletonrobotics.frc2023.FieldConstants.StagingLocations;
 import org.littletonrobotics.frc2023.subsystems.arm.Arm;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmPose;
-import org.littletonrobotics.frc2023.subsystems.coneintake.ConeIntake;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntake;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
 import org.littletonrobotics.frc2023.subsystems.gripper.Gripper;
@@ -45,7 +44,6 @@ public class AutoCommands {
   private final Arm arm;
   private final Gripper gripper;
   private final CubeIntake cubeIntake;
-  private final ConeIntake coneIntake;
   private final Supplier<List<AutoQuestionResponse>> responses;
 
   // Constants
@@ -70,13 +68,11 @@ public class AutoCommands {
       Arm arm,
       Gripper gripper,
       CubeIntake cubeIntake,
-      ConeIntake coneIntake,
       Supplier<List<AutoQuestionResponse>> responses) {
     this.drive = drive;
     this.arm = arm;
     this.gripper = gripper;
     this.cubeIntake = cubeIntake;
-    this.coneIntake = coneIntake;
     this.responses = responses;
 
     for (int i = 0; i < 9; i++) {

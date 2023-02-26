@@ -49,15 +49,14 @@ public class Arm extends SubsystemBase {
   public static final double trajectoryCacheMarginRadians = Units.degreesToRadians(3.0);
   public static final double shiftCenterMarginMeters = 0.05;
   public static final double wristGroundMarginMeters = 0.05;
-  public static final double[] cubeIntakeAvoidanceRect = new double[] {0.05, 0.0, 0.75, 0.65};
-  public static final double[] coneIntakeAvoidanceRect = new double[] {-0.65, 0.0, -0.05, 0.6};
+  public static final double[] cubeIntakeAvoidanceRect = new double[] {0.1, 0.0, 0.75, 0.65};
   public static final double nodeConstraintMinY =
       0.8; // If target or start is above this y, enable node constraints
   public static final double nodeConstraintMinX =
       0.52; // If target or start is beyond this x, enable node constraints
   public static final Set<String> frontNodeConstraints = Set.of("nodeMidFront", "nodeHighFront");
   public static final Set<String> backNodeConstraints = Set.of("nodeMidBack", "nodeHighBack");
-  public static final double avoidanceLookaheadSecs = 0.25;
+  public static final double avoidanceLookaheadSecs = 0.75;
   public static final double emergencyDisableMaxError = Units.degreesToRadians(20.0);
   public static final double emergencyDisableMaxErrorTime = 1.0;
   public static final double emergencyDisableBeyondLimitThreshold = Units.degreesToRadians(5.0);
@@ -108,6 +107,7 @@ public class Arm extends SubsystemBase {
   private ArmPose lastSetpointPose = null; // Used for FF calculation when not following trajectory
   private ArmPose queuedPose = null; // Use as setpoint once trajectory is completed
   private final Timer trajectoryTimer = new Timer();
+  private double trajectoryStartWait = 0.0;
 
   private final PIDController shoulderFeedback =
       new PIDController(0.0, 0.0, 0.0, Constants.loopPeriodSecs);
@@ -192,7 +192,7 @@ public class Arm extends SubsystemBase {
     ArmVisualizer.logRectangleConstraints("ArmConstraints", config, new Color8Bit(Color.kBlack));
     ArmVisualizer.logRectangles(
         "ArmIntakeAvoidance",
-        new double[][] {cubeIntakeAvoidanceRect, coneIntakeAvoidanceRect},
+        new double[][] {cubeIntakeAvoidanceRect},
         new Color8Bit(Color.kGreen));
 
     // Load cached trajectories
@@ -319,14 +319,26 @@ public class Arm extends SubsystemBase {
       queuedPose = null;
     }
 
-    // Check if trajectory is finished
+    // Stop trajectory if finished
     if (currentTrajectory != null
         && currentTrajectory.isGenerated()
-        && trajectoryTimer.hasElapsed(currentTrajectory.getTotalTime())) {
+        && trajectoryTimer.hasElapsed(trajectoryStartWait + currentTrajectory.getTotalTime())) {
       trajectoryTimer.stop();
       trajectoryTimer.reset();
       currentTrajectory = null;
       setpointPose = queuedPose;
+    }
+
+    // Start trajectory if ready
+    if (currentTrajectory != null
+        && currentTrajectory.isGenerated()
+        && trajectoryTimer.get() == 0.0) {
+      trajectoryTimer.start();
+      trajectoryStartWait = 0.0;
+      double timeUntilCollision = getTimeUntilCollision(cubeIntakeAvoidanceRect);
+      if (timeUntilCollision < avoidanceLookaheadSecs && timeUntilCollision != 0.0) {
+        trajectoryStartWait = avoidanceLookaheadSecs - timeUntilCollision;
+      }
     }
 
     // Values to be logged at the end of the cycle and used for emergency stop
@@ -348,10 +360,11 @@ public class Arm extends SubsystemBase {
       shoulderFeedback.reset();
       elbowFeedback.reset();
 
-    } else if (currentTrajectory != null && currentTrajectory.isGenerated()) {
+    } else if (currentTrajectory != null
+        && currentTrajectory.isGenerated()
+        && trajectoryTimer.get() > trajectoryStartWait) {
       // Follow trajectory
-      trajectoryTimer.start();
-      var state = currentTrajectory.sample(trajectoryTimer.get());
+      var state = currentTrajectory.sample(trajectoryTimer.get() - trajectoryStartWait);
       shoulderAngleSetpoint = state.get(0, 0);
       elbowAngleSetpoint = state.get(1, 0);
 
@@ -366,6 +379,7 @@ public class Arm extends SubsystemBase {
       io.setElbowVoltage(
           elbowVoltageFeedforward
               + applyKs(elbowVoltageFeedback, elbowKs.get(), elbowKsDeadband.get()));
+
       setpointPose = // If trajectory is interrupted, go to last setpoint
           new ArmPose(
               kinematics.forward(new Vector<>(state.extractColumnVector(0))),
@@ -533,64 +547,63 @@ public class Arm extends SubsystemBase {
     return volts + Math.copySign(kS, volts);
   }
 
-  /** Returns whether the arm is current in or will pass through the provided region. */
-  private boolean checkAvoidanceRegion(double[] region) {
+  /**
+   * Returns the predicted time until the arm will pass through the provided region. Zero if already
+   * intersecting the region and infinity if no planned motion will intersect the region.
+   */
+  private double getTimeUntilCollision(double[] region) {
     // Check setpoint
     if (setpointPose.endEffectorPosition().getX() >= region[0]
         && setpointPose.endEffectorPosition().getX() <= region[2]
         && setpointPose.endEffectorPosition().getY() >= region[1]
         && setpointPose.endEffectorPosition().getY() <= region[3]) {
-      return true;
+      return 0.0;
     }
     var setpointWristPosition = setpointPose.wristPosition();
     if (setpointWristPosition.getX() >= region[0]
         && setpointWristPosition.getX() <= region[2]
         && setpointWristPosition.getY() >= region[1]
         && setpointWristPosition.getY() <= region[3]) {
-      return true;
+      return 0.0;
     }
 
     // Check trajectory
     if (currentTrajectory != null && currentTrajectory.isGenerated()) {
       var points = currentTrajectory.getPoints();
       var dt = currentTrajectory.getTotalTime() / (points.size() - 1);
+      var trajectoryTime =
+          trajectoryTimer.get() == 0.0 || trajectoryTimer.get() < trajectoryStartWait
+              ? 0.0
+              : trajectoryTimer.get() - trajectoryStartWait;
       for (int i = 0; i < points.size(); i++) {
         var time = dt * i;
-        if (time < trajectoryTimer.get()) {
+        if (time < trajectoryTime) {
           continue;
-        }
-        if (time > trajectoryTimer.get() + avoidanceLookaheadSecs) {
-          break;
         }
         var endEffectorPosition = kinematics.forward(points.get(i));
         var wristPosition =
-            new ArmPose(endEffectorPosition, queuedPose.globalWristAngle()).wristPosition();
+            new ArmPose(endEffectorPosition, setpointPose.globalWristAngle()).wristPosition();
         if (endEffectorPosition.getX() >= region[0]
             && endEffectorPosition.getX() <= region[2]
             && endEffectorPosition.getY() >= region[1]
             && endEffectorPosition.getY() <= region[3]) {
-          return true;
+          return time - trajectoryTime;
         }
         if (wristPosition.getX() >= region[0]
             && wristPosition.getX() <= region[2]
             && wristPosition.getY() >= region[1]
             && wristPosition.getY() <= region[3]) {
-          return true;
+          return time - trajectoryTime;
         }
       }
     }
 
-    return false;
+    return Double.POSITIVE_INFINITY;
   }
 
   /** Returns whether the cube intake should be extended to avoid colliding with the arm. */
   public boolean cubeIntakeShouldExtend() {
-    return checkAvoidanceRegion(cubeIntakeAvoidanceRect);
-  }
-
-  /** Returns whether the cone intake should be extended to avoid colliding with the arm. */
-  public boolean coneIntakeShouldExtend() {
-    return checkAvoidanceRegion(coneIntakeAvoidanceRect);
+    return getTimeUntilCollision(cubeIntakeAvoidanceRect) < avoidanceLookaheadSecs;
   }
 
   /** Returns the current arm setpoint. */
