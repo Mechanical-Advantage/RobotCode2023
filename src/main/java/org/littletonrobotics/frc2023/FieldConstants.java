@@ -230,4 +230,38 @@ public final class FieldConstants {
       throw new RuntimeException("Failed to load AprilTag layout JSON");
     }
   }
+
+  // Layout for shop practice space:
+  // new AprilTagFieldLayout(
+  //     List.of(
+  //         new AprilTag(
+  //             6,
+  //             new Pose3d(
+  //                 Units.inchesToMeters(40.45),
+  //                 Units.inchesToMeters(174.19),
+  //                 Units.inchesToMeters(18.22),
+  //                 new Rotation3d())),
+  //         new AprilTag(
+  //             9,
+  //             new Pose3d(
+  //                 Units.inchesToMeters(40.45 + 155.0),
+  //                 Units.inchesToMeters(174.19 + 76.0),
+  //                 Units.inchesToMeters(16.0),
+  //                 new Rotation3d(0.0, 0.0, -Math.PI / 2.0))),
+  //         new AprilTag(
+  //             10,
+  //             new Pose3d(
+  //                 Units.inchesToMeters(40.45 + 139.5),
+  //                 Units.inchesToMeters(174.19 - 61.75),
+  //                 Units.inchesToMeters(17.625),
+  //                 new Rotation3d(0.0, 0.0, Math.PI / 2.0))),
+  //         new AprilTag(
+  //             11,
+  //             new Pose3d(
+  //                 Units.inchesToMeters(40.45 + 42.5),
+  //                 Units.inchesToMeters(174.19 - 61.75),
+  //                 Units.inchesToMeters(17.625),
+  //                 new Rotation3d(0.0, 0.0, Math.PI / 2.0)))),
+  //     fieldLength,
+  //     fieldWidth);
 }
