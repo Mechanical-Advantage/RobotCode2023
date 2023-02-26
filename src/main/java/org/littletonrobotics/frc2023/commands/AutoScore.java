@@ -75,10 +75,13 @@ public class AutoScore extends SequentialCommandGroup {
                 arm.runPathCommand(armTargetSupplier),
                 Commands.run(() -> arm.runDirect(armTargetSupplier.get()), arm));
     addCommands(
-        Commands.waitUntil(
-                () -> atGoalForObjective(driveCommand, objective) && arm.isTrajectoryFinished())
-            .andThen(waitToScore(objective))
+        Commands.waitUntil(() -> !arm.isTrajectoryFinished())
+            .andThen(
+                Commands.waitUntil(
+                    () ->
+                        atGoalForObjective(driveCommand, objective) && arm.isTrajectoryFinished()))
             .deadlineWith(driveCommand, armCommand)
+            .andThen(waitToScore(objective))
             .andThen(gripper.ejectCommand(objective))
             .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
   }
@@ -96,7 +99,8 @@ public class AutoScore extends SequentialCommandGroup {
         arm.runPathCommand(armTargetSupplier)
             .andThen(Commands.run(() -> arm.runDirect(armTargetSupplier.get()), arm));
     addCommands(
-        Commands.waitUntil(() -> arm.isTrajectoryFinished() && ejectButton.get())
+        Commands.waitUntil(() -> !arm.isTrajectoryFinished())
+            .andThen(Commands.waitUntil(() -> arm.isTrajectoryFinished() && ejectButton.get()))
             .deadlineWith(armCommand)
             .andThen(gripper.ejectCommand(objective))
             .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
@@ -119,11 +123,13 @@ public class AutoScore extends SequentialCommandGroup {
                     driveCommand.withinTolerance(extendArmDriveTolerance, extendArmThetaTolerance))
             .andThen(arm.runPathCommand(armTargetSupplier), moveArmCommand);
     addCommands(
-        Commands.waitUntil(
-                () ->
-                    atGoalForObjective(driveCommand, objective)
-                        && arm.isTrajectoryFinished()
-                        && ejectButton.get())
+        Commands.waitUntil(() -> !arm.isTrajectoryFinished())
+            .andThen(
+                Commands.waitUntil(
+                    () ->
+                        atGoalForObjective(driveCommand, objective)
+                            && arm.isTrajectoryFinished()
+                            && ejectButton.get()))
             .deadlineWith(driveCommand, armCommand)
             .andThen(gripper.ejectCommand(objective))
             .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
@@ -141,7 +147,8 @@ public class AutoScore extends SequentialCommandGroup {
     initTargetSuppliers(poseSupplier, arm, objective, reachScoreDisable);
     var armCommand = arm.runPathCommand(armTargetSupplier).andThen(moveArmCommand);
     addCommands(
-        Commands.waitUntil(() -> arm.isTrajectoryFinished() && ejectButton.get())
+        Commands.waitUntil(() -> !arm.isTrajectoryFinished())
+            .andThen(Commands.waitUntil(() -> arm.isTrajectoryFinished() && ejectButton.get()))
             .andThen(waitToScore(objective))
             .deadlineWith(armCommand)
             .andThen(gripper.ejectCommand(objective))
