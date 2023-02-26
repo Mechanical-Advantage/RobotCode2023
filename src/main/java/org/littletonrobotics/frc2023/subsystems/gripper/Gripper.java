@@ -74,7 +74,7 @@ public class Gripper extends SubsystemBase {
     }
 
     // Update too hot alert
-    if (inputs.tempCelcius[0] < tooHotTemperatureHigh) {
+    if (inputs.tempCelcius.length == 0 || inputs.tempCelcius[0] < tooHotTemperatureHigh) {
       tooHotTimer.reset();
     }
     if (tooHotAlertActive) {
