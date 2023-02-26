@@ -32,4 +32,7 @@ public interface CubeIntakeIO {
 
   /** Set the intake roller voltage */
   public default void setRollerVoltage(double volts) {}
+
+  /** Enable or disable brake mode on the motors. */
+  public default void setBrakeMode(boolean armBrake, boolean rollerBrake) {}
 }

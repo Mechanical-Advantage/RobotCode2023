@@ -59,6 +59,15 @@ public class CubeIntake extends SubsystemBase {
 
   static {
     switch (Constants.getRobot()) {
+      case ROBOT_2023C:
+        neutralPositionDegrees.initDefault(90.0);
+        deployPositionDegrees.initDefault(0.0);
+        rollerVolts.initDefault(8.0);
+        kP.initDefault(4.0);
+        kD.initDefault(0.0);
+        maxVelocity.initDefault(1.0);
+        maxAcceleration.initDefault(1.0);
+        break;
       case ROBOT_SIMBOT:
         neutralPositionDegrees.initDefault(90.0);
         deployPositionDegrees.initDefault(0.0);
@@ -76,6 +85,7 @@ public class CubeIntake extends SubsystemBase {
   /** Creates a new CubeIntake. */
   public CubeIntake(CubeIntakeIO io) {
     this.io = io;
+    io.setBrakeMode(true, false);
 
     // Create mechanism
     mechanism = new Mechanism2d(4, 3, new Color8Bit(Color.kGray));

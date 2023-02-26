@@ -8,6 +8,7 @@
 package org.littletonrobotics.frc2023.subsystems.cubeintake;
 
 import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.RelativeEncoder;
 import edu.wpi.first.math.MathUtil;
@@ -37,18 +38,18 @@ public class CubeIntakeIOSparkMax implements CubeIntakeIO {
     switch (Constants.getRobot()) {
       case ROBOT_2023C:
         armSparkMax = new CANSparkMax(6, MotorType.kBrushless);
-        rollerSparkMax = new CANSparkMax(12, MotorType.kBrushless);
+        rollerSparkMax = new CANSparkMax(12, MotorType.kBrushed);
 
         armInvert = false;
         armExternalEncoderInvert = false;
-        rollerInvert = false;
-        armInternalEncoderReduction = 1.0;
-        armAbsoluteEncoderOffset = new Rotation2d(0.0);
+        rollerInvert = true;
+        armInternalEncoderReduction = 5.0 * 5.0 * (30.0 / 18.0) * (30.0 / 18.0);
+        armAbsoluteEncoderOffset = new Rotation2d(-2.624263).plus(Rotation2d.fromDegrees(-90.0));
 
-        armAbsoluteEncoder = new DutyCycleEncoder(0);
+        armAbsoluteEncoder = new DutyCycleEncoder(10);
         armAbsoluteEncoder.setDutyCycleRange(1.0 / 1025.0, 1024.0 / 1025.0);
-        armRelativeEncoder = new Encoder(0, 1, false);
-        armRelativeEncoder.setDistancePerPulse((2 * Math.PI) / 8192);
+        armRelativeEncoder = new Encoder(12, 11);
+        armRelativeEncoder.setDistancePerPulse((2 * Math.PI) / 2048);
         break;
       default:
         throw new RuntimeException("Invalid robot for CubeIntakeIOSparkMax!");
@@ -122,5 +123,11 @@ public class CubeIntakeIOSparkMax implements CubeIntakeIO {
   @Override
   public void setRollerVoltage(double voltage) {
     rollerSparkMax.setVoltage(voltage);
+  }
+
+  @Override
+  public void setBrakeMode(boolean armBrake, boolean rollerBrake) {
+    armSparkMax.setIdleMode(armBrake ? IdleMode.kBrake : IdleMode.kCoast);
+    rollerSparkMax.setIdleMode(rollerBrake ? IdleMode.kBrake : IdleMode.kCoast);
   }
 }
