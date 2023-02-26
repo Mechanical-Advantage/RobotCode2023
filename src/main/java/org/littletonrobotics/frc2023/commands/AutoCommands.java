@@ -81,13 +81,9 @@ public class AutoCommands {
 
     for (int i = 0; i < 9; i++) {
       startingForwards[i] =
-          new Pose2d(
-              new Translation2d(startX, Grids.nodeFirstY + (i * Grids.nodeSeparationY)),
-              Rotation2d.fromDegrees(180.0));
+          new Pose2d(new Translation2d(startX, Grids.nodeY[i]), Rotation2d.fromDegrees(180.0));
       startingBackwards[i] =
-          new Pose2d(
-              new Translation2d(startX, Grids.nodeFirstY + (i * Grids.nodeSeparationY)),
-              new Rotation2d());
+          new Pose2d(new Translation2d(startX, Grids.nodeY[i]), new Rotation2d());
     }
     transitWallSide =
         new Translation2d(
