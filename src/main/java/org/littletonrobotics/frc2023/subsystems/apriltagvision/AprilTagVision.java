@@ -52,9 +52,9 @@ public class AprilTagVision extends VirtualSubsystem {
         cameraPoses =
             new Pose3d[] {
               new Pose3d(
-                  Units.inchesToMeters(4.0),
+                  Units.inchesToMeters(4.625),
                   Units.inchesToMeters(-12.5),
-                  Units.inchesToMeters(19.75),
+                  Units.inchesToMeters(23.3125),
                   new Rotation3d(0.0, Units.degreesToRadians(15.0), 0.0)),
               new Pose3d(
                   Units.inchesToMeters(-4.0),
