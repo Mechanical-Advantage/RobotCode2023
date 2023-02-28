@@ -25,7 +25,6 @@ import org.littletonrobotics.frc2023.Constants;
 import org.littletonrobotics.frc2023.FieldConstants;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIO.AprilTagVisionIOInputs;
 import org.littletonrobotics.frc2023.util.GeomUtil;
-import org.littletonrobotics.frc2023.util.PolynomialRegression;
 import org.littletonrobotics.frc2023.util.PoseEstimator.TimestampedVisionUpdate;
 import org.littletonrobotics.frc2023.util.VirtualSubsystem;
 import org.littletonrobotics.junction.Logger;
@@ -34,8 +33,8 @@ public class AprilTagVision extends VirtualSubsystem {
   private static final double ambiguityThreshold = 0.15;
   private static final double targetLogTimeSecs = 0.05;
   private static final Pose3d[] cameraPoses;
-  private static final PolynomialRegression xyStdDevModel;
-  private static final PolynomialRegression thetaStdDevModel;
+  private static final double xyStdDevCoefficient;
+  private static final double thetaStdDevCoefficient;
 
   private final AprilTagVisionIO[] io;
   private final AprilTagVisionIOInputs[] inputs;
@@ -66,33 +65,13 @@ public class AprilTagVision extends VirtualSubsystem {
                   new Rotation3d(0.0, 0.0, Units.degreesToRadians(180.0))
                       .rotateBy(new Rotation3d(0.0, Units.degreesToRadians(-14.0), 0.0)))
             };
-        xyStdDevModel =
-            new PolynomialRegression(
-                new double[] {
-                  0.752358, 1.016358, 1.296358, 1.574358, 1.913358, 2.184358, 2.493358, 2.758358,
-                  3.223358, 4.093358, 4.726358
-                },
-                new double[] {
-                  0.005, 0.0135, 0.016, 0.038, 0.0515, 0.0925, 0.0695, 0.046, 0.1245, 0.0815, 0.193
-                },
-                1);
-        thetaStdDevModel =
-            new PolynomialRegression(
-                new double[] {
-                  0.752358, 1.016358, 1.296358, 1.574358, 1.913358, 2.184358, 2.493358, 2.758358,
-                  3.223358, 4.093358, 4.726358
-                },
-                new double[] {
-                  0.008, 0.027, 0.015, 0.044, 0.04, 0.078, 0.049, 0.027, 0.059, 0.029, 0.068
-                },
-                1);
+        xyStdDevCoefficient = 0.01;
+        thetaStdDevCoefficient = 0.01;
         break;
       default:
         cameraPoses = new Pose3d[] {};
-        xyStdDevModel =
-            new PolynomialRegression(new double[] {0.0, 1.0}, new double[] {0.1, 0.1}, 1);
-        thetaStdDevModel =
-            new PolynomialRegression(new double[] {0.0, 1.0}, new double[] {0.1, 0.1}, 1);
+        xyStdDevCoefficient = 0.01;
+        thetaStdDevCoefficient = 0.01;
         break;
     }
   }
@@ -217,8 +196,8 @@ public class AprilTagVision extends VirtualSubsystem {
         double avgDistance = totalDistance / tagPoses.size();
 
         // Add to vision updates
-        double xyStdDev = xyStdDevModel.predict(avgDistance) / tagPoses.size();
-        double thetaStdDev = thetaStdDevModel.predict(avgDistance) / tagPoses.size();
+        double xyStdDev = xyStdDevCoefficient * Math.pow(avgDistance, 2.0) / tagPoses.size();
+        double thetaStdDev = thetaStdDevCoefficient * Math.pow(avgDistance, 2.0) / tagPoses.size();
         visionUpdates.add(
             new TimestampedVisionUpdate(
                 timestamp, robotPose, VecBuilder.fill(xyStdDev, xyStdDev, thetaStdDev)));
