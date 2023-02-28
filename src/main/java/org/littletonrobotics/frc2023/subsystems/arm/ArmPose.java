@@ -36,48 +36,48 @@ public record ArmPose(Translation2d endEffectorPosition, Rotation2d globalWristA
                     Math.max(
                             AutoScore.minDriveX,
                             FieldConstants.Grids.midX
-                                - AutoScore.midConeRelativePosition.getX()
+                                - AutoScore.coneRelativePosition.getX()
                                 + AutoScore.minArmExtension)
                         - FieldConstants.Grids.midX,
                     FieldConstants.Grids.midConeZ)
-                .plus(AutoScore.midConeRelativePosition),
-            AutoScore.midConeWristAngle)),
+                .plus(AutoScore.coneRelativePosition),
+            AutoScore.coneWristAngle)),
     SCORE_MID_CUBE(
         new ArmPose(
             new Translation2d(
                     Math.max(
                             AutoScore.minDriveX,
                             FieldConstants.Grids.midX
-                                - AutoScore.midCubeRelativePosition.getX()
+                                - AutoScore.cubeRelativePosition.getX()
                                 + AutoScore.minArmExtension)
                         - FieldConstants.Grids.midX,
                     FieldConstants.Grids.midCubeZ)
-                .plus(AutoScore.midCubeRelativePosition),
-            AutoScore.midCubeWristAngle)),
+                .plus(AutoScore.cubeRelativePosition),
+            AutoScore.cubeWristAngle)),
     SCORE_HIGH_CONE(
         new ArmPose(
             new Translation2d(
                     Math.max(
                             AutoScore.minDriveX,
                             FieldConstants.Grids.highX
-                                - AutoScore.highConeRelativePosition.getX()
+                                - AutoScore.coneRelativePosition.getX()
                                 + AutoScore.minArmExtension)
                         - FieldConstants.Grids.highX,
                     FieldConstants.Grids.highConeZ)
-                .plus(AutoScore.highConeRelativePosition),
-            AutoScore.highConeWristAngle)),
+                .plus(AutoScore.coneRelativePosition),
+            AutoScore.coneWristAngle)),
     SCORE_HIGH_CUBE(
         new ArmPose(
             new Translation2d(
                     Math.max(
                             AutoScore.minDriveX,
                             FieldConstants.Grids.highX
-                                - AutoScore.highCubeRelativePosition.getX()
+                                - AutoScore.cubeRelativePosition.getX()
                                 + AutoScore.minArmExtension)
                         - FieldConstants.Grids.highX,
                     FieldConstants.Grids.highCubeZ)
-                .plus(AutoScore.highCubeRelativePosition),
-            AutoScore.highCubeWristAngle)),
+                .plus(AutoScore.cubeRelativePosition),
+            AutoScore.cubeWristAngle)),
     SINGLE_SUBTATION(
         new ArmPose(
             new Translation2d(0.49, FieldConstants.LoadingZone.singleSubstationCenterZ - 0.15),
@@ -87,9 +87,6 @@ public record ArmPose(Translation2d endEffectorPosition, Rotation2d globalWristA
             new Translation2d(0.49, FieldConstants.LoadingZone.doubleSubstationShelfZ + 0.1),
             new Rotation2d())),
     CUBE_HANDOFF(new ArmPose(new Translation2d(0.35, 0.65), Rotation2d.fromDegrees(-75.0)), false),
-    CONE_HANDOFF(new ArmPose(new Translation2d(-0.31, 0.53), Rotation2d.fromDegrees(175.0)), false),
-    CONE_HANDOFF_RELEASED(
-        new ArmPose(new Translation2d(-0.45, 0.6), Rotation2d.fromDegrees(175.0)), false),
     FLOOR_BACK_CUBE(
         new ArmPose(new Translation2d(-0.5, 0.3), Rotation2d.fromDegrees(-150.0)), false),
     FLOOR_FRONT_CUBE(
