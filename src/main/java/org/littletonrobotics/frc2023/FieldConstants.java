@@ -26,11 +26,11 @@ import java.util.List;
  * methods to flip these values based on the current alliance color.
  */
 public final class FieldConstants {
-  public static final boolean isTeamVersion =
-      false; // The team version of the cube nodes is wider than the official field
+  public static final boolean isWPIField = true; // Red alliance
 
   public static final double fieldLength = Units.inchesToMeters(651.25);
-  public static final double fieldWidth = Units.inchesToMeters(315.5);
+  public static final double fieldWidth =
+      Units.inchesToMeters(315.5) + (isWPIField ? Units.inchesToMeters(3.0) : 0.0);
   public static final double tapeWidth = Units.inchesToMeters(2.0);
   public static final double aprilTagWidth = Units.inchesToMeters(6.0);
 
@@ -96,17 +96,17 @@ public final class FieldConstants {
     // Y layout
     public static final int nodeRowCount = 9;
     public static final double[] nodeY =
-        isTeamVersion
+        isWPIField
             ? new double[] {
-              Units.inchesToMeters(20.19 + 22.0 * 0 + 0.0),
-              Units.inchesToMeters(20.19 + 22.0 * 1 + 0.5),
-              Units.inchesToMeters(20.19 + 22.0 * 2 + 1.0),
-              Units.inchesToMeters(20.19 + 22.0 * 3 + 1.0),
-              Units.inchesToMeters(20.19 + 22.0 * 4 + 1.5),
-              Units.inchesToMeters(20.19 + 22.0 * 5 + 2.0),
-              Units.inchesToMeters(20.19 + 22.0 * 6 + 2.0),
-              Units.inchesToMeters(20.19 + 22.0 * 7 + 2.5),
-              Units.inchesToMeters(20.19 + 22.0 * 8 + 3.0)
+              Units.inchesToMeters(20.19),
+              Units.inchesToMeters(42.19),
+              Units.inchesToMeters(64.0),
+              Units.inchesToMeters(86.0),
+              Units.inchesToMeters(108.7),
+              Units.inchesToMeters(130.5),
+              Units.inchesToMeters(153.2),
+              Units.inchesToMeters(175.25),
+              Units.inchesToMeters(199.0)
             }
             : new double[] {
               Units.inchesToMeters(20.19 + 22.0 * 0),
@@ -206,7 +206,7 @@ public final class FieldConstants {
     public static final double doubleSubstationLength = Units.inchesToMeters(14.0);
     public static final double doubleSubstationX = innerX - doubleSubstationLength;
     public static final double doubleSubstationShelfZ = Units.inchesToMeters(37.375);
-    public static final double doubleSubstationCenterY = Units.inchesToMeters(265.74);
+    public static final double doubleSubstationCenterY = fieldWidth - Units.inchesToMeters(49.76);
 
     // Single substation dimensions
     public static final double singleSubstationWidth = Units.inchesToMeters(22.75);
@@ -251,34 +251,34 @@ public final class FieldConstants {
                   new Pose3d(
                       Units.inchesToMeters(610.77),
                       Grids.nodeY[1],
-                      Units.inchesToMeters(18.22),
+                      Units.inchesToMeters(isWPIField ? 19.0 : 18.22),
                       new Rotation3d(0.0, 0.0, Math.PI))),
               new AprilTag(
                   2,
                   new Pose3d(
                       Units.inchesToMeters(610.77),
                       Grids.nodeY[4],
-                      Units.inchesToMeters(18.22),
+                      Units.inchesToMeters(isWPIField ? 19.0 : 18.22),
                       new Rotation3d(0.0, 0.0, Math.PI))),
               new AprilTag(
                   3,
                   new Pose3d(
                       Units.inchesToMeters(610.77),
                       Grids.nodeY[7],
-                      Units.inchesToMeters(18.22),
+                      Units.inchesToMeters(isWPIField ? 19.0 : 18.22),
                       new Rotation3d(0.0, 0.0, Math.PI))),
               new AprilTag(
                   4,
                   new Pose3d(
                       Units.inchesToMeters(636.96),
-                      Units.inchesToMeters(265.74),
+                      LoadingZone.doubleSubstationCenterY,
                       Units.inchesToMeters(27.38),
                       new Rotation3d(0.0, 0.0, Math.PI))),
               new AprilTag(
                   5,
                   new Pose3d(
                       Units.inchesToMeters(14.25),
-                      Units.inchesToMeters(265.74),
+                      LoadingZone.doubleSubstationCenterY,
                       Units.inchesToMeters(27.38),
                       new Rotation3d())),
               new AprilTag(
@@ -286,21 +286,21 @@ public final class FieldConstants {
                   new Pose3d(
                       Units.inchesToMeters(40.45),
                       Grids.nodeY[7],
-                      Units.inchesToMeters(18.22),
+                      Units.inchesToMeters(isWPIField ? 19.0 : 18.22),
                       new Rotation3d())),
               new AprilTag(
                   7,
                   new Pose3d(
                       Units.inchesToMeters(40.45),
                       Grids.nodeY[4],
-                      Units.inchesToMeters(18.22),
+                      Units.inchesToMeters(isWPIField ? 19.0 : 18.22),
                       new Rotation3d())),
               new AprilTag(
                   8,
                   new Pose3d(
                       Units.inchesToMeters(40.45),
                       Grids.nodeY[1],
-                      Units.inchesToMeters(18.22),
+                      Units.inchesToMeters(isWPIField ? 19.0 : 18.22),
                       new Rotation3d()))),
           fieldLength,
           fieldWidth);
