@@ -109,12 +109,10 @@ public class AutoScore extends SequentialCommandGroup {
     // Create drive and arm commands
     var driveToPose = new DriveToPose(drive, driveTargetSupplier);
     var driveCommand =
-        Commands.either(
-            driveToPose
-                .until(() -> atGoalForObjective(driveToPose, objective))
-                .andThen(driveWithJoysticks),
-            driveToPose,
-            () -> manualDriveAdjust.get());
+        driveToPose
+            .until(
+                () -> manualDriveAdjust.get() ? atGoalForObjective(driveToPose, objective) : false)
+            .andThen(driveWithJoysticks);
     var armCommand =
         Commands.waitUntil(
                 () -> driveToPose.withinTolerance(extendArmDriveTolerance, extendArmThetaTolerance))
