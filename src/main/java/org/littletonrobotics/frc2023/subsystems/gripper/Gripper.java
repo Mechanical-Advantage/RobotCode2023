@@ -26,7 +26,7 @@ public class Gripper extends SubsystemBase {
   private final GripperIOInputsAutoLogged inputs = new GripperIOInputsAutoLogged();
 
   private static final LoggedTunableNumber holdVolts =
-      new LoggedTunableNumber("Gripper/HoldVolts", 0.7);
+      new LoggedTunableNumber("Gripper/HoldVolts", 0.9);
   private static final LoggedTunableNumber intakeVolts =
       new LoggedTunableNumber("Gripper/IntakeVolts", 10.0);
   private static final LoggedTunableNumber intakeVelocityWaitStart =
@@ -36,17 +36,17 @@ public class Gripper extends SubsystemBase {
   private static final LoggedTunableNumber intakeStopVelocity =
       new LoggedTunableNumber("Gripper/IntakeStopVelocity", 5.0);
   private static final LoggedTunableNumber ejectVoltsFast =
-      new LoggedTunableNumber("Gripper/EjectVoltsFast", -12.0);
+      new LoggedTunableNumber("Gripper/EjectVoltsFast", -4.0);
   private static final LoggedTunableNumber ejectSecsFast =
       new LoggedTunableNumber("Gripper/EjectSecsFast", 0.4);
   private static final LoggedTunableNumber ejectVoltsSlow =
-      new LoggedTunableNumber("Gripper/EjectVoltsSlow", -2.5);
+      new LoggedTunableNumber("Gripper/EjectVoltsSlow", -2.0);
   private static final LoggedTunableNumber ejectSecsSlow =
       new LoggedTunableNumber("Gripper/EjectSecsSlow", 0.75);
 
   private static final double tooHotTemperatureHigh = 80.0;
   private static final double tooHotTemperatureHighTime = 2.0;
-  private static final double tooHotTemperatureLow = 70.0;
+  private static final double tooHotTemperatureLow = 65.0;
   private boolean tooHotAlertActive = false;
   private final Timer tooHotTimer = new Timer();
   private final Alert tooHotAlert =
@@ -59,7 +59,7 @@ public class Gripper extends SubsystemBase {
     setDefaultCommand(
         run(
             () -> {
-              io.setVoltage(holdVolts.get());
+              setVoltage(holdVolts.get());
             }));
   }
 
@@ -91,7 +91,7 @@ public class Gripper extends SubsystemBase {
 
   private void setVoltage(double volts) {
     if (!tooHotAlertActive) {
-      io.setVoltage(0.0);
+      io.setVoltage(volts);
     }
   }
 

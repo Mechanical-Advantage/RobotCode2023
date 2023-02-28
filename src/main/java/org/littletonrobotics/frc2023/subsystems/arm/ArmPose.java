@@ -86,7 +86,7 @@ public record ArmPose(Translation2d endEffectorPosition, Rotation2d globalWristA
         new ArmPose(
             new Translation2d(0.49, FieldConstants.LoadingZone.doubleSubstationShelfZ + 0.1),
             new Rotation2d())),
-    CUBE_HANDOFF(new ArmPose(new Translation2d(0.3, 0.57), Rotation2d.fromDegrees(-75.0)), false),
+    CUBE_HANDOFF(new ArmPose(new Translation2d(0.35, 0.65), Rotation2d.fromDegrees(-75.0)), false),
     CONE_HANDOFF(new ArmPose(new Translation2d(-0.31, 0.53), Rotation2d.fromDegrees(175.0)), false),
     CONE_HANDOFF_RELEASED(
         new ArmPose(new Translation2d(-0.45, 0.6), Rotation2d.fromDegrees(175.0)), false),

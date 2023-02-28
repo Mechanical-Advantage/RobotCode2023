@@ -39,7 +39,7 @@ public class TheUltimateAuto extends SequentialCommandGroup {
   public TheUltimateAuto(Drive drive, Arm arm, Gripper gripper, ObjectiveTracker objectiveTracker) {
     List<Objective> objectives = getObjectiveList();
     for (int i = 0; i < objectives.size() - 1; i++) {
-      addCommands(new AutoScore(drive, arm, gripper, objectives.get(i), () -> !reachScore));
+      // addCommands(new AutoScore(drive, arm, gripper, objectives.get(i), () -> !reachScore));
       addCommands(Commands.waitUntil(() -> arm.isTrajectoryFinished()));
       addCommands(
           new DriveTrajectory(
@@ -50,7 +50,7 @@ public class TheUltimateAuto extends SequentialCommandGroup {
                       Waypoint.fromDifferentialPose(new Pose2d(transit, new Rotation2d())),
                       Waypoint.fromHolonomicPose(substationBackoff))));
       addCommands(
-          new DriveToSubstation(drive)
+          new DriveToSubstation(drive, () -> false)
               .withTimeout(2.0)
               .andThen(
                   new DriveTrajectory(
@@ -75,9 +75,9 @@ public class TheUltimateAuto extends SequentialCommandGroup {
                           new Pose2d(transit, Rotation2d.fromDegrees(180.0))),
                       Waypoint.fromHolonomicPose(autoScorePose))));
     }
-    addCommands(
-        new AutoScore(
-            drive, arm, gripper, objectives.get(objectives.size() - 1), () -> !reachScore));
+    // addCommands(
+    //     new AutoScore(
+    //         drive, arm, gripper, objectives.get(objectives.size() - 1), () -> !reachScore));
     addCommands(
         new DriveTrajectory(
             drive,

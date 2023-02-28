@@ -12,6 +12,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import java.util.List;
+import java.util.function.Supplier;
 import org.littletonrobotics.frc2023.FieldConstants;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
@@ -33,18 +34,19 @@ public class DriveToSubstation extends DriveToPose {
           new Rotation2d());
 
   /** Automatically drives to the nearest substation. */
-  public DriveToSubstation(Drive drive) {
+  public DriveToSubstation(Drive drive, Supplier<Boolean> useDouble) {
     super(
         drive,
         () -> {
           var nearestTarget =
-              drive
-                  .getPose()
-                  .nearest(
-                      List.of(
-                          AllianceFlipUtil.apply(singleSubstationPose),
-                          AllianceFlipUtil.apply(doubleSubstationLeftPose),
-                          AllianceFlipUtil.apply(doubleSubstationRightPose)));
+              useDouble.get()
+                  ? drive
+                      .getPose()
+                      .nearest(
+                          List.of(
+                              AllianceFlipUtil.apply(doubleSubstationLeftPose),
+                              AllianceFlipUtil.apply(doubleSubstationRightPose)))
+                  : AllianceFlipUtil.apply(singleSubstationPose);
           if (drive.getRotation().minus(nearestTarget.getRotation()).getCos() < 0.0) {
             nearestTarget =
                 nearestTarget.transformBy(

@@ -56,7 +56,7 @@ public class Arm extends SubsystemBase {
       0.52; // If target or start is beyond this x, enable node constraints
   public static final Set<String> frontNodeConstraints = Set.of("nodeMidFront", "nodeHighFront");
   public static final Set<String> backNodeConstraints = Set.of("nodeMidBack", "nodeHighBack");
-  public static final double avoidanceLookaheadSecs = 0.75;
+  public static final double avoidanceLookaheadSecs = 0.0;
   public static final double emergencyDisableMaxError = Units.degreesToRadians(20.0);
   public static final double emergencyDisableMaxErrorTime = 1.0;
   public static final double emergencyDisableBeyondLimitThreshold = Units.degreesToRadians(5.0);
@@ -137,7 +137,7 @@ public class Arm extends SubsystemBase {
     if (!Constants.disableHAL) { // Don't run during trajectory cache generation
       switch (Constants.getRobot()) {
         case ROBOT_2023C:
-          shoulderKp.initDefault(10.0);
+          shoulderKp.initDefault(6.0);
           shoulderKd.initDefault(0.2);
           shoulderKs.initDefault(0.1);
           shoulderKsDeadband.initDefault(0.05);

@@ -26,7 +26,6 @@ import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracke
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.Objective;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
 import org.littletonrobotics.frc2023.util.GeomUtil;
-import org.littletonrobotics.frc2023.util.SuppliedWaitCommand;
 
 public class AutoScore extends SequentialCommandGroup {
   public static final double minDriveX = FieldConstants.Grids.outerX + 0.45;
@@ -41,145 +40,100 @@ public class AutoScore extends SequentialCommandGroup {
   public static final Rotation2d extendArmThetaTolerance = Rotation2d.fromDegrees(45.0);
   public static final double cubeHybridDriveTolerance = 0.1;
   public static final Rotation2d cubeHybridThetaTolerance = Rotation2d.fromDegrees(5.0);
-  public static final double coneMidScoreDelay = 1.0;
-  public static final double coneHighScoreDelay = 1.5;
 
   public static final Translation2d hybridRelativePosition = new Translation2d(-0.2, 0.6);
   public static final Rotation2d hybridWristAngle = Rotation2d.fromDegrees(-60.0);
-  public static final Translation2d midCubeRelativePosition = new Translation2d(-0.5, 0.5);
-  public static final Rotation2d midCubeWristAngle = Rotation2d.fromDegrees(-30.0);
-  public static final Translation2d highCubeRelativePosition = new Translation2d(-0.5, 0.5);
-  public static final Rotation2d highCubeWristAngle = Rotation2d.fromDegrees(-30.0);
-  public static final Translation2d midConeRelativePosition = new Translation2d(-0.165, 0.0);
-  public static final Rotation2d midConeWristAngle = Rotation2d.fromDegrees(50.0);
-  public static final Translation2d highConeRelativePosition = new Translation2d(-0.165, 0.0);
-  public static final Rotation2d highConeWristAngle = Rotation2d.fromDegrees(50.0);
+  public static final Translation2d cubeRelativePosition = new Translation2d(-0.4, 0.5);
+  public static final Rotation2d cubeWristAngle = Rotation2d.fromDegrees(-30.0);
+  public static final Translation2d coneRelativePosition = new Translation2d(-0.15, 0.0);
+  public static final Rotation2d coneWristAngle = Rotation2d.fromDegrees(50.0);
 
-  private Supplier<Pose2d> driveTargetSupplier = null;
-  private Supplier<ArmPose> armTargetSupplier = null;
+  // Tipped cone presets, 3 volt ejection:
+  // public static final Translation2d coneRelativePosition = new Translation2d(-0.2, -0.1);
+  // public static final Rotation2d coneWristAngle = Rotation2d.fromDegrees(30.0);
 
-  /** Auto score in full automatic mode with auto drive and auto arm. */
+  /** Auto score a game piece on the grid in full automatic mode. */
   public AutoScore(
       Drive drive,
       Arm arm,
       Gripper gripper,
       Objective objective,
       Supplier<Boolean> reachScoreDisable) {
-    initTargetSuppliers(drive::getPose, arm, objective, reachScoreDisable);
-    var driveCommand = new DriveToPose(drive, driveTargetSupplier);
-    var armCommand =
-        Commands.waitUntil(
-                () ->
-                    driveCommand.withinTolerance(extendArmDriveTolerance, extendArmThetaTolerance))
-            .andThen(
-                arm.runPathCommand(armTargetSupplier),
-                Commands.run(() -> arm.runDirect(armTargetSupplier.get()), arm));
-    addCommands(
-        Commands.waitUntil(() -> !arm.isTrajectoryFinished())
-            .andThen(
-                Commands.waitUntil(
-                    () ->
-                        atGoalForObjective(driveCommand, objective) && arm.isTrajectoryFinished()))
-            .deadlineWith(driveCommand, armCommand)
-            .andThen(waitToScore(objective))
-            .andThen(gripper.ejectCommand(objective))
-            .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
+    this(
+        drive,
+        arm,
+        gripper,
+        objective,
+        Commands.none(),
+        Commands.none(),
+        () -> false,
+        () -> false,
+        () -> false,
+        reachScoreDisable);
   }
 
-  /** Auto score in semi-automatic mode with manual drive and auto arm. */
-  public AutoScore(
-      Supplier<Pose2d> poseSupplier,
-      Arm arm,
-      Gripper gripper,
-      Objective objective,
-      Supplier<Boolean> reachScoreDisable,
-      Supplier<Boolean> ejectButton) {
-    initTargetSuppliers(poseSupplier, arm, objective, reachScoreDisable);
-    var armCommand =
-        arm.runPathCommand(armTargetSupplier)
-            .andThen(Commands.run(() -> arm.runDirect(armTargetSupplier.get()), arm));
-    addCommands(
-        Commands.waitUntil(() -> !arm.isTrajectoryFinished())
-            .andThen(Commands.waitUntil(() -> arm.isTrajectoryFinished() && ejectButton.get()))
-            .deadlineWith(armCommand)
-            .andThen(gripper.ejectCommand(objective))
-            .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
-  }
-
-  /** Auto score in semi-automatic mode with auto drive and manual arm. */
+  /** Auto score a game piece on the grid with support for overrides. */
   public AutoScore(
       Drive drive,
       Arm arm,
       Gripper gripper,
       Objective objective,
-      Supplier<Boolean> reachScoreDisable,
+      Command driveWithJoysticks,
+      Command moveArmWithJoysticks,
       Supplier<Boolean> ejectButton,
-      MoveArmWithJoysticks moveArmCommand) {
-    initTargetSuppliers(drive::getPose, arm, objective, reachScoreDisable);
-    var driveCommand = new DriveToPose(drive, driveTargetSupplier);
-    var armCommand =
-        Commands.waitUntil(
-                () ->
-                    driveCommand.withinTolerance(extendArmDriveTolerance, extendArmThetaTolerance))
-            .andThen(arm.runPathCommand(armTargetSupplier), moveArmCommand);
-    addCommands(
-        Commands.waitUntil(() -> !arm.isTrajectoryFinished())
-            .andThen(
-                Commands.waitUntil(
-                    () ->
-                        atGoalForObjective(driveCommand, objective)
-                            && arm.isTrajectoryFinished()
-                            && ejectButton.get()))
-            .deadlineWith(driveCommand, armCommand)
-            .andThen(gripper.ejectCommand(objective))
-            .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
-  }
-
-  /** Auto score in manual mode with manual drive and manual arm. */
-  public AutoScore(
-      Supplier<Pose2d> poseSupplier,
-      Arm arm,
-      Gripper gripper,
-      Objective objective,
-      Supplier<Boolean> reachScoreDisable,
-      Supplier<Boolean> ejectButton,
-      MoveArmWithJoysticks moveArmCommand) {
-    initTargetSuppliers(poseSupplier, arm, objective, reachScoreDisable);
-    var armCommand = arm.runPathCommand(armTargetSupplier).andThen(moveArmCommand);
-    addCommands(
-        Commands.waitUntil(() -> !arm.isTrajectoryFinished())
-            .andThen(Commands.waitUntil(() -> arm.isTrajectoryFinished() && ejectButton.get()))
-            .andThen(waitToScore(objective))
-            .deadlineWith(armCommand)
-            .andThen(gripper.ejectCommand(objective))
-            .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
-  }
-
-  /** Creates the drive and arm target suppliers (repeated in multiple constructors). */
-  private void initTargetSuppliers(
-      Supplier<Pose2d> poseSupplier,
-      Arm arm,
-      Objective objective,
+      Supplier<Boolean> manualDriveAdjust,
+      Supplier<Boolean> manualArmAdjust,
       Supplier<Boolean> reachScoreDisable) {
-    driveTargetSupplier =
+
+    // Create target suppliers
+    Supplier<Pose2d> driveTargetSupplier =
         () ->
             AllianceFlipUtil.apply( // Flip
                 getDriveTarget(
-                    AllianceFlipUtil.apply(poseSupplier.get()), // Unflip
+                    AllianceFlipUtil.apply(drive.getPose()), // Unflip
                     objective,
                     arm,
                     !reachScoreDisable.get()));
-    armTargetSupplier =
+    Supplier<ArmPose> armTargetSupplier =
         () ->
             getArmTarget(
                 getDriveTarget(
-                    AllianceFlipUtil.apply(poseSupplier.get()), // Unflip
+                    AllianceFlipUtil.apply(drive.getPose()), // Unflip
                     objective,
                     arm,
                     !reachScoreDisable.get()),
                 objective,
                 arm,
                 !reachScoreDisable.get());
+
+    // Create drive and arm commands
+    var driveToPose = new DriveToPose(drive, driveTargetSupplier);
+    var driveCommand =
+        Commands.either(
+            driveToPose
+                .until(() -> atGoalForObjective(driveToPose, objective))
+                .andThen(driveWithJoysticks),
+            driveToPose,
+            () -> manualDriveAdjust.get());
+    var armCommand =
+        Commands.waitUntil(
+                () -> driveToPose.withinTolerance(extendArmDriveTolerance, extendArmThetaTolerance))
+            .andThen(
+                arm.runPathCommand(armTargetSupplier),
+                Commands.either(
+                    moveArmWithJoysticks,
+                    Commands.run(() -> arm.runDirect(armTargetSupplier.get()), arm),
+                    () -> manualArmAdjust.get()));
+
+    // Combine all commands
+    addCommands(
+        Commands.either(
+                Commands.waitUntil(() -> ejectButton.get()),
+                Commands.waitUntil(() -> arm.isTrajectoryFinished() && driveToPose.atGoal()),
+                () -> manualDriveAdjust.get() || manualArmAdjust.get())
+            .deadlineWith(driveCommand, armCommand)
+            .andThen(gripper.ejectCommand(objective))
+            .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
   }
 
   /**
@@ -191,24 +145,6 @@ public class AutoScore extends SequentialCommandGroup {
     } else {
       return driveToPose.atGoal();
     }
-  }
-
-  /** Returns a command to wait after alignment based on the objective. */
-  public static Command waitToScore(Objective objective) {
-    return new SuppliedWaitCommand(
-        () -> {
-          if (objective.gamePiece == GamePiece.CONE) {
-            switch (objective.nodeLevel) {
-              case HYBRID:
-                return 0.0;
-              case MID:
-                return coneMidScoreDelay;
-              case HIGH:
-                return coneHighScoreDelay;
-            }
-          }
-          return 0.0;
-        });
   }
 
   /** Returns the best drive target for the selected node. */
@@ -313,7 +249,7 @@ public class AutoScore extends SequentialCommandGroup {
 
     } else {
       // Choose the same side as the cone was grabbed
-      return objective.lastIntakeFront;
+      return !objective.lastIntakeFront;
     }
   }
 
@@ -337,19 +273,12 @@ public class AutoScore extends SequentialCommandGroup {
       case HYBRID:
         return hybridRelativePosition;
       case MID:
-        switch (objective.gamePiece) {
-          case CUBE:
-            return midCubeRelativePosition;
-          case CONE:
-            return midConeRelativePosition;
-        }
-        break;
       case HIGH:
         switch (objective.gamePiece) {
           case CUBE:
-            return highCubeRelativePosition;
+            return cubeRelativePosition;
           case CONE:
-            return highConeRelativePosition;
+            return coneRelativePosition;
         }
         break;
     }
@@ -362,19 +291,12 @@ public class AutoScore extends SequentialCommandGroup {
       case HYBRID:
         return hybridWristAngle;
       case MID:
-        switch (objective.gamePiece) {
-          case CUBE:
-            return midCubeWristAngle;
-          case CONE:
-            return midConeWristAngle;
-        }
-        break;
       case HIGH:
         switch (objective.gamePiece) {
           case CUBE:
-            return highCubeWristAngle;
+            return cubeWristAngle;
           case CONE:
-            return highConeWristAngle;
+            return coneWristAngle;
         }
         break;
     }

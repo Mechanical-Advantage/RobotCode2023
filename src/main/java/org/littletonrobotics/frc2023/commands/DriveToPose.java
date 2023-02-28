@@ -163,4 +163,9 @@ public class DriveToPose extends CommandBase {
         && Math.abs(driveErrorAbs) < driveTolerance
         && Math.abs(thetaErrorAbs) < thetaTolerance.getRadians();
   }
+
+  /** Returns whether the command is actively running. */
+  public boolean isRunning() {
+    return running;
+  }
 }

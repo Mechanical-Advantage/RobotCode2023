@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import java.util.List;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import org.littletonrobotics.frc2023.AutoSelector.AutoQuestion;
 import org.littletonrobotics.frc2023.AutoSelector.AutoQuestionResponse;
@@ -45,7 +46,6 @@ import org.littletonrobotics.frc2023.subsystems.arm.ArmSolverIOKairos;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntake;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntakeIO;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntakeIOSim;
-import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntakeIOSparkMax;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
 import org.littletonrobotics.frc2023.subsystems.drive.GyroIO;
 import org.littletonrobotics.frc2023.subsystems.drive.GyroIOPigeon2;
@@ -84,7 +84,7 @@ public class RobotContainer {
   private final Trigger robotRelativeOverride = overrides.driverSwitch(0);
   private final Trigger armDisableOverride = overrides.driverSwitch(1);
   private final Trigger armCoastOverride = overrides.driverSwitch(2);
-  private final Trigger manualDriveAlignOverride = overrides.operatorSwitch(0);
+  private final Trigger manualDriveAdjustOverride = overrides.operatorSwitch(0);
   private final Trigger manualArmAdjustOverride = overrides.operatorSwitch(1);
   private final Trigger reachScoringDisableOverride = overrides.operatorSwitch(2);
   private final Trigger forcePregenPathsOverride = overrides.operatorSwitch(3);
@@ -116,7 +116,6 @@ public class RobotContainer {
                   new ModuleIOSparkMax(3));
           arm = new Arm(new ArmIOSparkMax(), new ArmSolverIOKairos(3));
           gripper = new Gripper(new GripperIOSparkMax());
-          cubeIntake = new CubeIntake(new CubeIntakeIOSparkMax());
           aprilTagVision =
               new AprilTagVision(
                   new AprilTagVisionIONorthstar("northstar_0"),
@@ -188,8 +187,8 @@ public class RobotContainer {
         () -> armDisableOverride.getAsBoolean(),
         () -> armCoastOverride.getAsBoolean(),
         () -> forcePregenPathsOverride.getAsBoolean());
-    cubeIntake.setForceExtendSupplier(arm::cubeIntakeShouldExtend);
-    aprilTagVision.setDataInterfaces(drive::getPose, drive::addVisionData);
+    cubeIntake.setSuppliers(arm::cubeIntakeShouldExtend, () -> armCoastOverride.getAsBoolean());
+    aprilTagVision.setDataInterface(drive::addVisionData);
 
     // Set up auto routines
     AutoCommands autoCommands =
@@ -249,18 +248,29 @@ public class RobotContainer {
     // Rely on our custom alerts for disconnected controllers
     DriverStation.silenceJoystickConnectionWarning(true);
 
+    // Joystick command factories
+    Function<Boolean, DriveWithJoysticks> driveWithJoysticksFactory =
+        (Boolean alwaysSniper) ->
+            new DriveWithJoysticks(
+                drive,
+                () -> -driver.getLeftY(),
+                () -> -driver.getLeftX(),
+                () -> -driver.getRightX(),
+                () -> alwaysSniper || driver.getHID().getLeftBumper(),
+                () -> robotRelativeOverride.getAsBoolean(),
+                arm::getExtensionPercent);
+    Supplier<MoveArmWithJoysticks> moveArmWithJoysticksFactory =
+        () ->
+            new MoveArmWithJoysticks(
+                arm,
+                () -> operator.getLeftX(),
+                () -> -operator.getLeftY(),
+                () -> -operator.getRightY());
+
     // *** DRIVER CONTROLS ***
 
     // Drive controls
-    drive.setDefaultCommand(
-        new DriveWithJoysticks(
-            drive,
-            () -> -driver.getLeftY(),
-            () -> -driver.getLeftX(),
-            () -> -driver.getRightX(),
-            () -> driver.getHID().getLeftBumper(),
-            () -> robotRelativeOverride.getAsBoolean(),
-            arm::getExtensionPercent));
+    drive.setDefaultCommand(driveWithJoysticksFactory.apply(false));
     driver
         .start()
         .or(driver.back())
@@ -294,69 +304,23 @@ public class RobotContainer {
                 .ignoringDisable(true));
 
     // Auto align controls
-    driver.leftTrigger().whileTrue(new DriveToSubstation(drive));
+    driver
+        .leftTrigger()
+        .whileTrue(new DriveToSubstation(drive, () -> operator.getHID().getXButton()));
     var autoScoreTrigger = driver.rightTrigger();
-    var operatorEjectTrigger = operator.back();
-    Supplier<MoveArmWithJoysticks> moveArmWithJoysticksFactory =
-        () ->
-            new MoveArmWithJoysticks(
-                arm,
-                () -> operator.getLeftX(),
-                () -> -operator.getLeftY(),
-                () -> -operator.getRightY());
-
-    // Full auto mode (auto drive, auto arm)
-    autoScoreTrigger
-        .and(manualDriveAlignOverride.negate())
-        .and(manualArmAdjustOverride.negate())
-        .whileTrue(
-            new AutoScore(
-                drive,
-                arm,
-                gripper,
-                objectiveTracker.objective,
-                () -> reachScoringDisableOverride.getAsBoolean()));
-
-    // Semi-auto (manual drive, auto arm)
-    autoScoreTrigger
-        .and(manualDriveAlignOverride)
-        .and(manualArmAdjustOverride.negate())
-        .whileTrue(
-            new AutoScore(
-                drive::getPose,
-                arm,
-                gripper,
-                objectiveTracker.objective,
-                () -> reachScoringDisableOverride.getAsBoolean(),
-                () -> operatorEjectTrigger.getAsBoolean()));
-
-    // Semi-auto (auto drive, manual arm)
-    autoScoreTrigger
-        .and(manualDriveAlignOverride.negate())
-        .and(manualArmAdjustOverride)
-        .whileTrue(
-            new AutoScore(
-                drive,
-                arm,
-                gripper,
-                objectiveTracker.objective,
-                () -> reachScoringDisableOverride.getAsBoolean(),
-                () -> operatorEjectTrigger.getAsBoolean(),
-                moveArmWithJoysticksFactory.get()));
-
-    // Manual (manual drive, manual arm)
-    autoScoreTrigger
-        .and(manualDriveAlignOverride)
-        .and(manualArmAdjustOverride)
-        .whileTrue(
-            new AutoScore(
-                drive::getPose,
-                arm,
-                gripper,
-                objectiveTracker.objective,
-                () -> reachScoringDisableOverride.getAsBoolean(),
-                () -> operatorEjectTrigger.getAsBoolean(),
-                moveArmWithJoysticksFactory.get()));
+    var ejectTrigger = driver.a();
+    autoScoreTrigger.whileTrue(
+        new AutoScore(
+            drive,
+            arm,
+            gripper,
+            objectiveTracker.objective,
+            driveWithJoysticksFactory.apply(true),
+            moveArmWithJoysticksFactory.get(),
+            () -> ejectTrigger.getAsBoolean(),
+            () -> manualDriveAdjustOverride.getAsBoolean(),
+            () -> manualArmAdjustOverride.getAsBoolean(),
+            () -> reachScoringDisableOverride.getAsBoolean()));
 
     // *** OPERATOR CONTROLS ***
 
@@ -369,14 +333,7 @@ public class RobotContainer {
         .whileTrue(new IntakeSubstation(false, arm, drive, gripper, objectiveTracker.objective));
     operator
         .b()
-        // .and(() -> objectiveTracker.objective.gamePiece == GamePiece.CUBE)
         .whileTrue(new IntakeCubeHandoff(cubeIntake, arm, gripper, objectiveTracker.objective));
-    // var coneIntakeTrigger =
-    //     operator.b().and(() -> objectiveTracker.objective.gamePiece == GamePiece.CONE);
-    // coneIntakeTrigger.onTrue(
-    //     new IntakeConeHandoff(
-    //         coneIntake, arm, gripper, objectiveTracker.objective,
-    // coneIntakeTrigger::getAsBoolean));
     operator
         .rightTrigger()
         .and(floorEjectOverride.negate())
@@ -401,9 +358,7 @@ public class RobotContainer {
         .leftStick()
         .and(autoScoreTrigger.negate())
         .onTrue(Commands.runOnce(() -> arm.runPath(ArmPose.Preset.HOMED), arm));
-    operatorEjectTrigger // Trigger defined above b/c used for auto scoring
-        .and(autoScoreTrigger.negate())
-        .whileTrue(gripper.ejectCommand(EjectSpeed.FAST));
+    operator.back().and(autoScoreTrigger.negate()).whileTrue(gripper.ejectCommand(EjectSpeed.FAST));
     operator.start().and(autoScoreTrigger.negate()).whileTrue(gripper.intakeCommand());
 
     // Objective tracking controls

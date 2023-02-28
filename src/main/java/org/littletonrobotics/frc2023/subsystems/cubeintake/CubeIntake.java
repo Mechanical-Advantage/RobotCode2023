@@ -40,6 +40,8 @@ public class CubeIntake extends SubsystemBase {
   private double absoluteAngleOffset = 0.0;
   private boolean isRunning = false;
   private Supplier<Boolean> forceExtendSupplier = () -> false;
+  private Supplier<Boolean> coastSupplier = () -> false;
+  private boolean lastCoast = false;
 
   private static final LoggedTunableNumber neutralPositionDegrees =
       new LoggedTunableNumber("CubeIntake/NeutralPositionDegrees");
@@ -63,10 +65,10 @@ public class CubeIntake extends SubsystemBase {
         neutralPositionDegrees.initDefault(90.0);
         deployPositionDegrees.initDefault(0.0);
         rollerVolts.initDefault(8.0);
-        kP.initDefault(4.0);
+        kP.initDefault(6.0);
         kD.initDefault(0.0);
-        maxVelocity.initDefault(1.0);
-        maxAcceleration.initDefault(1.0);
+        maxVelocity.initDefault(50.0);
+        maxAcceleration.initDefault(30.0);
         break;
       case ROBOT_SIMBOT:
         neutralPositionDegrees.initDefault(90.0);
@@ -75,7 +77,7 @@ public class CubeIntake extends SubsystemBase {
         kP.initDefault(30.0);
         kD.initDefault(2.0);
         maxVelocity.initDefault(10.0);
-        maxAcceleration.initDefault(50.0);
+        maxAcceleration.initDefault(15.0);
         break;
       default:
         break;
@@ -95,8 +97,9 @@ public class CubeIntake extends SubsystemBase {
             new MechanismLigament2d("IntakeArm", 0.35, 90, 4, new Color8Bit(Color.kLightGreen)));
   }
 
-  public void setForceExtendSupplier(Supplier<Boolean> supplier) {
-    forceExtendSupplier = supplier;
+  public void setSuppliers(Supplier<Boolean> forceExtendSupplier, Supplier<Boolean> coastSupplier) {
+    this.forceExtendSupplier = forceExtendSupplier;
+    this.coastSupplier = coastSupplier;
   }
 
   @Override
@@ -112,6 +115,13 @@ public class CubeIntake extends SubsystemBase {
     if (maxVelocity.hasChanged(hashCode()) && maxAcceleration.hasChanged(hashCode())) {
       controller.setConstraints(
           new TrapezoidProfile.Constraints(maxVelocity.get(), maxAcceleration.get()));
+    }
+
+    // Update coast mode
+    boolean coast = coastSupplier.get() && DriverStation.isDisabled();
+    if (coast != lastCoast) {
+      lastCoast = coast;
+      io.setBrakeMode(!coast, false);
     }
 
     // Zero with absolute encoder
@@ -144,10 +154,14 @@ public class CubeIntake extends SubsystemBase {
       } else {
         controller.setGoal(Units.degreesToRadians(neutralPositionDegrees.get()));
       }
+
       io.setArmVoltage(controller.calculate(angle));
 
       // Run roller
-      io.setRollerVoltage(isRunning ? rollerVolts.get() : 0.0);
+      io.setRollerVoltage(
+          isRunning && controller.getGoal().equals(controller.getSetpoint())
+              ? rollerVolts.get()
+              : 0.0);
     }
   }
 
