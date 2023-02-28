@@ -12,8 +12,6 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import java.util.Map;
-import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.GamePiece;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.Objective;
 import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
@@ -108,13 +106,8 @@ public class Gripper extends SubsystemBase {
 
   /** Command factory to run the gripper wheels back and eject a game piece. */
   public Command ejectCommand(Objective objective) {
-    return Commands.select(
-        Map.of(
-            GamePiece.CUBE,
-            ejectCommand(EjectSpeed.FAST),
-            GamePiece.CONE,
-            ejectCommand(EjectSpeed.SLOW)),
-        () -> objective.gamePiece);
+    return Commands.either(
+        ejectCommand(EjectSpeed.SLOW), ejectCommand(EjectSpeed.FAST), objective::isConeNode);
   }
 
   /** Command factory to run the gripper wheels back and eject a game piece. */

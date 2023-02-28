@@ -126,14 +126,18 @@ public class ArmTrajectoryCache {
     List.of(
             ArmPose.Preset.SCORE_HYBRID.getPose(),
             ArmPose.Preset.SCORE_HYBRID.getPose().withFlip(true),
-            ArmPose.Preset.SCORE_MID_CONE.getPose(),
-            ArmPose.Preset.SCORE_MID_CONE.getPose().withFlip(true),
             ArmPose.Preset.SCORE_MID_CUBE.getPose(),
             ArmPose.Preset.SCORE_MID_CUBE.getPose().withFlip(true),
-            ArmPose.Preset.SCORE_HIGH_CONE.getPose(),
-            ArmPose.Preset.SCORE_HIGH_CONE.getPose().withFlip(true),
             ArmPose.Preset.SCORE_HIGH_CUBE.getPose(),
-            ArmPose.Preset.SCORE_HIGH_CUBE.getPose().withFlip(true))
+            ArmPose.Preset.SCORE_HIGH_CUBE.getPose().withFlip(true),
+            ArmPose.Preset.SCORE_MID_UPRIGHT_CONE.getPose(),
+            ArmPose.Preset.SCORE_MID_UPRIGHT_CONE.getPose().withFlip(true),
+            ArmPose.Preset.SCORE_HIGH_UPRIGHT_CONE.getPose(),
+            ArmPose.Preset.SCORE_HIGH_UPRIGHT_CONE.getPose().withFlip(true),
+            ArmPose.Preset.SCORE_MID_TIPPED_CONE.getPose(),
+            ArmPose.Preset.SCORE_MID_TIPPED_CONE.getPose().withFlip(true),
+            ArmPose.Preset.SCORE_HIGH_TIPPED_CONE.getPose(),
+            ArmPose.Preset.SCORE_HIGH_TIPPED_CONE.getPose().withFlip(true))
         .forEach(
             (ArmPose targetPose) -> {
               double xPosition = targetPose.endEffectorPosition().getX();

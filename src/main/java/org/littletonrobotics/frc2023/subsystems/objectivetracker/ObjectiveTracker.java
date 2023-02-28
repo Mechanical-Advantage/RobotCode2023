@@ -24,25 +24,44 @@ public class ObjectiveTracker extends VirtualSubsystem {
   public final Objective objective = new Objective();
 
   public static class Objective {
-    public int nodeRow; // The row of the selected target node
-    public NodeLevel nodeLevel; // The level of the selected target node
-    public GamePiece gamePiece; // The selected game piece for intaking and scoring
-    public boolean
-        lastIntakeFront; // Whether the last game piece was grabbed from the front of the robot
+    public int nodeRow;
+    public NodeLevel nodeLevel;
+    public ConeOrientation coneOrientation;
+    public boolean lastIntakeFront;
 
     public Objective(
-        int nodeRow, NodeLevel nodeLevel, GamePiece gamePiece, boolean lastIntakeFront) {
+        int nodeRow,
+        NodeLevel nodeLevel,
+        ConeOrientation coneOrientation,
+        boolean lastIntakeFront) {
       this.nodeRow = nodeRow;
       this.nodeLevel = nodeLevel;
-      this.gamePiece = gamePiece;
+      this.coneOrientation = coneOrientation;
       this.lastIntakeFront = lastIntakeFront;
     }
 
     public Objective() {
-      this.nodeRow = 0;
-      this.nodeLevel = NodeLevel.HYBRID;
-      this.gamePiece = GamePiece.CUBE;
-      lastIntakeFront = true;
+      this(0, NodeLevel.HYBRID, ConeOrientation.TIPPED, true);
+    }
+
+    public boolean isConeNode() {
+      return nodeLevel != NodeLevel.HYBRID
+          && (nodeRow == 0
+              || nodeRow == 2
+              || nodeRow == 3
+              || nodeRow == 5
+              || nodeRow == 6
+              || nodeRow == 8);
+    }
+
+    public ScoringSide getScoringSide() {
+      if (nodeLevel == NodeLevel.HYBRID || !isConeNode()) {
+        return ScoringSide.EITHER;
+      } else {
+        return coneOrientation == ConeOrientation.TIPPED ^ lastIntakeFront
+            ? ScoringSide.FRONT
+            : ScoringSide.BACK;
+      }
     }
   }
 
@@ -55,24 +74,26 @@ public class ObjectiveTracker extends VirtualSubsystem {
     selectorIO.updateInputs(selectorInputs);
     Logger.getInstance().processInputs("NodeSelector", selectorInputs);
 
-    // Send selected game piece
-    SmartDashboard.putBoolean("Cube Selected", objective.gamePiece == GamePiece.CUBE);
-
     // Read updates from node selector
-    if (selectorInputs.selected != -1) {
+    if (selectorInputs.selectedNode != -1) {
       if (DriverStation.getAlliance() == Alliance.Blue) {
-        objective.nodeRow = 8 - ((int) selectorInputs.selected % 9);
+        objective.nodeRow = 8 - ((int) selectorInputs.selectedNode % 9);
       } else {
-        objective.nodeRow = (int) selectorInputs.selected % 9;
+        objective.nodeRow = (int) selectorInputs.selectedNode % 9;
       }
-      if (selectorInputs.selected < 9) {
+      if (selectorInputs.selectedNode < 9) {
         objective.nodeLevel = NodeLevel.HYBRID;
-      } else if (selectorInputs.selected < 18) {
+      } else if (selectorInputs.selectedNode < 18) {
         objective.nodeLevel = NodeLevel.MID;
       } else {
         objective.nodeLevel = NodeLevel.HIGH;
       }
-      selectorInputs.selected = -1;
+      selectorInputs.selectedNode = -1;
+    }
+    if (selectorInputs.coneTipped != -1) {
+      objective.coneOrientation =
+          selectorInputs.coneTipped == 0 ? ConeOrientation.UPRIGHT : ConeOrientation.TIPPED;
+      selectorInputs.coneTipped = -1;
     }
 
     // Send current node to selector
@@ -90,6 +111,9 @@ public class ObjectiveTracker extends VirtualSubsystem {
       }
       selectorIO.setSelected(selected);
     }
+
+    // Send cone orientation to selector
+    selectorIO.setConeOrientation(objective.coneOrientation == ConeOrientation.TIPPED);
 
     // Send current node as text
     {
@@ -121,10 +145,14 @@ public class ObjectiveTracker extends VirtualSubsystem {
       SmartDashboard.putString("Selected Node", text);
     }
 
+    // Send cone orientation to dashboard
+    SmartDashboard.putBoolean("Cube Tipped", objective.coneOrientation == ConeOrientation.TIPPED);
+
     // Log state
     Logger.getInstance().recordOutput("ObjectiveTracker/NodeRow", objective.nodeRow);
     Logger.getInstance().recordOutput("ObjectiveTracker/NodeLevel", objective.nodeLevel.toString());
-    Logger.getInstance().recordOutput("ObjectiveTracker/GamePiece", objective.gamePiece.toString());
+    Logger.getInstance()
+        .recordOutput("ObjectiveTracker/ConeOrientation", objective.coneOrientation.toString());
     Logger.getInstance()
         .recordOutput("ObjectiveTracker/LastIntakeFront", objective.lastIntakeFront);
   }
@@ -184,15 +212,37 @@ public class ObjectiveTracker extends VirtualSubsystem {
         .ignoringDisable(true);
   }
 
-  public static enum GamePiece {
-    CUBE,
-    CONE
+  /** Command factory to toggle whether the cone is tipped. */
+  public Command toggleConeOrientationCommand() {
+    return Commands.runOnce(
+            () -> {
+              switch (objective.coneOrientation) {
+                case UPRIGHT:
+                  objective.coneOrientation = ConeOrientation.TIPPED;
+                  break;
+                case TIPPED:
+                  objective.coneOrientation = ConeOrientation.UPRIGHT;
+                  break;
+              }
+            })
+        .ignoringDisable(true);
   }
 
   public static enum NodeLevel {
     HYBRID,
     MID,
     HIGH
+  }
+
+  public static enum ConeOrientation {
+    UPRIGHT,
+    TIPPED,
+  }
+
+  public static enum ScoringSide {
+    FRONT,
+    BACK,
+    EITHER
   }
 
   public static enum Direction {

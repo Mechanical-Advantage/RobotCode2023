@@ -21,8 +21,6 @@ import org.littletonrobotics.frc2023.subsystems.arm.Arm;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmPose;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
 import org.littletonrobotics.frc2023.subsystems.gripper.Gripper;
-import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.GamePiece;
-import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.NodeLevel;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.Objective;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
 import org.littletonrobotics.frc2023.util.GeomUtil;
@@ -45,12 +43,10 @@ public class AutoScore extends SequentialCommandGroup {
   public static final Rotation2d hybridWristAngle = Rotation2d.fromDegrees(-60.0);
   public static final Translation2d cubeRelativePosition = new Translation2d(-0.4, 0.5);
   public static final Rotation2d cubeWristAngle = Rotation2d.fromDegrees(-30.0);
-  public static final Translation2d coneRelativePosition = new Translation2d(-0.15, 0.0);
-  public static final Rotation2d coneWristAngle = Rotation2d.fromDegrees(50.0);
-
-  // Tipped cone presets, 3 volt ejection:
-  // public static final Translation2d coneRelativePosition = new Translation2d(-0.2, -0.1);
-  // public static final Rotation2d coneWristAngle = Rotation2d.fromDegrees(30.0);
+  public static final Translation2d uprightConeRelativePosition = new Translation2d(-0.15, 0.0);
+  public static final Rotation2d uprightConeWristAngle = Rotation2d.fromDegrees(50.0);
+  public static final Translation2d tippedConeRelativePosition = new Translation2d(-0.2, -0.1);
+  public static final Rotation2d tippedConeWristAngle = Rotation2d.fromDegrees(30.0);
 
   /** Auto score a game piece on the grid in full automatic mode. */
   public AutoScore(
@@ -138,10 +134,10 @@ public class AutoScore extends SequentialCommandGroup {
    * Returns whether the drive to pose command is within the tolerance for the selected objective.
    */
   public static boolean atGoalForObjective(DriveToPose driveToPose, Objective objective) {
-    if (objective.nodeLevel == NodeLevel.HYBRID || objective.gamePiece == GamePiece.CUBE) {
-      return driveToPose.withinTolerance(cubeHybridDriveTolerance, cubeHybridThetaTolerance);
-    } else {
+    if (objective.isConeNode()) {
       return driveToPose.atGoal();
+    } else {
+      return driveToPose.withinTolerance(cubeHybridDriveTolerance, cubeHybridThetaTolerance);
     }
   }
 
@@ -235,19 +231,21 @@ public class AutoScore extends SequentialCommandGroup {
 
   /** Returns whether to score off of the front or back of the robot. */
   public static boolean shouldScoreFront(Pose2d unflippedPose, Objective objective) {
-    var nodeTranslation = GeomUtil.translation3dTo2dXY(getNodeTranslation(objective));
-    var relativeRotation =
-        nodeTranslation
-            .minus(unflippedPose.getTranslation())
-            .getAngle()
-            .minus(unflippedPose.getRotation());
-    if (objective.nodeLevel == NodeLevel.HYBRID || objective.gamePiece == GamePiece.CUBE) {
-      // Choose nearest side
-      return relativeRotation.getCos() > 0.0;
-
-    } else {
-      // Choose the same side as the cone was grabbed
-      return !objective.lastIntakeFront;
+    switch (objective.getScoringSide()) {
+      case FRONT:
+        return true;
+      case BACK:
+        return false;
+      case EITHER:
+        var nodeTranslation = GeomUtil.translation3dTo2dXY(getNodeTranslation(objective));
+        var relativeRotation =
+            nodeTranslation
+                .minus(unflippedPose.getTranslation())
+                .getAngle()
+                .minus(unflippedPose.getRotation());
+        return relativeRotation.getCos() > 0.0;
+      default:
+        return true;
     }
   }
 
@@ -272,11 +270,15 @@ public class AutoScore extends SequentialCommandGroup {
         return hybridRelativePosition;
       case MID:
       case HIGH:
-        switch (objective.gamePiece) {
-          case CUBE:
-            return cubeRelativePosition;
-          case CONE:
-            return coneRelativePosition;
+        if (objective.isConeNode()) {
+          switch (objective.coneOrientation) {
+            case UPRIGHT:
+              return uprightConeRelativePosition;
+            case TIPPED:
+              return tippedConeRelativePosition;
+          }
+        } else {
+          return cubeRelativePosition;
         }
         break;
     }
@@ -290,11 +292,15 @@ public class AutoScore extends SequentialCommandGroup {
         return hybridWristAngle;
       case MID:
       case HIGH:
-        switch (objective.gamePiece) {
-          case CUBE:
-            return cubeWristAngle;
-          case CONE:
-            return coneWristAngle;
+        if (objective.isConeNode()) {
+          switch (objective.coneOrientation) {
+            case UPRIGHT:
+              return uprightConeWristAngle;
+            case TIPPED:
+              return tippedConeWristAngle;
+          }
+        } else {
+          return cubeWristAngle;
         }
         break;
     }

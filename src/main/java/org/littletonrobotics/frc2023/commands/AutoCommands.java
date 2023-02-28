@@ -32,7 +32,7 @@ import org.littletonrobotics.frc2023.subsystems.arm.ArmPose;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntake;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
 import org.littletonrobotics.frc2023.subsystems.gripper.Gripper;
-import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.GamePiece;
+import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.ConeOrientation;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.NodeLevel;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.Objective;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
@@ -190,9 +190,9 @@ public class AutoCommands {
   /** Constructs a command to score a link with the specified options. */
   private Command scoreLinkWithOptions(
       NodeLevel level, boolean wallSide, Supplier<Boolean> balance) {
-    var objective0 = new Objective(wallSide ? 0 : 8, level, GamePiece.CONE, false);
-    var objective1 = new Objective(wallSide ? 1 : 7, level, GamePiece.CUBE, true);
-    var objective2 = new Objective(wallSide ? 2 : 6, level, GamePiece.CONE, true);
+    var objective0 = new Objective(wallSide ? 0 : 8, level, ConeOrientation.TIPPED, false);
+    var objective1 = new Objective(wallSide ? 1 : 7, level, ConeOrientation.TIPPED, true);
+    var objective2 = new Objective(wallSide ? 2 : 6, level, ConeOrientation.TIPPED, true);
 
     var startingPose = startingBackwards[wallSide ? 0 : 8];
     var hybridBackupPose = startingPose.transformBy(translationToTransform(0.25, 0.0));
@@ -267,7 +267,7 @@ public class AutoCommands {
                 holonomic(scorePose0),
                 wallSide ? transitWallSideOutWaypoint : transitFieldSideOutWaypoint,
                 holonomic(intakePose1Backoff))
-            .alongWith(armPathThroughHome(ArmPose.Preset.FLOOR_FRONT_CONE)),
+            .alongWith(armPathThroughHome(ArmPose.Preset.FLOOR_CONE)),
         path(holonomic(intakePose1Backoff), holonomic(intakePose1))
             .deadlineWith(gripper.intakeCommand()),
         path(

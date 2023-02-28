@@ -7,10 +7,15 @@
 
 import { NT4_Client } from "./NT4.js";
 
-const robotToDashboardTopic = "/nodeselector/robot_to_dashboard";
-const dashboardToRobotTopic = "/nodeselector/dashboard_to_robot";
+const nodeRobotToDashboardTopic = "/nodeselector/node_robot_to_dashboard";
+const nodeDashboardToRobotTopic = "/nodeselector/node_dashboard_to_robot";
+const coneTippedRobotToDashboardTopic =
+  "/nodeselector/cone_tipped_robot_to_dashboard";
+const coneTippedDashboardToRobotTopic =
+  "/nodeselector/cone_tipped_dashboard_to_robot";
 
 let active = null;
+let tipped = false;
 
 function displayActive(index) {
   active = index;
@@ -24,8 +29,21 @@ function displayActive(index) {
 
 function sendActive(index) {
   if (index !== active) {
-    client.addSample(dashboardToRobotTopic, index);
+    client.addSample(nodeDashboardToRobotTopic, index);
   }
+}
+
+function displayTipped(newTipped) {
+  if (newTipped != tipped) {
+    tipped = newTipped;
+    document
+      .getElementsByClassName("cone-orientation")[0]
+      .classList.toggle("tipped");
+  }
+}
+
+function toggleTipped() {
+  client.addSample(coneTippedDashboardToRobotTopic, !tipped);
 }
 
 let client = new NT4_Client(
@@ -39,9 +57,11 @@ let client = new NT4_Client(
   },
   (topic, timestamp, value) => {
     // New data
-    if (topic.name === robotToDashboardTopic) {
+    if (topic.name === nodeRobotToDashboardTopic) {
       document.body.style.backgroundColor = "white";
       displayActive(value);
+    } else if (topic.name == coneTippedRobotToDashboardTopic) {
+      displayTipped(value);
     }
   },
   () => {
@@ -51,17 +71,24 @@ let client = new NT4_Client(
     // Disconnected
     document.body.style.backgroundColor = "red";
     displayActive(null);
+    displayTipped(false);
   }
 );
 
 window.addEventListener("load", () => {
   // Start NT connection
-  client.subscribe([robotToDashboardTopic], false, false, 0.02);
-  client.publishTopic(dashboardToRobotTopic, "int");
+  client.subscribe(
+    [nodeRobotToDashboardTopic, coneTippedRobotToDashboardTopic],
+    false,
+    false,
+    0.02
+  );
+  client.publishTopic(nodeDashboardToRobotTopic, "int");
+  client.publishTopic(coneTippedDashboardToRobotTopic, "boolean");
   client.connect();
 
-  // Add click listeners
-  Array.from(document.getElementsByTagName("td")).forEach((cell, index) => {
+  // Add node click listeners
+  Array.from(document.getElementsByClassName("node")).forEach((cell, index) => {
     cell.addEventListener("click", () => {
       sendActive(index);
     });
@@ -71,13 +98,13 @@ window.addEventListener("load", () => {
     });
   });
 
-  // Add touch listeners
-  ["touchstart", "touchmove"].forEach((eventString) => {
+  // Add node touch listeners
+  [("touchstart", "touchmove")].forEach((eventString) => {
     document.body.addEventListener(eventString, (event) => {
       if (event.touches.length > 0) {
         let x = event.touches[0].clientX;
         let y = event.touches[0].clientY;
-        Array.from(document.getElementsByTagName("td")).forEach(
+        Array.from(document.getElementsByClassName("node")).forEach(
           (cell, index) => {
             let rect = cell.getBoundingClientRect();
             if (
@@ -92,5 +119,20 @@ window.addEventListener("load", () => {
         );
       }
     });
+  });
+
+  // Add cone orientation listeners
+  const coneOrientationDiv =
+    document.getElementsByClassName("cone-orientation")[0];
+  coneOrientationDiv.addEventListener("click", () => {
+    toggleTipped();
+  });
+  coneOrientationDiv.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
+    toggleTipped();
+  });
+  coneOrientationDiv.addEventListener("touchstart", () => {
+    event.preventDefault();
+    toggleTipped();
   });
 });

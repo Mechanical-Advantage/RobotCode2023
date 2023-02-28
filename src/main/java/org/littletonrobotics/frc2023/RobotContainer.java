@@ -28,8 +28,8 @@ import org.littletonrobotics.frc2023.commands.DriveWithJoysticks;
 import org.littletonrobotics.frc2023.commands.EjectHeld;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
+import org.littletonrobotics.frc2023.commands.IntakeConeFloor;
 import org.littletonrobotics.frc2023.commands.IntakeCubeHandoff;
-import org.littletonrobotics.frc2023.commands.IntakeFromFloorSimple;
 import org.littletonrobotics.frc2023.commands.IntakeSubstation;
 import org.littletonrobotics.frc2023.commands.MoveArmWithJoysticks;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVision;
@@ -59,7 +59,6 @@ import org.littletonrobotics.frc2023.subsystems.objectivetracker.NodeSelectorIO;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.NodeSelectorIOServer;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.Direction;
-import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.GamePiece;
 import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
@@ -329,18 +328,10 @@ public class RobotContainer {
         .x()
         .whileTrue(new IntakeSubstation(false, arm, drive, gripper, objectiveTracker.objective));
     operator
-        .b()
-        .whileTrue(new IntakeCubeHandoff(cubeIntake, arm, gripper, objectiveTracker.objective));
-    operator
         .rightTrigger()
-        .and(floorEjectOverride.negate())
-        .whileTrue(new IntakeFromFloorSimple(true, arm, gripper, objectiveTracker.objective));
-    operator
-        .leftTrigger()
-        .and(floorEjectOverride.negate())
-        .whileTrue(new IntakeFromFloorSimple(false, arm, gripper, objectiveTracker.objective));
-    operator.rightTrigger().and(floorEjectOverride).onTrue(new EjectHeld(true, arm, gripper));
-    operator.leftTrigger().and(floorEjectOverride).whileTrue(new EjectHeld(false, arm, gripper));
+        .whileTrue(new IntakeCubeHandoff(cubeIntake, arm, gripper, objectiveTracker.objective));
+    operator.leftTrigger().whileTrue(new IntakeConeFloor(arm, gripper, objectiveTracker.objective));
+    operator.b().and(floorEjectOverride).whileTrue(new EjectHeld(false, arm, gripper));
 
     // Manual arm controls
     new Trigger(
@@ -359,20 +350,21 @@ public class RobotContainer {
     operator.start().and(autoScoreTrigger.negate()).whileTrue(gripper.intakeCommand());
 
     // Objective tracking controls
-    operator
-        .leftBumper()
-        .onTrue(
-            Commands.runOnce(() -> objectiveTracker.objective.gamePiece = GamePiece.CONE)
-                .ignoringDisable(true));
-    operator
-        .rightBumper()
-        .onTrue(
-            Commands.runOnce(() -> objectiveTracker.objective.gamePiece = GamePiece.CUBE)
-                .ignoringDisable(true));
+    // operator
+    //     .leftBumper()
+    //     .onTrue(
+    //         Commands.runOnce(() -> objectiveTracker.objective.gamePiece = GamePiece.CONE)
+    //             .ignoringDisable(true));
+    // operator
+    //     .rightBumper()
+    //     .onTrue(
+    //         Commands.runOnce(() -> objectiveTracker.objective.gamePiece = GamePiece.CUBE)
+    //             .ignoringDisable(true));
     operator.povUp().whileTrue(objectiveTracker.shiftNodeCommand(Direction.UP));
     operator.povRight().whileTrue(objectiveTracker.shiftNodeCommand(Direction.RIGHT));
     operator.povDown().whileTrue(objectiveTracker.shiftNodeCommand(Direction.DOWN));
     operator.povLeft().whileTrue(objectiveTracker.shiftNodeCommand(Direction.LEFT));
+    operator.y().onTrue(objectiveTracker.toggleConeOrientationCommand());
   }
 
   /** Passes the autonomous command to the {@link Robot} class. */

@@ -7,6 +7,8 @@
 
 package org.littletonrobotics.frc2023.subsystems.objectivetracker;
 
+import edu.wpi.first.networktables.BooleanPublisher;
+import edu.wpi.first.networktables.BooleanSubscriber;
 import edu.wpi.first.networktables.IntegerPublisher;
 import edu.wpi.first.networktables.IntegerSubscriber;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -16,14 +18,18 @@ import io.javalin.http.staticfiles.Location;
 import java.nio.file.Paths;
 
 public class NodeSelectorIOServer implements NodeSelectorIO {
-  private final IntegerPublisher publisher;
-  private final IntegerSubscriber subscriber;
+  private final IntegerPublisher nodePublisher;
+  private final IntegerSubscriber nodeSubscriber;
+  private final BooleanPublisher coneTippedPublisher;
+  private final BooleanSubscriber coneTippedSubscriber;
 
   public NodeSelectorIOServer() {
     // Create publisher and subscriber
     var table = NetworkTableInstance.getDefault().getTable("nodeselector");
-    publisher = table.getIntegerTopic("robot_to_dashboard").publish();
-    subscriber = table.getIntegerTopic("dashboard_to_robot").subscribe(-1);
+    nodePublisher = table.getIntegerTopic("node_robot_to_dashboard").publish();
+    nodeSubscriber = table.getIntegerTopic("node_dashboard_to_robot").subscribe(-1);
+    coneTippedPublisher = table.getBooleanTopic("cone_tipped_robot_to_dashboard").publish();
+    coneTippedSubscriber = table.getBooleanTopic("cone_tipped_dashboard_to_robot").subscribe(false);
 
     // Start server
     var app =
@@ -40,12 +46,19 @@ public class NodeSelectorIOServer implements NodeSelectorIO {
   }
 
   public void updateInputs(NodeSelectorIOInputs inputs) {
-    for (var value : subscriber.readQueueValues()) {
-      inputs.selected = value;
+    for (var value : nodeSubscriber.readQueueValues()) {
+      inputs.selectedNode = value;
+    }
+    for (var value : coneTippedSubscriber.readQueueValues()) {
+      inputs.coneTipped = value ? 1 : 0;
     }
   }
 
   public void setSelected(long selected) {
-    publisher.set(selected);
+    nodePublisher.set(selected);
+  }
+
+  public void setConeOrientation(boolean tipped) {
+    coneTippedPublisher.set(tipped);
   }
 }
