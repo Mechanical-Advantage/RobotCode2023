@@ -27,6 +27,7 @@ public class Leds extends VirtualSubsystem {
   }
 
   // Robot state tracking
+  public int loopCycleCount = 0;
   public boolean hpCone = false;
   public boolean hpConeTipped = false;
   public boolean hpDoubleSubstation = false;
@@ -35,7 +36,7 @@ public class Leds extends VirtualSubsystem {
   public boolean autoSubstation = false;
   public boolean distraction = false;
   public boolean fallen = false;
-  public boolean sameBattery = true;
+  public boolean sameBattery = false;
   public boolean armEstopped = false;
   private Alliance alliance = Alliance.Invalid;
 
@@ -43,20 +44,21 @@ public class Leds extends VirtualSubsystem {
   private final AddressableLED leds;
   private final AddressableLEDBuffer buffer;
 
-  // Pattern constants
-  private static final int length = 160;
-  private static final int staticLength = 100;
+  // Constants
+  private static final int minLoopCycleCount = 10;
+  private static final int length = 43;
+  private static final int staticLength = 14;
   private static final int batteryAlertLength = 5;
+  private static final int doubleSubstationLength = 5;
   private static final double strobeFastDuration = 0.1;
-  private static final double strobeMediumDuration = 0.2;
-  private static final double strobeSlowDuration = 0.8;
+  private static final double strobeSlowDuration = 0.2;
   private static final double breathDuration = 1.0;
-  private static final double rainbowCycleLength = 40.0;
+  private static final double rainbowCycleLength = 25.0;
   private static final double rainbowDuration = 0.25;
   private static final double waveExponent = 0.4;
-  private static final double waveFastCycleLength = 40.0;
+  private static final double waveFastCycleLength = 25.0;
   private static final double waveFastDuration = 0.25;
-  private static final double waveSlowCycleLength = 40.0;
+  private static final double waveSlowCycleLength = 25.0;
   private static final double waveSlowDuration = 3.0;
   private static final double waveAllianceCycleLength = 15.0;
   private static final double waveAllianceDuration = 2.0;
@@ -73,6 +75,12 @@ public class Leds extends VirtualSubsystem {
     // Update alliance color
     if (DriverStation.isFMSAttached()) {
       alliance = DriverStation.getAlliance();
+    }
+
+    // Exit during initial cycles
+    loopCycleCount += 1;
+    if (loopCycleCount < minLoopCycleCount) {
+      return;
     }
 
     // Select LED mode
@@ -110,17 +118,20 @@ public class Leds extends VirtualSubsystem {
       Color hpColor = Color.kBlack;
       if (hpCone) {
         if (hpConeTipped) {
-          hpColor = new Color(255, 64, 0); // #ff4000 (orange/red)
+          hpColor = Color.kRed;
         } else {
-          hpColor = new Color(255, 218, 30); // #ffd91e (yellow)
+          hpColor = Color.kGold;
         }
       } else {
-        hpColor = new Color(170, 0, 255); // #aa00ff (purple)
+        hpColor = Color.kPurple;
       }
       if (hpDoubleSubstation) {
-        strobe(Section.STATIC, hpColor, strobeSlowDuration);
+        solid(Section.STATIC, hpColor);
+        for (int i = doubleSubstationLength; i < staticLength - doubleSubstationLength; i++) {
+          buffer.setLED(i, Color.kBlack);
+        }
       } else if (hpThrowGamePiece) {
-        strobe(Section.STATIC, hpColor, strobeMediumDuration);
+        strobe(Section.STATIC, hpColor, strobeSlowDuration);
       } else {
         solid(Section.STATIC, hpColor);
       }

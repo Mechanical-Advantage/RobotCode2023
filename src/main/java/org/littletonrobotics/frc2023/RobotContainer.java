@@ -45,6 +45,7 @@ import org.littletonrobotics.frc2023.subsystems.arm.ArmSolverIOKairos;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntake;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntakeIO;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntakeIOSim;
+import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntakeIOSparkMax;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
 import org.littletonrobotics.frc2023.subsystems.drive.GyroIO;
 import org.littletonrobotics.frc2023.subsystems.drive.GyroIOPigeon2;
@@ -121,6 +122,7 @@ public class RobotContainer {
                   new ModuleIOSparkMax(3));
           arm = new Arm(new ArmIOSparkMax(), new ArmSolverIOKairos(3));
           gripper = new Gripper(new GripperIOSparkMax());
+          cubeIntake = new CubeIntake(new CubeIntakeIOSparkMax());
           aprilTagVision =
               new AprilTagVision(
                   new AprilTagVisionIONorthstar("northstar_0"),

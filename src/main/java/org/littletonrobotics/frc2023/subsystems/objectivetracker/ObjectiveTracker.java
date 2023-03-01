@@ -42,7 +42,7 @@ public class ObjectiveTracker extends VirtualSubsystem {
     }
 
     public Objective() {
-      this(0, NodeLevel.HYBRID, ConeOrientation.TIPPED, true);
+      this(0, NodeLevel.HYBRID, ConeOrientation.UPRIGHT, true);
     }
 
     public boolean isConeNode() {
@@ -147,7 +147,7 @@ public class ObjectiveTracker extends VirtualSubsystem {
     }
 
     // Send cone orientation to dashboard and LEDs
-    SmartDashboard.putBoolean("Cube Tipped", objective.coneOrientation == ConeOrientation.TIPPED);
+    SmartDashboard.putBoolean("Cone Tipped", objective.coneOrientation == ConeOrientation.TIPPED);
     Leds.getInstance().hpConeTipped = objective.coneOrientation == ConeOrientation.TIPPED;
 
     // Log state

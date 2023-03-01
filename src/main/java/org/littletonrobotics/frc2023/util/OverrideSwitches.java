@@ -72,7 +72,7 @@ public class OverrideSwitches {
 
   /** Returns a trigger for when the multi-directional switch is pushed to the right. */
   public Trigger multiDirectionSwitchRight() {
-    return new Trigger(() -> getMultiDirectionSwitch() == MultiDirectionSwitchState.LEFT);
+    return new Trigger(() -> getMultiDirectionSwitch() == MultiDirectionSwitchState.RIGHT);
   }
 
   /** The state of the multi-directional switch. */
