@@ -276,6 +276,26 @@ public class Drive extends SubsystemBase {
     return fieldVelocity;
   }
 
+  /** Returns the current pitch (Y rotation). */
+  public Rotation2d getPitch() {
+    return new Rotation2d(gyroInputs.pitchPositionRad);
+  }
+
+  /** Returns the current roll (X rotation). */
+  public Rotation2d getRoll() {
+    return new Rotation2d(gyroInputs.rollPositionRad);
+  }
+
+  /** Returns the current pitch velocity (Y rotation) in radians per second. */
+  public double getPitchVelocity() {
+    return gyroInputs.pitchVelocityRadPerSec;
+  }
+
+  /** Returns the current roll velocity (X rotation) in radians per second. */
+  public double getRollVelocity() {
+    return gyroInputs.rollVelocityRadPerSec;
+  }
+
   /** Returns the current odometry pose. */
   public Pose2d getPose() {
     return poseEstimator.getLatestPose();

@@ -153,10 +153,11 @@ public class AutoCommands {
             position0.getY(),
             position0.getRotation());
     return path(
-        Waypoint.fromHolonomicPose(startingPosition),
-        Waypoint.fromHolonomicPose(
-            position0, enterFront ? new Rotation2d() : Rotation2d.fromDegrees(180.0)),
-        Waypoint.fromHolonomicPose(position1));
+            Waypoint.fromHolonomicPose(startingPosition),
+            Waypoint.fromHolonomicPose(
+                position0, enterFront ? new Rotation2d() : Rotation2d.fromDegrees(180.0)),
+            Waypoint.fromHolonomicPose(position1))
+        .andThen(new AutoBalance(drive));
   }
 
   /** Places three game pieces on the selected level, then optionally balances. */
