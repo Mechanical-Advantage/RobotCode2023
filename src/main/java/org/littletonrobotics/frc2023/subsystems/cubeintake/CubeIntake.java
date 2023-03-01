@@ -39,9 +39,11 @@ public class CubeIntake extends SubsystemBase {
   private boolean isZeroed = false;
   private double absoluteAngleOffset = 0.0;
   private boolean isRunning = false;
+  private Supplier<Boolean> enableRollerSupplier = () -> true;
+  private boolean lastCoast = false;
+
   private Supplier<Boolean> forceExtendSupplier = () -> false;
   private Supplier<Boolean> coastSupplier = () -> false;
-  private boolean lastCoast = false;
 
   private static final LoggedTunableNumber neutralPositionDegrees =
       new LoggedTunableNumber("CubeIntake/NeutralPositionDegrees");
@@ -154,12 +156,13 @@ public class CubeIntake extends SubsystemBase {
       } else {
         controller.setGoal(Units.degreesToRadians(neutralPositionDegrees.get()));
       }
-
       io.setArmVoltage(controller.calculate(angle));
 
       // Run roller
       io.setRollerVoltage(
-          isRunning && controller.getGoal().equals(controller.getSetpoint())
+          isRunning
+                  && controller.getGoal().equals(controller.getSetpoint())
+                  && enableRollerSupplier.get()
               ? rollerVolts.get()
               : 0.0);
     }
@@ -173,6 +176,16 @@ public class CubeIntake extends SubsystemBase {
 
   /** Command factory to extend and run the roller. */
   public Command runCommand() {
-    return startEnd(() -> isRunning = true, () -> isRunning = false);
+    return runCommand(() -> true);
+  }
+
+  /** Command factory to extend and run the roller. */
+  public Command runCommand(Supplier<Boolean> enableRollerSupplier) {
+    return startEnd(
+        () -> {
+          isRunning = true;
+          this.enableRollerSupplier = enableRollerSupplier;
+        },
+        () -> isRunning = false);
   }
 }

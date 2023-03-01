@@ -20,7 +20,7 @@ public class IntakeCubeHandoff extends SequentialCommandGroup {
   public IntakeCubeHandoff(CubeIntake intake, Arm arm, Gripper gripper, Objective objective) {
     addCommands(
         intake
-            .runCommand()
+            .runCommand(arm::isTrajectoryFinished)
             .deadlineWith(
                 arm.runPathCommand(ArmPose.Preset.CUBE_HANDOFF),
                 gripper.intakeCommand(),
