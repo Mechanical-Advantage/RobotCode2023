@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
+import org.littletonrobotics.frc2023.subsystems.leds.Leds;
 import org.littletonrobotics.frc2023.util.VirtualSubsystem;
 import org.littletonrobotics.junction.Logger;
 
@@ -145,8 +146,9 @@ public class ObjectiveTracker extends VirtualSubsystem {
       SmartDashboard.putString("Selected Node", text);
     }
 
-    // Send cone orientation to dashboard
+    // Send cone orientation to dashboard and LEDs
     SmartDashboard.putBoolean("Cube Tipped", objective.coneOrientation == ConeOrientation.TIPPED);
+    Leds.getInstance().hpConeTipped = objective.coneOrientation == ConeOrientation.TIPPED;
 
     // Log state
     Logger.getInstance().recordOutput("ObjectiveTracker/NodeRow", objective.nodeRow);

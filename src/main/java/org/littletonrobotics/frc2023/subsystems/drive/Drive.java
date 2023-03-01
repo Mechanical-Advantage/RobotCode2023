@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.littletonrobotics.frc2023.Constants;
+import org.littletonrobotics.frc2023.subsystems.leds.Leds;
 import org.littletonrobotics.frc2023.util.LoggedTunableNumber;
 import org.littletonrobotics.frc2023.util.PoseEstimator;
 import org.littletonrobotics.frc2023.util.PoseEstimator.TimestampedVisionUpdate;
@@ -36,6 +37,7 @@ public class Drive extends SubsystemBase {
       6.0; // Need to be under the above speed for this length of time to switch to coast
   private static final double aprilTagGyroThresholdSecs =
       6.0; // Must be disabled for this time to start using AprilTag gyro data
+  private static final double ledsFallenAngleDegrees = 60.0; // Threshold to detect falls
 
   private final GyroIO gyroIO;
   private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
@@ -233,6 +235,12 @@ public class Drive extends SubsystemBase {
         }
       }
     }
+
+    // Check for fallen robot
+    Leds.getInstance().fallen =
+        Units.radiansToDegrees(Math.abs(gyroInputs.pitchPositionRad)) > ledsFallenAngleDegrees
+            || Units.radiansToDegrees(Math.abs(gyroInputs.rollPositionRad))
+                > ledsFallenAngleDegrees;
   }
 
   /**

@@ -16,6 +16,11 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,6 +28,7 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import org.littletonrobotics.frc2023.Constants.Mode;
 import org.littletonrobotics.frc2023.Constants.RobotType;
+import org.littletonrobotics.frc2023.subsystems.leds.Leds;
 import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
 import org.littletonrobotics.frc2023.util.BatteryTracker;
@@ -36,6 +42,8 @@ import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
 public class Robot extends LoggedRobot {
+  private static final String batteryNameFile = "/home/lvuser/battery-name.txt";
+
   private RobotContainer robotContainer;
   private Command autoCommand;
   private double autoStart;
@@ -45,6 +53,8 @@ public class Robot extends LoggedRobot {
       new Alert("No log path set for current robot. Data will NOT be logged.", AlertType.WARNING);
   private final Alert logReceiverQueueAlert =
       new Alert("Logging queue exceeded capacity, data will NOT be logged.", AlertType.ERROR);
+  private final Alert sameBatteryAlert =
+      new Alert("The battery has not been changed since the last match.", AlertType.WARNING);
 
   public Robot() {
     super(Constants.loopPeriodSecs);
@@ -106,6 +116,31 @@ public class Robot extends LoggedRobot {
     setUseTiming(Constants.getMode() != Mode.REPLAY);
     logger.start();
 
+    // Check for battery alert
+    if (Constants.getMode() == Mode.REAL
+        && !BatteryTracker.getName().equals(BatteryTracker.defaultName)) {
+      File file = new File(batteryNameFile);
+      if (file.exists()) {
+        // Read previous battery name
+        String previousBatteryName = "";
+        try {
+          previousBatteryName =
+              new String(Files.readAllBytes(Paths.get(batteryNameFile)), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+
+        if (previousBatteryName.equals(BatteryTracker.getName())) {
+          // Same battery, set alert
+          sameBatteryAlert.set(true);
+          Leds.getInstance().sameBattery = true;
+        } else {
+          // New battery, delete file
+          file.delete();
+        }
+      }
+    }
+
     // Log active commands
     Map<String, Integer> commandCounts = new HashMap<>();
     BiConsumer<Command, Boolean> logCommandFunction =
@@ -152,8 +187,9 @@ public class Robot extends LoggedRobot {
     // Check logging fault
     logReceiverQueueAlert.set(Logger.getInstance().getReceiverQueueFault());
 
-    // Check controllers
+    // Robot container periodic methods
     robotContainer.checkControllers();
+    robotContainer.updateHPModeLeds();
 
     // Log list of NT clients
     List<String> clientNames = new ArrayList<>();

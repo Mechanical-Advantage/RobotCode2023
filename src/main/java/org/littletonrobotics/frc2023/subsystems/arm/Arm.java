@@ -38,6 +38,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 import org.littletonrobotics.frc2023.Constants;
 import org.littletonrobotics.frc2023.Constants.Mode;
+import org.littletonrobotics.frc2023.subsystems.leds.Leds;
 import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
 import org.littletonrobotics.frc2023.util.LoggedTunableNumber;
@@ -537,6 +538,7 @@ public class Arm extends SubsystemBase {
     // Update disable alerts
     driverDisableAlert.set(disableSupplier.get());
     emergencyDisableAlert.set(emergencyDisable);
+    Leds.getInstance().armEstopped = emergencyDisable;
   }
 
   /** Applies a static friction and deadband to an applied voltage. */

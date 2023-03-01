@@ -55,6 +55,7 @@ import org.littletonrobotics.frc2023.subsystems.gripper.Gripper;
 import org.littletonrobotics.frc2023.subsystems.gripper.Gripper.EjectSpeed;
 import org.littletonrobotics.frc2023.subsystems.gripper.GripperIO;
 import org.littletonrobotics.frc2023.subsystems.gripper.GripperIOSparkMax;
+import org.littletonrobotics.frc2023.subsystems.leds.Leds;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.NodeSelectorIO;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.NodeSelectorIOServer;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker;
@@ -82,6 +83,8 @@ public class RobotContainer {
   private final Trigger robotRelativeOverride = overrides.driverSwitch(0);
   private final Trigger armDisableOverride = overrides.driverSwitch(1);
   private final Trigger armCoastOverride = overrides.driverSwitch(2);
+  private final Trigger hpDoubleSubstationSwitch = overrides.multiDirectionSwitchLeft();
+  private final Trigger hpThrowGamePieceSwitch = overrides.multiDirectionSwitchRight();
   private final Trigger manualDriveAdjustOverride = overrides.operatorSwitch(0);
   private final Trigger manualArmAdjustOverride = overrides.operatorSwitch(1);
   private final Trigger reachScoringDisableOverride = overrides.operatorSwitch(2);
@@ -100,6 +103,9 @@ public class RobotContainer {
   public RobotContainer() {
     // Check if flash should be burned
     SparkMaxBurnManager.update();
+
+    // Instantiate LEDs
+    Leds.getInstance();
 
     // Instantiate active subsystems
     if (Constants.getMode() != Mode.REPLAY) {
@@ -239,6 +245,12 @@ public class RobotContainer {
     overrideDisconnected.set(!overrides.isConnected());
   }
 
+  /** Updates the extra HP LED modes based on the override switch. */
+  public void updateHPModeLeds() {
+    Leds.getInstance().hpDoubleSubstation = hpDoubleSubstationSwitch.getAsBoolean();
+    Leds.getInstance().hpThrowGamePiece = hpThrowGamePieceSwitch.getAsBoolean();
+  }
+
   /** Binds the driver and operator controls. */
   public void bindControls() {
     // Rely on our custom alerts for disconnected controllers
@@ -302,21 +314,38 @@ public class RobotContainer {
     // Auto align controls
     driver
         .leftTrigger()
-        .whileTrue(new DriveToSubstation(drive, () -> operator.getHID().getXButton()));
+        .whileTrue(
+            new DriveToSubstation(drive, () -> operator.getHID().getXButton())
+                .deadlineWith(
+                    Commands.startEnd(
+                        () -> Leds.getInstance().autoSubstation = true,
+                        () -> Leds.getInstance().autoSubstation = false)));
     var autoScoreTrigger = driver.rightTrigger();
     var ejectTrigger = driver.a();
     autoScoreTrigger.whileTrue(
         new AutoScore(
-            drive,
-            arm,
-            gripper,
-            objectiveTracker.objective,
-            driveWithJoysticksFactory.apply(true),
-            moveArmWithJoysticksFactory.get(),
-            () -> ejectTrigger.getAsBoolean(),
-            () -> manualDriveAdjustOverride.getAsBoolean(),
-            () -> manualArmAdjustOverride.getAsBoolean(),
-            () -> reachScoringDisableOverride.getAsBoolean()));
+                drive,
+                arm,
+                gripper,
+                objectiveTracker.objective,
+                driveWithJoysticksFactory.apply(true),
+                moveArmWithJoysticksFactory.get(),
+                () -> ejectTrigger.getAsBoolean(),
+                () -> manualDriveAdjustOverride.getAsBoolean(),
+                () -> manualArmAdjustOverride.getAsBoolean(),
+                () -> reachScoringDisableOverride.getAsBoolean())
+            .deadlineWith(
+                Commands.startEnd(
+                    () -> Leds.getInstance().autoScore = true,
+                    () -> Leds.getInstance().autoScore = false)));
+
+    // Distraction LEDs
+    driver
+        .rightBumper()
+        .whileTrue(
+            Commands.startEnd(
+                () -> Leds.getInstance().distraction = true,
+                () -> Leds.getInstance().distraction = false));
 
     // *** OPERATOR CONTROLS ***
 
@@ -350,21 +379,17 @@ public class RobotContainer {
     operator.start().and(autoScoreTrigger.negate()).whileTrue(gripper.intakeCommand());
 
     // Objective tracking controls
-    // operator
-    //     .leftBumper()
-    //     .onTrue(
-    //         Commands.runOnce(() -> objectiveTracker.objective.gamePiece = GamePiece.CONE)
-    //             .ignoringDisable(true));
-    // operator
-    //     .rightBumper()
-    //     .onTrue(
-    //         Commands.runOnce(() -> objectiveTracker.objective.gamePiece = GamePiece.CUBE)
-    //             .ignoringDisable(true));
+    operator
+        .leftBumper()
+        .onTrue(Commands.runOnce(() -> Leds.getInstance().hpCone = true).ignoringDisable(true));
+    operator
+        .rightBumper()
+        .onTrue(Commands.runOnce(() -> Leds.getInstance().hpCone = false).ignoringDisable(true));
+    operator.y().onTrue(objectiveTracker.toggleConeOrientationCommand());
     operator.povUp().whileTrue(objectiveTracker.shiftNodeCommand(Direction.UP));
     operator.povRight().whileTrue(objectiveTracker.shiftNodeCommand(Direction.RIGHT));
     operator.povDown().whileTrue(objectiveTracker.shiftNodeCommand(Direction.DOWN));
     operator.povLeft().whileTrue(objectiveTracker.shiftNodeCommand(Direction.LEFT));
-    operator.y().onTrue(objectiveTracker.toggleConeOrientationCommand());
   }
 
   /** Passes the autonomous command to the {@link Robot} class. */
