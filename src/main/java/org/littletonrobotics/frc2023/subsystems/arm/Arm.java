@@ -259,6 +259,7 @@ public class Arm extends SubsystemBase {
       lastCoast = coast;
       io.setBrakeMode(!coast, !coast, !coast);
     }
+    Leds.getInstance().armCoast = coast;
 
     // Zero with absolute encoders
     if (!isZeroed) {

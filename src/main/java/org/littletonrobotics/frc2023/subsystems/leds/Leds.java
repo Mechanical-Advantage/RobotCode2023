@@ -37,6 +37,7 @@ public class Leds extends VirtualSubsystem {
   public boolean distraction = false;
   public boolean fallen = false;
   public boolean sameBattery = false;
+  public boolean armCoast = false;
   public boolean armEstopped = false;
   private Alliance alliance = Alliance.Invalid;
 
@@ -48,8 +49,7 @@ public class Leds extends VirtualSubsystem {
   private static final int minLoopCycleCount = 10;
   private static final int length = 43;
   private static final int staticLength = 14;
-  private static final int batteryAlertLength = 5;
-  private static final int doubleSubstationLength = 5;
+  private static final int staticSectionLength = 5;
   private static final double strobeFastDuration = 0.1;
   private static final double strobeSlowDuration = 0.2;
   private static final double breathDuration = 1.0;
@@ -126,10 +126,8 @@ public class Leds extends VirtualSubsystem {
         hpColor = Color.kPurple;
       }
       if (hpDoubleSubstation) {
-        solid(Section.STATIC, hpColor);
-        for (int i = doubleSubstationLength; i < staticLength - doubleSubstationLength; i++) {
-          buffer.setLED(i, Color.kBlack);
-        }
+        solid(Section.STATIC_LOW, hpColor);
+        solid(Section.STATIC_HIGH, hpColor);
       } else if (hpThrowGamePiece) {
         strobe(Section.STATIC, hpColor, strobeSlowDuration);
       } else {
@@ -142,14 +140,16 @@ public class Leds extends VirtualSubsystem {
       }
     }
 
-    // Add arm estop alert
-    if (armEstopped) {
-      breath(Section.SHOULDER, Color.kRed, Color.kBlack, breathDuration);
+    // Alerts at static base
+    if (sameBattery) {
+      breath(Section.STATIC_LOW, Color.kRed, Color.kBlack, breathDuration);
+    } else if (armCoast) {
+      solid(Section.STATIC_LOW, Color.kWhite);
     }
 
-    // Add same battery alert
-    if (sameBattery) {
-      breath(Section.BATTERY_ALERT, Color.kRed, Color.kBlack, breathDuration);
+    // Arm estop alert
+    if (armEstopped) {
+      breath(Section.SHOULDER, Color.kRed, Color.kBlack, breathDuration);
     }
 
     // Update LEDs
@@ -213,7 +213,9 @@ public class Leds extends VirtualSubsystem {
     STATIC,
     SHOULDER,
     FULL,
-    BATTERY_ALERT;
+    STATIC_LOW,
+    STATIC_MID,
+    STATIC_HIGH;
 
     private int start() {
       switch (this) {
@@ -223,8 +225,12 @@ public class Leds extends VirtualSubsystem {
           return staticLength;
         case FULL:
           return 0;
-        case BATTERY_ALERT:
+        case STATIC_LOW:
           return 0;
+        case STATIC_MID:
+          return staticSectionLength;
+        case STATIC_HIGH:
+          return staticLength - staticSectionLength;
         default:
           return 0;
       }
@@ -238,8 +244,12 @@ public class Leds extends VirtualSubsystem {
           return length;
         case FULL:
           return length;
-        case BATTERY_ALERT:
-          return batteryAlertLength;
+        case STATIC_LOW:
+          return staticSectionLength;
+        case STATIC_MID:
+          return staticLength - staticSectionLength;
+        case STATIC_HIGH:
+          return staticLength;
         default:
           return length;
       }
