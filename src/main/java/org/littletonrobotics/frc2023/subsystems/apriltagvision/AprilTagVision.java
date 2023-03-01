@@ -24,6 +24,7 @@ import java.util.function.Consumer;
 import org.littletonrobotics.frc2023.Constants;
 import org.littletonrobotics.frc2023.FieldConstants;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIO.AprilTagVisionIOInputs;
+import org.littletonrobotics.frc2023.subsystems.drive.Module;
 import org.littletonrobotics.frc2023.util.GeomUtil;
 import org.littletonrobotics.frc2023.util.PoseEstimator.TimestampedVisionUpdate;
 import org.littletonrobotics.frc2023.util.VirtualSubsystem;
@@ -51,17 +52,17 @@ public class AprilTagVision extends VirtualSubsystem {
               new Pose3d(
                   Units.inchesToMeters(4.625),
                   Units.inchesToMeters(-12.5),
-                  Units.inchesToMeters(23.3125),
+                  Units.inchesToMeters(23.3125) + Module.getWheelRadius(),
                   new Rotation3d(0.0, Units.degreesToRadians(15.0), 0.0)),
               new Pose3d(
                   Units.inchesToMeters(-4.0),
                   Units.inchesToMeters(-11.5),
-                  Units.inchesToMeters(19.0),
+                  Units.inchesToMeters(19.0) + Module.getWheelRadius(),
                   new Rotation3d(0.0, 0.0, Units.degreesToRadians(-90.0))),
               new Pose3d(
                   Units.inchesToMeters(-11.5),
                   Units.inchesToMeters(7.5),
-                  Units.inchesToMeters(6.5),
+                  Units.inchesToMeters(6.5) + Module.getWheelRadius(),
                   new Rotation3d(0.0, 0.0, Units.degreesToRadians(180.0))
                       .rotateBy(new Rotation3d(0.0, Units.degreesToRadians(-14.0), 0.0)))
             };
