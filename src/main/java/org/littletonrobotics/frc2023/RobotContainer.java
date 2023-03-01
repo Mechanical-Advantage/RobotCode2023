@@ -63,6 +63,7 @@ import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracke
 import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
+import org.littletonrobotics.frc2023.util.DoublePressTracker;
 import org.littletonrobotics.frc2023.util.OverrideSwitches;
 import org.littletonrobotics.frc2023.util.SparkMaxBurnManager;
 
@@ -80,16 +81,16 @@ public class RobotContainer {
   private final CommandXboxController driver = new CommandXboxController(0);
   private final CommandXboxController operator = new CommandXboxController(1);
   private final OverrideSwitches overrides = new OverrideSwitches(5);
-  private final Trigger robotRelativeOverride = overrides.driverSwitch(0);
-  private final Trigger armDisableOverride = overrides.driverSwitch(1);
-  private final Trigger armCoastOverride = overrides.driverSwitch(2);
+  private final Trigger robotRelative = overrides.driverSwitch(0);
+  private final Trigger armDisable = overrides.driverSwitch(1);
+  private final Trigger armCoast = overrides.driverSwitch(2);
   private final Trigger hpDoubleSubstationSwitch = overrides.multiDirectionSwitchLeft();
   private final Trigger hpThrowGamePieceSwitch = overrides.multiDirectionSwitchRight();
-  private final Trigger manualDriveAdjustOverride = overrides.operatorSwitch(0);
-  private final Trigger manualArmAdjustOverride = overrides.operatorSwitch(1);
-  private final Trigger reachScoringDisableOverride = overrides.operatorSwitch(2);
-  private final Trigger forcePregenPathsOverride = overrides.operatorSwitch(3);
-  private final Trigger floorEjectOverride = overrides.operatorSwitch(4);
+  private final Trigger manualDriveAdjust = overrides.operatorSwitch(0);
+  private final Trigger manualArmAdjust = overrides.operatorSwitch(1);
+  private final Trigger reachScoringDisable = overrides.operatorSwitch(2);
+  private final Trigger forcePregenPaths = overrides.operatorSwitch(3);
+  private final Trigger forceGripperEnable = overrides.operatorSwitch(4);
   private final Alert driverDisconnected =
       new Alert("Driver controller disconnected (port 0).", AlertType.WARNING);
   private final Alert operatorDisconnected =
@@ -188,10 +189,11 @@ public class RobotContainer {
 
     // Set up subsystems
     arm.setOverrides(
-        () -> armDisableOverride.getAsBoolean(),
-        () -> armCoastOverride.getAsBoolean(),
-        () -> forcePregenPathsOverride.getAsBoolean());
-    cubeIntake.setSuppliers(arm::cubeIntakeShouldExtend, () -> armCoastOverride.getAsBoolean());
+        () -> armDisable.getAsBoolean(),
+        () -> armCoast.getAsBoolean(),
+        () -> forcePregenPaths.getAsBoolean());
+    gripper.setOverrides(() -> forceGripperEnable.getAsBoolean());
+    cubeIntake.setSuppliers(arm::cubeIntakeShouldExtend, () -> armCoast.getAsBoolean());
     aprilTagVision.setDataInterface(drive::addVisionData);
 
     // Set up auto routines
@@ -265,7 +267,7 @@ public class RobotContainer {
                 () -> -driver.getLeftX(),
                 () -> -driver.getRightX(),
                 () -> alwaysSniper || driver.getHID().getLeftBumper(),
-                () -> robotRelativeOverride.getAsBoolean(),
+                () -> robotRelative.getAsBoolean(),
                 arm::getExtensionPercent);
     Supplier<MoveArmWithJoysticks> moveArmWithJoysticksFactory =
         () ->
@@ -331,9 +333,9 @@ public class RobotContainer {
                 driveWithJoysticksFactory.apply(true),
                 moveArmWithJoysticksFactory.get(),
                 () -> ejectTrigger.getAsBoolean(),
-                () -> manualDriveAdjustOverride.getAsBoolean(),
-                () -> manualArmAdjustOverride.getAsBoolean(),
-                () -> reachScoringDisableOverride.getAsBoolean())
+                () -> manualDriveAdjust.getAsBoolean(),
+                () -> manualArmAdjust.getAsBoolean(),
+                () -> reachScoringDisable.getAsBoolean())
             .deadlineWith(
                 Commands.startEnd(
                     () -> Leds.getInstance().autoScore = true,
@@ -360,7 +362,12 @@ public class RobotContainer {
         .rightTrigger()
         .whileTrue(new IntakeCubeHandoff(cubeIntake, arm, gripper, objectiveTracker.objective));
     operator.leftTrigger().whileTrue(new IntakeConeFloor(arm, gripper, objectiveTracker.objective));
-    operator.b().and(floorEjectOverride).whileTrue(new EjectHeld(false, arm, gripper));
+    var ejectBackCommand =
+        Commands.waitSeconds(DoublePressTracker.maxLengthSecs)
+            .andThen(new EjectHeld(false, arm, gripper).withName("EjectHeld_Back"));
+    operator.b().onTrue(ejectBackCommand);
+    DoublePressTracker.createTrigger(operator.b())
+        .onTrue(new EjectHeld(true, arm, gripper).withName("EjectHeld_Front"));
 
     // Manual arm controls
     new Trigger(

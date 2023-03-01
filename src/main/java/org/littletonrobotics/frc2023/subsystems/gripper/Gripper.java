@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import java.util.function.Supplier;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.Objective;
 import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
@@ -49,16 +50,21 @@ public class Gripper extends SubsystemBase {
   private final Timer tooHotTimer = new Timer();
   private final Alert tooHotAlert =
       new Alert("Gripper motor disabled due to very high temperature.", AlertType.ERROR);
+  private Supplier<Boolean> forceEnableSupplier = () -> false;
 
   public Gripper(GripperIO io) {
     this.io = io;
     io.setBrakeMode(false);
     tooHotTimer.start();
     setDefaultCommand(
-        run(
-            () -> {
+        run(() -> {
               setVoltage(holdVolts.get());
-            }));
+            })
+            .withName("GripperIdle"));
+  }
+
+  public void setOverrides(Supplier<Boolean> forceEnableSupplier) {
+    this.forceEnableSupplier = forceEnableSupplier;
   }
 
   @Override
@@ -88,7 +94,7 @@ public class Gripper extends SubsystemBase {
   }
 
   private void setVoltage(double volts) {
-    if (!tooHotAlertActive) {
+    if (!tooHotAlertActive || forceEnableSupplier.get()) {
       io.setVoltage(volts);
     }
   }
