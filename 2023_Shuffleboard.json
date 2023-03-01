@@ -1,0 +1,250 @@
+{
+  "tabPane": [
+    {
+      "title": "The Questionaire",
+      "autoPopulate": false,
+      "autoPopulatePrefix": "",
+      "widgetPane": {
+        "gridSize": 128.0,
+        "showGrid": true,
+        "hgap": 16.0,
+        "vgap": 16.0,
+        "titleType": 0,
+        "tiles": {
+          "0,0": {
+            "size": [
+              2,
+              1
+            ],
+            "content": {
+              "_type": "ComboBox Chooser",
+              "_source0": "network_table:///SmartDashboard/Auto/Routine",
+              "_title": "Auto Routine",
+              "_glyph": 330,
+              "_showGlyph": true
+            }
+          },
+          "0,1": {
+            "size": [
+              2,
+              1
+            ],
+            "content": {
+              "_type": "Text View",
+              "_source0": "network_table:///SmartDashboard/Auto/Question #1",
+              "_title": "Question #1",
+              "_glyph": 148,
+              "_showGlyph": false
+            }
+          },
+          "0,2": {
+            "size": [
+              2,
+              1
+            ],
+            "content": {
+              "_type": "Text View",
+              "_source0": "network_table:///SmartDashboard/Auto/Question #2",
+              "_title": "Question #2",
+              "_glyph": 148,
+              "_showGlyph": false
+            }
+          },
+          "0,3": {
+            "size": [
+              2,
+              1
+            ],
+            "content": {
+              "_type": "Text View",
+              "_source0": "network_table:///SmartDashboard/Auto/Question #3",
+              "_title": "Question #3",
+              "_glyph": 148,
+              "_showGlyph": false
+            }
+          },
+          "0,4": {
+            "size": [
+              2,
+              1
+            ],
+            "content": {
+              "_type": "Text View",
+              "_source0": "network_table:///SmartDashboard/Auto/Question #4",
+              "_title": "Question #4",
+              "_glyph": 148,
+              "_showGlyph": false
+            }
+          },
+          "2,1": {
+            "size": [
+              3,
+              1
+            ],
+            "content": {
+              "_type": "Split Button Chooser",
+              "_source0": "network_table:///SmartDashboard/Auto/Question #1 Chooser",
+              "_title": "Question #1 Response",
+              "_glyph": 148,
+              "_showGlyph": false
+            }
+          },
+          "2,2": {
+            "size": [
+              3,
+              1
+            ],
+            "content": {
+              "_type": "Split Button Chooser",
+              "_source0": "network_table:///SmartDashboard/Auto/Question #2 Chooser",
+              "_title": "Question #2 Response",
+              "_glyph": 148,
+              "_showGlyph": false
+            }
+          },
+          "2,3": {
+            "size": [
+              3,
+              1
+            ],
+            "content": {
+              "_type": "Split Button Chooser",
+              "_source0": "network_table:///SmartDashboard/Auto/Question #3 Chooser",
+              "_title": "Question #3 Response",
+              "_glyph": 148,
+              "_showGlyph": false
+            }
+          },
+          "2,4": {
+            "size": [
+              3,
+              1
+            ],
+            "content": {
+              "_type": "Split Button Chooser",
+              "_source0": "network_table:///SmartDashboard/Auto/Question #4 Chooser",
+              "_title": "Question #4 Response",
+              "_glyph": 148,
+              "_showGlyph": false
+            }
+          },
+          "2,0": {
+            "size": [
+              3,
+              1
+            ],
+            "content": {
+              "_type": "Basic FMS Info",
+              "_source0": "network_table:///FMSInfo",
+              "_title": "Robot Status",
+              "_glyph": 104,
+              "_showGlyph": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "title": "Teleop",
+      "autoPopulate": false,
+      "autoPopulatePrefix": "",
+      "widgetPane": {
+        "gridSize": 128.0,
+        "showGrid": true,
+        "hgap": 16.0,
+        "vgap": 16.0,
+        "titleType": 0,
+        "tiles": {
+          "0,3": {
+            "size": [
+              2,
+              1
+            ],
+            "content": {
+              "_type": "ComboBox Chooser",
+              "_source0": "network_table:///SmartDashboard/Angular Speed Limit",
+              "_title": "Angular Speed Limit",
+              "_glyph": 418,
+              "_showGlyph": false
+            }
+          },
+          "2,1": {
+            "size": [
+              3,
+              3
+            ],
+            "content": {
+              "_type": "Alerts",
+              "_source0": "network_table:///SmartDashboard/Alerts",
+              "_title": "Alerts",
+              "_glyph": 180,
+              "_showGlyph": true
+            }
+          },
+          "0,2": {
+            "size": [
+              2,
+              1
+            ],
+            "content": {
+              "_type": "ComboBox Chooser",
+              "_source0": "network_table:///SmartDashboard/Linear Speed Limit",
+              "_title": "Linear Speed Limit",
+              "_glyph": 323,
+              "_showGlyph": false
+            }
+          },
+          "0,0": {
+            "size": [
+              3,
+              1
+            ],
+            "content": {
+              "_type": "Text View",
+              "_source0": "network_table:///SmartDashboard/Selected Node",
+              "_title": "Selected Node",
+              "_glyph": 146,
+              "_showGlyph": true
+            }
+          },
+          "0,1": {
+            "size": [
+              2,
+              1
+            ],
+            "content": {
+              "_type": "Boolean Box",
+              "_source0": "network_table:///FMSInfo/IsRedAlliance",
+              "_title": "Alliance Color",
+              "_glyph": 220,
+              "_showGlyph": true,
+              "Colors/Color when true": "#FF0000FF",
+              "Colors/Color when false": "#0000FFFF"
+            }
+          },
+          "3,0": {
+            "size": [
+              2,
+              1
+            ],
+            "content": {
+              "_type": "Boolean Box",
+              "_source0": "network_table:///SmartDashboard/Cone Tipped",
+              "_title": "Cone Tipped",
+              "_glyph": 419,
+              "_showGlyph": true,
+              "Colors/Color when true": "#FF4000FF",
+              "Colors/Color when false": "#FFD91EFF"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "windowGeometry": {
+    "x": -4.5,
+    "y": 0.0,
+    "width": 758.5,
+    "height": 844.0
+  }
+}
