@@ -90,6 +90,12 @@ public class Gripper extends SubsystemBase {
         tooHotAlertActive = true;
       }
     }
+    if (inputs.tempCelcius.length > 0 && tooHotAlertActive) {
+      tooHotAlert.setText(
+          "Gripper motor disabled due to very high temperature ("
+              + Long.toString(Math.round(inputs.tempCelcius[0]))
+              + "°C)");
+    }
     tooHotAlert.set(tooHotAlertActive);
   }
 
