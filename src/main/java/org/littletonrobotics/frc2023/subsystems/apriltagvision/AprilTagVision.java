@@ -50,21 +50,29 @@ public class AprilTagVision extends VirtualSubsystem {
         cameraPoses =
             new Pose3d[] {
               new Pose3d(
-                  Units.inchesToMeters(4.625),
-                  Units.inchesToMeters(-12.5),
-                  Units.inchesToMeters(23.3125) + Module.getWheelRadius(),
-                  new Rotation3d(0.0, Units.degreesToRadians(15.0), 0.0)),
+                  Units.inchesToMeters(9.513),
+                  Units.inchesToMeters(7.491),
+                  Units.inchesToMeters(7.948) + Module.getWheelRadius(),
+                  new Rotation3d(0.0, Units.degreesToRadians(-28.125), 0.0)
+                      .rotateBy(new Rotation3d(0.0, 0.0, Units.degreesToRadians(-32.782)))),
               new Pose3d(
-                  Units.inchesToMeters(-4.0),
-                  Units.inchesToMeters(-11.5),
-                  Units.inchesToMeters(19.0) + Module.getWheelRadius(),
-                  new Rotation3d(0.0, 0.0, Units.degreesToRadians(-90.0))),
+                  Units.inchesToMeters(-11.875),
+                  Units.inchesToMeters(-6.579),
+                  Units.inchesToMeters(5.898) + Module.getWheelRadius(),
+                  new Rotation3d(0.0, Units.degreesToRadians(-28.125), 0.0)
+                      .rotateBy(new Rotation3d(0.0, 0.0, Units.degreesToRadians(146.479)))),
               new Pose3d(
-                  Units.inchesToMeters(-11.5),
-                  Units.inchesToMeters(7.5),
-                  Units.inchesToMeters(6.5) + Module.getWheelRadius(),
-                  new Rotation3d(0.0, 0.0, Units.degreesToRadians(180.0))
-                      .rotateBy(new Rotation3d(0.0, Units.degreesToRadians(-14.0), 0.0)))
+                  Units.inchesToMeters(-10.498),
+                  Units.inchesToMeters(7.516),
+                  Units.inchesToMeters(6.573) + Module.getWheelRadius(),
+                  new Rotation3d(0.0, Units.degreesToRadians(-28.125), 0.0)
+                      .rotateBy(new Rotation3d(0.0, 0.0, Units.degreesToRadians(82.89)))),
+              new Pose3d(
+                  Units.inchesToMeters(-10.281),
+                  Units.inchesToMeters(-9.258),
+                  Units.inchesToMeters(6.415) + Module.getWheelRadius(),
+                  new Rotation3d(0.0, Units.degreesToRadians(-28.125), 0.0)
+                      .rotateBy(new Rotation3d(0.0, 0.0, Units.degreesToRadians(-82.89))))
             };
         xyStdDevCoefficient = 0.01;
         thetaStdDevCoefficient = 0.01;

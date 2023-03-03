@@ -45,11 +45,11 @@ public class Module {
   static {
     switch (Constants.getRobot()) {
       case ROBOT_2023C:
-        wheelRadius.initDefault(Units.inchesToMeters(2.0));
+        wheelRadius.initDefault(Units.inchesToMeters(1.9193));
         driveKp.initDefault(0.1);
         driveKd.initDefault(0.0);
-        driveKs.initDefault(0.12349);
-        driveKv.initDefault(0.13477);
+        driveKs.initDefault(0.18868);
+        driveKv.initDefault(0.12825);
         turnKp.initDefault(10.0);
         turnKd.initDefault(0.0);
         break;

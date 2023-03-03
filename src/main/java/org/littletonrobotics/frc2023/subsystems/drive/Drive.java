@@ -20,7 +20,6 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.littletonrobotics.frc2023.Constants;
@@ -35,8 +34,6 @@ public class Drive extends SubsystemBase {
       0.05; // Need to be under this to switch to coast when disabling
   private static final double coastThresholdSecs =
       6.0; // Need to be under the above speed for this length of time to switch to coast
-  private static final double aprilTagGyroThresholdSecs =
-      6.0; // Must be disabled for this time to start using AprilTag gyro data
   private static final double ledsFallenAngleDegrees = 60.0; // Threshold to detect falls
 
   private final GyroIO gyroIO;
@@ -58,9 +55,8 @@ public class Drive extends SubsystemBase {
   private double characterizationVolts = 0.0;
   private boolean isBrakeMode = false;
   private Timer lastMovementTimer = new Timer();
-  private Timer lastEnabledTimer = new Timer();
 
-  private PoseEstimator poseEstimator = new PoseEstimator(VecBuilder.fill(0.005, 0.005, 0.0003));
+  private PoseEstimator poseEstimator = new PoseEstimator(VecBuilder.fill(0.003, 0.003, 0.0002));
   private double[] lastModulePositionsMeters = new double[] {0.0, 0.0, 0.0, 0.0};
   private Rotation2d lastGyroYaw = new Rotation2d();
   private Twist2d fieldVelocity = new Twist2d();
@@ -94,7 +90,6 @@ public class Drive extends SubsystemBase {
     modules[2] = new Module(blModuleIO, 2);
     modules[3] = new Module(brModuleIO, 3);
     lastMovementTimer.start();
-    lastEnabledTimer.start();
     for (var module : modules) {
       module.setBrakeMode(false);
     }
@@ -118,11 +113,6 @@ public class Drive extends SubsystemBase {
                   .map(translation -> translation.getNorm())
                   .max(Double::compare)
                   .get();
-    }
-
-    // Reset last enabled timer
-    if (DriverStation.isEnabled()) {
-      lastEnabledTimer.reset();
     }
 
     // Run modules
@@ -313,22 +303,7 @@ public class Drive extends SubsystemBase {
 
   /** Adds vision data to the pose esimation. */
   public void addVisionData(List<TimestampedVisionUpdate> visionData) {
-    if (lastEnabledTimer.hasElapsed(aprilTagGyroThresholdSecs)) {
-      poseEstimator.addVisionData(visionData);
-    } else {
-      List<TimestampedVisionUpdate> newVisionData = new ArrayList<>();
-      for (var update : visionData) {
-        newVisionData.add(
-            new TimestampedVisionUpdate(
-                update.timestamp(),
-                update.pose(),
-                VecBuilder.fill(
-                    update.stdDevs().get(0, 0),
-                    update.stdDevs().get(1, 0),
-                    Double.POSITIVE_INFINITY)));
-      }
-      poseEstimator.addVisionData(newVisionData);
-    }
+    poseEstimator.addVisionData(visionData);
   }
 
   /** Returns an array of module translations. */

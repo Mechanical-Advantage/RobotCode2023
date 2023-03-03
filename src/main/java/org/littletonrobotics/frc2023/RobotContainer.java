@@ -120,14 +120,15 @@ public class RobotContainer {
                   new ModuleIOSparkMax(1),
                   new ModuleIOSparkMax(2),
                   new ModuleIOSparkMax(3));
-          arm = new Arm(new ArmIOSparkMax(), new ArmSolverIOKairos(3));
+          arm = new Arm(new ArmIOSparkMax(), new ArmSolverIOKairos(4));
           gripper = new Gripper(new GripperIOSparkMax());
           cubeIntake = new CubeIntake(new CubeIntakeIOSparkMax());
           aprilTagVision =
               new AprilTagVision(
                   new AprilTagVisionIONorthstar("northstar_0"),
                   new AprilTagVisionIONorthstar("northstar_1"),
-                  new AprilTagVisionIONorthstar("northstar_2"));
+                  new AprilTagVisionIONorthstar("northstar_2"),
+                  new AprilTagVisionIONorthstar("northstar_3"));
           objectiveTracker = new ObjectiveTracker(new NodeSelectorIOServer());
           break;
         case ROBOT_2023P:

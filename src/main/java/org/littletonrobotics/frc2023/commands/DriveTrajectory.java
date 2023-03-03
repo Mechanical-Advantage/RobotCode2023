@@ -83,9 +83,9 @@ public class DriveTrajectory extends CommandBase {
         maxAccelerationMetersPerSec2 = Units.inchesToMeters(200.0);
         maxCentripetalAccelerationMetersPerSec2 = Units.inchesToMeters(100.0);
 
-        driveKp.initDefault(0.0);
+        driveKp.initDefault(2.5);
         driveKd.initDefault(0.0);
-        turnKp.initDefault(0.0);
+        turnKp.initDefault(7.0);
         turnKd.initDefault(0.0);
         break;
       default:

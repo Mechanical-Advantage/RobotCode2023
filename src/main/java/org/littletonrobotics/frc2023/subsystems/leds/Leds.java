@@ -32,6 +32,7 @@ public class Leds extends VirtualSubsystem {
   public boolean hpConeTipped = false;
   public boolean hpDoubleSubstation = false;
   public boolean hpThrowGamePiece = false;
+  public boolean intakeReady = false;
   public boolean autoScore = false;
   public boolean autoSubstation = false;
   public boolean distraction = false;
@@ -49,7 +50,7 @@ public class Leds extends VirtualSubsystem {
   private static final int minLoopCycleCount = 10;
   private static final int length = 43;
   private static final int staticLength = 14;
-  private static final int staticSectionLength = 5;
+  private static final int staticSectionLength = 3;
   private static final double strobeFastDuration = 0.1;
   private static final double strobeSlowDuration = 0.2;
   private static final double breathDuration = 1.0;
@@ -135,21 +136,26 @@ public class Leds extends VirtualSubsystem {
       }
 
       // Set special modes
-      if (autoScore || autoSubstation) {
+      if (intakeReady) {
+        solid(Section.SHOULDER, Color.kGreen);
+      } else if (autoScore || autoSubstation) {
         rainbow(Section.SHOULDER, rainbowCycleLength, rainbowDuration);
       }
     }
 
-    // Alerts at static base
-    if (sameBattery) {
-      breath(Section.STATIC_LOW, Color.kRed, Color.kBlack, breathDuration);
-    } else if (armCoast) {
-      solid(Section.STATIC_LOW, Color.kWhite);
+    // Arm coast alert
+    if (armCoast) {
+      solid(Section.STATIC, Color.kWhite);
     }
 
     // Arm estop alert
     if (armEstopped) {
       breath(Section.SHOULDER, Color.kRed, Color.kBlack, breathDuration);
+    }
+
+    // Same battery alert
+    if (sameBattery) {
+      breath(Section.STATIC_LOW, Color.kRed, Color.kBlack, breathDuration);
     }
 
     // Update LEDs

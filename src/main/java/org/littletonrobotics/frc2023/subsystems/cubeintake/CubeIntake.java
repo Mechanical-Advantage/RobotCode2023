@@ -66,7 +66,7 @@ public class CubeIntake extends SubsystemBase {
       case ROBOT_2023C:
         neutralPositionDegrees.initDefault(98.0);
         deployPositionDegrees.initDefault(5.0);
-        rollerVolts.initDefault(8.0);
+        rollerVolts.initDefault(12.0);
         kP.initDefault(6.0);
         kD.initDefault(0.0);
         maxVelocity.initDefault(50.0);
@@ -159,13 +159,15 @@ public class CubeIntake extends SubsystemBase {
       io.setArmVoltage(controller.calculate(angle));
 
       // Run roller
-      io.setRollerVoltage(
-          isRunning
-                  && controller.getGoal().equals(controller.getSetpoint())
-                  && enableRollerSupplier.get()
-              ? rollerVolts.get()
-              : 0.0);
+      io.setRollerVoltage(isRollerRunning() ? rollerVolts.get() : 0.0);
     }
+  }
+
+  /** Returns whether the roller is running. */
+  public boolean isRollerRunning() {
+    return isRunning
+        && controller.getGoal().equals(controller.getSetpoint())
+        && enableRollerSupplier.get();
   }
 
   /** Returns the 3D pose of the intake for visualization. */

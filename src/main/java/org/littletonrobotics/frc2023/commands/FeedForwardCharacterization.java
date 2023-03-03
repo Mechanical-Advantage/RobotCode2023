@@ -139,6 +139,10 @@ public class FeedForwardCharacterization extends CommandBase {
     }
 
     public void print() {
+      if (velocityData.size() == 0 || voltageData.size() == 0) {
+        return;
+      }
+
       PolynomialRegression regression =
           new PolynomialRegression(
               velocityData.stream().mapToDouble(Double::doubleValue).toArray(),

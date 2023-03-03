@@ -50,7 +50,7 @@ public class AutoCommands {
   private static final double startX = Grids.outerX + 0.5;
   private static final double throughHomeWaitSecs = 0.1;
   private static final double cubeIntakeDistance = 0.5;
-  private static final double coneSweeperDistance = 1.0;
+  private static final double coneSweeperDistance = 0.5;
   private static final double coneSweeperBackoffDistance = 0.3;
 
   // Waypoints
@@ -191,9 +191,9 @@ public class AutoCommands {
   /** Constructs a command to score a link with the specified options. */
   private Command scoreLinkWithOptions(
       NodeLevel level, boolean wallSide, Supplier<Boolean> balance) {
-    var objective0 = new Objective(wallSide ? 0 : 8, level, ConeOrientation.TIPPED, false);
-    var objective1 = new Objective(wallSide ? 1 : 7, level, ConeOrientation.TIPPED, true);
-    var objective2 = new Objective(wallSide ? 2 : 6, level, ConeOrientation.TIPPED, true);
+    var objective0 = new Objective(wallSide ? 0 : 8, level, ConeOrientation.UPRIGHT, false);
+    var objective1 = new Objective(wallSide ? 1 : 7, level, ConeOrientation.TIPPED, false);
+    var objective2 = new Objective(wallSide ? 2 : 6, level, ConeOrientation.TIPPED, false);
 
     var startingPose = startingBackwards[wallSide ? 0 : 8];
     var hybridBackupPose = startingPose.transformBy(translationToTransform(0.25, 0.0));
@@ -213,10 +213,10 @@ public class AutoCommands {
     var intakePose1 =
         new Pose2d(
                 StagingLocations.translations[wallSide ? 1 : 2],
-                Rotation2d.fromDegrees(wallSide ? 30.0 : -30.0))
-            .transformBy(translationToTransform(-coneSweeperDistance, 0.0));
+                Rotation2d.fromDegrees(wallSide ? -150.0 : 150.0))
+            .transformBy(translationToTransform(coneSweeperDistance, 0.0));
     var intakePose1Backoff =
-        intakePose1.transformBy(translationToTransform(-coneSweeperBackoffDistance, 0.0));
+        intakePose1.transformBy(translationToTransform(coneSweeperBackoffDistance, 0.0));
     var scorePose1 =
         AutoScore.getDriveTarget(
                 new Pose2d(wallSide ? transitWallSide : transitFieldSide, new Rotation2d()),
@@ -252,9 +252,8 @@ public class AutoCommands {
                 holonomic(level == NodeLevel.HYBRID ? hybridBackupPose : startingPose),
                 wallSide ? transitWallSideOutWaypoint : transitFieldSideOutWaypoint,
                 holonomic(intakePose0))
-            .alongWith(
-                armPathThroughHome(ArmPose.Preset.CUBE_HANDOFF)
-                    .deadlineWith(parallel(cubeIntake.runCommand(), gripper.intakeCommand()))),
+            .alongWith(armPathThroughHome(ArmPose.Preset.CUBE_HANDOFF))
+            .deadlineWith(cubeIntake.runCommand(), gripper.intakeCommand()),
         path(
                 constraints,
                 holonomic(intakePose0),
@@ -277,14 +276,7 @@ public class AutoCommands {
                 wallSide ? transitWallSideInWaypoint : transitFieldSideInWaypoint,
                 holonomic(scorePose1))
             .alongWith(
-                waitUntil(
-                        () ->
-                            level == NodeLevel.HYBRID
-                                || AllianceFlipUtil.apply(drive.getRotation()).getCos() < 0.0)
-                    .alongWith(arm.runPathCommand(ArmPose.Preset.HOMED))
-                    .andThen(
-                        arm.runPathCommand(
-                            AutoScore.getArmTarget(scorePose1, objective2, arm, true)))),
+                armPathThroughHome(AutoScore.getArmTarget(scorePose1, objective2, arm, true))),
         gripper.ejectCommand(objective2),
         either(balance(scorePose1), none(), () -> balance.get()).alongWith(armToHome()));
   }

@@ -30,8 +30,8 @@ public class AutoScore extends SequentialCommandGroup {
   public static final double minDriveY = 0.5;
   public static final double maxDriveY = FieldConstants.Community.leftY - 0.5;
   public static final double minArmExtension = 0.6;
-  public static final double maxArmExtensionHybrid = 0.9;
-  public static final double maxArmExtensionMid = 1.1;
+  public static final double maxArmExtensionHybrid = 1.1;
+  public static final double maxArmExtensionMid = 0.9;
   public static final double maxArmExtensionHigh = 1.35;
 
   public static final double extendArmDriveTolerance = 1.0;
@@ -43,9 +43,9 @@ public class AutoScore extends SequentialCommandGroup {
   public static final Rotation2d hybridWristAngle = Rotation2d.fromDegrees(-60.0);
   public static final Translation2d cubeRelativePosition = new Translation2d(-0.4, 0.5);
   public static final Rotation2d cubeWristAngle = Rotation2d.fromDegrees(-30.0);
-  public static final Translation2d uprightConeRelativePosition = new Translation2d(-0.15, 0.0);
-  public static final Rotation2d uprightConeWristAngle = Rotation2d.fromDegrees(50.0);
-  public static final Translation2d tippedConeRelativePosition = new Translation2d(-0.2, -0.1);
+  public static final Translation2d uprightConeRelativePosition = new Translation2d(-0.31, -0.025);
+  public static final Rotation2d uprightConeWristAngle = Rotation2d.fromDegrees(55.0);
+  public static final Translation2d tippedConeRelativePosition = new Translation2d(-0.29, -0.1);
   public static final Rotation2d tippedConeWristAngle = Rotation2d.fromDegrees(30.0);
 
   /** Auto score a game piece on the grid in full automatic mode. */

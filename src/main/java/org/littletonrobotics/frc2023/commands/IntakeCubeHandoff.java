@@ -13,6 +13,7 @@ import org.littletonrobotics.frc2023.subsystems.arm.Arm;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmPose;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntake;
 import org.littletonrobotics.frc2023.subsystems.gripper.Gripper;
+import org.littletonrobotics.frc2023.subsystems.leds.Leds;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.Objective;
 
 public class IntakeCubeHandoff extends SequentialCommandGroup {
@@ -25,6 +26,13 @@ public class IntakeCubeHandoff extends SequentialCommandGroup {
                 arm.runPathCommand(ArmPose.Preset.CUBE_HANDOFF),
                 gripper.intakeCommand(),
                 Commands.run(() -> objective.lastIntakeFront = true))
-            .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
+            .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED))
+            .deadlineWith(
+                Commands.waitUntil(intake::isRollerRunning)
+                    .andThen(
+                        Commands.waitSeconds(0.5),
+                        Commands.startEnd(
+                            () -> Leds.getInstance().intakeReady = true,
+                            () -> Leds.getInstance().intakeReady = false))));
   }
 }
