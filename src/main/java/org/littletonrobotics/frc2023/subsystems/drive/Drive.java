@@ -52,6 +52,13 @@ public class Drive extends SubsystemBase {
 
   private boolean isCharacterizing = false;
   private ChassisSpeeds setpoint = new ChassisSpeeds();
+  private SwerveModuleState[] lastSetpointStates =
+      new SwerveModuleState[] {
+        new SwerveModuleState(),
+        new SwerveModuleState(),
+        new SwerveModuleState(),
+        new SwerveModuleState()
+      };
   private double characterizationVolts = 0.0;
   private boolean isBrakeMode = false;
   private Timer lastMovementTimer = new Timer();
@@ -153,6 +160,16 @@ public class Drive extends SubsystemBase {
       SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(adjustedSpeeds);
       SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, maxLinearSpeed.get());
 
+      // Set to last angles if zero
+      if (adjustedSpeeds.vxMetersPerSecond == 0.0
+          && adjustedSpeeds.vyMetersPerSecond == 0.0
+          && adjustedSpeeds.omegaRadiansPerSecond == 0) {
+        for (int i = 0; i < 4; i++) {
+          setpointStates[i] = new SwerveModuleState(0.0, lastSetpointStates[i].angle);
+        }
+      }
+      lastSetpointStates = setpointStates;
+
       // Send setpoints to modules
       SwerveModuleState[] optimizedStates = new SwerveModuleState[4];
       for (int i = 0; i < 4; i++) {
@@ -246,6 +263,19 @@ public class Drive extends SubsystemBase {
   /** Stops the drive. */
   public void stop() {
     runVelocity(new ChassisSpeeds());
+  }
+
+  /**
+   * Stops the drive and turns the modules to an X arrangement to resist movement. The modules will
+   * return to their normal orientations the next time a nonzero velocity is requested.
+   */
+  public void stopWithX() {
+    stop();
+    for (int i = 0; i < 4; i++) {
+      lastSetpointStates[i] =
+          new SwerveModuleState(
+              lastSetpointStates[i].speedMetersPerSecond, getModuleTranslations()[i].getAngle());
+    }
   }
 
   /** Returns the maximum linear speed in meters per sec. */

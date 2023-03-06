@@ -138,15 +138,14 @@ public class ArmTrajectory {
           trajectory.getParameters().finalJointPositions().minus(parameters.finalJointPositions());
 
       // Check if closest
-      double maxDiff =
-          Math.max(
-              Math.max(
-                  Math.max(Math.abs(initialDiff.get(0, 0)), Math.abs(initialDiff.get(1, 0))),
-                  Math.abs(finalDiff.get(0, 0))),
-              Math.abs(finalDiff.get(1, 0)));
-      if (maxDiff < closestTrajectoryDiff) {
+      double diff =
+          Math.abs(initialDiff.get(0, 0))
+              + Math.abs(initialDiff.get(1, 0))
+              + Math.abs(finalDiff.get(0, 0))
+              + Math.abs(finalDiff.get(1, 0));
+      if (diff < closestTrajectoryDiff) {
         closestTrajectory = trajectory;
-        closestTrajectoryDiff = maxDiff;
+        closestTrajectoryDiff = diff;
       }
     }
 

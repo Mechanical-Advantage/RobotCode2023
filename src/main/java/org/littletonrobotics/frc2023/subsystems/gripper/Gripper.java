@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.function.Supplier;
+import org.littletonrobotics.frc2023.subsystems.leds.Leds;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.Objective;
 import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
@@ -112,6 +113,7 @@ public class Gripper extends SubsystemBase {
             new SuppliedWaitCommand(() -> intakeVelocityWaitStart.get())
                 .andThen(
                     Commands.waitUntil(() -> inputs.velocityRadPerSec < intakeStopVelocity.get()),
+                    Commands.runOnce(() -> Leds.getInstance().grippedStopped()),
                     new SuppliedWaitCommand(() -> intakeVelocityWaitStop.get())))
         .finallyDo((interrupted) -> setVoltage(holdVolts.get()));
   }

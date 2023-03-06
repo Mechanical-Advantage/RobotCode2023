@@ -13,6 +13,7 @@ import static org.littletonrobotics.frc2023.util.GeomUtil.*;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.trajectory.constraint.MaxVelocityConstraint;
 import edu.wpi.first.math.trajectory.constraint.RectangularRegionConstraint;
@@ -47,11 +48,10 @@ public class AutoCommands {
   private final Supplier<List<AutoQuestionResponse>> responses;
 
   // Constants
-  private static final double startX = Grids.outerX + 0.5;
-  private static final double throughHomeWaitSecs = 0.1;
+  private static final double startX = Grids.outerX + 0.38;
   private static final double cubeIntakeDistance = 0.5;
   private static final double coneSweeperDistance = 0.5;
-  private static final double coneSweeperBackoffDistance = 0.3;
+  private static final double coneSweeperBackoffDistance = 0.8;
 
   // Waypoints
   private final Pose2d[] startingForwards = new Pose2d[9];
@@ -126,7 +126,7 @@ public class AutoCommands {
 
   /** Runs to the specified pose while stopping at homed. */
   private Command armPathThroughHome(ArmPose target) {
-    return armToHome().andThen(waitSeconds(throughHomeWaitSecs), arm.runPathCommand(target));
+    return armToHome().andThen(arm.runPathCommand(target));
   }
 
   /** Runs to the specified pose while stopping at homed. */
@@ -146,7 +146,8 @@ public class AutoCommands {
                 startingPosition.getY(),
                 Community.chargingStationRightY + 0.8,
                 Community.chargingStationLeftY - 0.8),
-            Rotation2d.fromDegrees(startingPosition.getRotation().getCos() > 0.0 ? 0.0 : 180.0));
+            Rotation2d.fromDegrees(
+                Math.round(startingPosition.getRotation().getDegrees() / 90.0) * 90.0));
     Pose2d position1 =
         new Pose2d(
             (Community.chargingStationOuterX + Community.chargingStationInnerX) / 2.0,
@@ -241,7 +242,7 @@ public class AutoCommands {
                     level == NodeLevel.HYBRID ? hybridBackupPose : startingPose,
                     objective0,
                     arm,
-                    false))
+                    true))
             .alongWith(
                 level == NodeLevel.HYBRID
                     ? path(holonomic(startingPose), holonomic(hybridBackupPose))
@@ -253,7 +254,9 @@ public class AutoCommands {
                 wallSide ? transitWallSideOutWaypoint : transitFieldSideOutWaypoint,
                 holonomic(intakePose0))
             .alongWith(armPathThroughHome(ArmPose.Preset.CUBE_HANDOFF))
-            .deadlineWith(cubeIntake.runCommand(), gripper.intakeCommand()),
+            .deadlineWith(
+                waitSeconds(1.0)
+                    .andThen(parallel(cubeIntake.runCommand(), gripper.intakeCommand()))),
         path(
                 constraints,
                 holonomic(intakePose0),
@@ -266,10 +269,9 @@ public class AutoCommands {
                 constraints,
                 holonomic(scorePose0),
                 wallSide ? transitWallSideOutWaypoint : transitFieldSideOutWaypoint,
-                holonomic(intakePose1Backoff))
-            .alongWith(armPathThroughHome(ArmPose.Preset.FLOOR_CONE)),
-        path(holonomic(intakePose1Backoff), holonomic(intakePose1))
-            .deadlineWith(gripper.intakeCommand()),
+                holonomic(intakePose1Backoff),
+                holonomic(intakePose1))
+            .alongWith(armPathThroughHome(ArmPose.Preset.FLOOR_CONE), gripper.intakeCommand()),
         path(
                 constraints,
                 holonomic(intakePose1),
@@ -279,5 +281,76 @@ public class AutoCommands {
                 armPathThroughHome(AutoScore.getArmTarget(scorePose1, objective2, arm, true))),
         gripper.ejectCommand(objective2),
         either(balance(scorePose1), none(), () -> balance.get()).alongWith(armToHome()));
+  }
+
+  /** Scores two cubes over the charge station. */
+  public Command scoreOverChargeStation() {
+    var objective0 = new Objective(4, NodeLevel.HIGH, ConeOrientation.UPRIGHT, true);
+    var objective1 = new Objective(4, NodeLevel.MID, ConeOrientation.UPRIGHT, true);
+
+    var startingPose = startingBackwards[4];
+    var transitNearPose =
+        new Pose2d(
+            Community.chargingStationInnerX,
+            (Community.chargingStationLeftY + Community.chargingStationRightY) / 2.0,
+            new Rotation2d());
+    var transitFarPose =
+        new Pose2d(
+            Community.chargingStationOuterX,
+            (Community.chargingStationLeftY + Community.chargingStationRightY) / 2.0,
+            new Rotation2d());
+    var intakePoseFieldSide =
+        new Pose2d(StagingLocations.translations[1], Rotation2d.fromDegrees(-15.0))
+            .transformBy(translationToTransform(0.0, 0.0));
+    var intakePoseWallSide =
+        new Pose2d(StagingLocations.translations[2], Rotation2d.fromDegrees(15.0))
+            .transformBy(translationToTransform(0.0, 0.0));
+    var scorePose =
+        transitNearPose.plus(new Transform2d(new Translation2d(0.5, 0.0), new Rotation2d()));
+    List<TrajectoryConstraint> constraints =
+        List.of(
+            new RectangularRegionConstraint(
+                new Translation2d(
+                    Community.chargingStationInnerX - 0.5, Community.chargingStationRightY),
+                new Translation2d(
+                    Community.chargingStationOuterX + 0.5, Community.chargingStationLeftY),
+                new MaxVelocityConstraint(Units.inchesToMeters(50.0))));
+
+    return sequence(
+        reset(startingPose),
+        arm.runPathCommand(AutoScore.getArmTarget(startingPose, objective0, arm, true)),
+        gripper.ejectCommand(objective0),
+        path(
+                constraints,
+                holonomic(startingPose),
+                Waypoint.fromHolonomicPose(transitNearPose, new Rotation2d()),
+                Waypoint.fromHolonomicPose(transitFarPose, new Rotation2d()),
+                holonomic(intakePoseFieldSide))
+            .alongWith(
+                sequence(
+                    armToHome(),
+                    waitUntil(
+                        () ->
+                            AllianceFlipUtil.apply(drive.getPose().getX())
+                                > Community.chargingStationOuterX),
+                    arm.runPathCommand(ArmPose.Preset.CUBE_HANDOFF),
+                    parallel(cubeIntake.runCommand(), gripper.intakeCommand()).withTimeout(1.0))),
+        path(
+                constraints,
+                holonomic(intakePoseFieldSide),
+                Waypoint.fromHolonomicPose(transitFarPose, Rotation2d.fromDegrees(180.0)),
+                holonomic(scorePose))
+            .alongWith(
+                sequence(
+                    armToHome(),
+                    waitUntil(
+                        () ->
+                            AllianceFlipUtil.apply(drive.getPose().getX())
+                                < (Community.chargingStationInnerX
+                                        + Community.chargingStationOuterX)
+                                    / 2.0),
+                    arm.runPathCommand(ArmPose.Preset.MID_CUBE_FROM_CHARGING_STATION))),
+        gripper.ejectCommand(objective1),
+        new AutoBalance(drive).alongWith(armToHome()));
   }
 }

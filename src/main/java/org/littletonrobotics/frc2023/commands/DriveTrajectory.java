@@ -69,18 +69,18 @@ public class DriveTrajectory extends CommandBase {
     switch (Constants.getRobot()) {
       case ROBOT_2023C:
       case ROBOT_2023P:
-        maxVelocityMetersPerSec = Units.inchesToMeters(150.0);
-        maxAccelerationMetersPerSec2 = Units.inchesToMeters(150.0);
+        maxVelocityMetersPerSec = Units.inchesToMeters(160.0);
+        maxAccelerationMetersPerSec2 = Units.inchesToMeters(120.0);
         maxCentripetalAccelerationMetersPerSec2 = Units.inchesToMeters(100.0);
 
-        driveKp.initDefault(2.5);
+        driveKp.initDefault(5.0);
         driveKd.initDefault(0.0);
-        turnKp.initDefault(7.0);
+        turnKp.initDefault(8.0);
         turnKd.initDefault(0.0);
         break;
       case ROBOT_SIMBOT:
-        maxVelocityMetersPerSec = Units.inchesToMeters(150.0);
-        maxAccelerationMetersPerSec2 = Units.inchesToMeters(200.0);
+        maxVelocityMetersPerSec = Units.inchesToMeters(160.0);
+        maxAccelerationMetersPerSec2 = Units.inchesToMeters(120.0);
         maxCentripetalAccelerationMetersPerSec2 = Units.inchesToMeters(100.0);
 
         driveKp.initDefault(2.5);

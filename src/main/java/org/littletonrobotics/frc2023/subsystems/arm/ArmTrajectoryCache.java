@@ -142,7 +142,7 @@ public class ArmTrajectoryCache {
             (ArmPose targetPose) -> {
               double xPosition = targetPose.endEffectorPosition().getX();
               while (true) {
-                xPosition += targetPose.endEffectorPosition().getX() > 0.0 ? 0.05 : -0.05;
+                xPosition += targetPose.endEffectorPosition().getX() > 0.0 ? 0.02 : -0.02;
 
                 boolean lastPoint = false;
                 double maxReach =

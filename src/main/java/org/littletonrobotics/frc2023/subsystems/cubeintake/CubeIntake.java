@@ -64,13 +64,13 @@ public class CubeIntake extends SubsystemBase {
   static {
     switch (Constants.getRobot()) {
       case ROBOT_2023C:
-        neutralPositionDegrees.initDefault(98.0);
-        deployPositionDegrees.initDefault(5.0);
-        rollerVolts.initDefault(12.0);
+        neutralPositionDegrees.initDefault(92.0);
+        deployPositionDegrees.initDefault(8.0);
+        rollerVolts.initDefault(7.0);
         kP.initDefault(6.0);
         kD.initDefault(0.0);
-        maxVelocity.initDefault(50.0);
-        maxAcceleration.initDefault(100.0);
+        maxVelocity.initDefault(7.0);
+        maxAcceleration.initDefault(50.0);
         break;
       case ROBOT_SIMBOT:
         neutralPositionDegrees.initDefault(90.0);
@@ -114,7 +114,7 @@ public class CubeIntake extends SubsystemBase {
       controller.setP(kP.get());
       controller.setD(kD.get());
     }
-    if (maxVelocity.hasChanged(hashCode()) && maxAcceleration.hasChanged(hashCode())) {
+    if (maxVelocity.hasChanged(hashCode()) || maxAcceleration.hasChanged(hashCode())) {
       controller.setConstraints(
           new TrapezoidProfile.Constraints(maxVelocity.get(), maxAcceleration.get()));
     }
@@ -165,9 +165,10 @@ public class CubeIntake extends SubsystemBase {
 
   /** Returns whether the roller is running. */
   public boolean isRollerRunning() {
-    return isRunning
-        && controller.getGoal().equals(controller.getSetpoint())
-        && enableRollerSupplier.get();
+    // return isRunning
+    //     && controller.getGoal().equals(controller.getSetpoint())
+    //     && enableRollerSupplier.get();
+    return isRunning;
   }
 
   /** Returns the 3D pose of the intake for visualization. */

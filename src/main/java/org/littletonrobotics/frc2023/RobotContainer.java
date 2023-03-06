@@ -221,6 +221,8 @@ public class RobotContainer {
                 List.of(AutoQuestionResponse.YES, AutoQuestionResponse.NO))),
         autoCommands.scoreLink());
     autoSelector.addRoutine(
+        "Two Cubes Over Charge Station", List.of(), autoCommands.scoreOverChargeStation());
+    autoSelector.addRoutine(
         "Drive Characterization",
         List.of(),
         new FeedForwardCharacterization(
