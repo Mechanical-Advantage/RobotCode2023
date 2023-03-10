@@ -313,13 +313,13 @@ public class RobotContainer {
             Commands.startEnd(
                     () -> {
                       Leds.getInstance().endgameAlert = true;
-                      driver.getHID().setRumble(RumbleType.kBothRumble, 0.6);
-                      operator.getHID().setRumble(RumbleType.kBothRumble, 0.6);
+                      driver.getHID().setRumble(RumbleType.kRightRumble, 1.0);
+                      operator.getHID().setRumble(RumbleType.kRightRumble, 1.0);
                     },
                     () -> {
                       Leds.getInstance().endgameAlert = false;
-                      driver.getHID().setRumble(RumbleType.kBothRumble, 0.0);
-                      operator.getHID().setRumble(RumbleType.kBothRumble, 0.0);
+                      driver.getHID().setRumble(RumbleType.kLeftRumble, 0.0);
+                      operator.getHID().setRumble(RumbleType.kLeftRumble, 0.0);
                     })
                 .withTimeout(3.0));
 
