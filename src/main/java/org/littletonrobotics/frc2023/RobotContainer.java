@@ -10,6 +10,7 @@ package org.littletonrobotics.frc2023;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -68,6 +69,7 @@ import org.littletonrobotics.frc2023.util.DoublePressTracker;
 import org.littletonrobotics.frc2023.util.OverrideSwitches;
 import org.littletonrobotics.frc2023.util.SparkMaxBurnManager;
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
 public class RobotContainer {
 
@@ -99,6 +101,8 @@ public class RobotContainer {
       new Alert("Operator controller disconnected (port 1).", AlertType.WARNING);
   private final Alert overrideDisconnected =
       new Alert("Override controller disconnected (port 5).", AlertType.INFO);
+  private final LoggedDashboardNumber endgameAlertTime =
+      new LoggedDashboardNumber("Endgame Alert Time", 30.0);
 
   // Auto selector
   private final AutoSelector autoSelector = new AutoSelector("Auto");
@@ -298,6 +302,26 @@ public class RobotContainer {
     if (FieldConstants.isWPIField) {
       new Alert("WPI field selected, do not use in competition.", AlertType.INFO).set(true);
     }
+
+    // Endgame alert
+    new Trigger(
+            () ->
+                DriverStation.isTeleopEnabled()
+                    && DriverStation.getMatchTime() > 0.0
+                    && DriverStation.getMatchTime() <= Math.round(endgameAlertTime.get()))
+        .onTrue(
+            Commands.startEnd(
+                    () -> {
+                      Leds.getInstance().endgameAlert = true;
+                      driver.getHID().setRumble(RumbleType.kBothRumble, 0.6);
+                      operator.getHID().setRumble(RumbleType.kBothRumble, 0.6);
+                    },
+                    () -> {
+                      Leds.getInstance().endgameAlert = false;
+                      driver.getHID().setRumble(RumbleType.kBothRumble, 0.0);
+                      operator.getHID().setRumble(RumbleType.kBothRumble, 0.0);
+                    })
+                .withTimeout(3.0));
 
     // Bind driver and operator controls
     bindControls();

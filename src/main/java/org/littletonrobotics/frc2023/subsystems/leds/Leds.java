@@ -38,6 +38,7 @@ public class Leds extends VirtualSubsystem {
   public boolean autoSubstation = false;
   public boolean distraction = false;
   public boolean fallen = false;
+  public boolean endgameAlert = false;
   public boolean sameBattery = false;
   public boolean armCoast = false;
   public boolean armEstopped = false;
@@ -145,7 +146,9 @@ public class Leds extends VirtualSubsystem {
       }
 
       // Set special modes
-      if (!gripperStopped.hasElapsed(gripperStoppedFlashTime)) {
+      if (endgameAlert) {
+        strobe(Section.FULL, Color.kOrange, strobeSlowDuration);
+      } else if (!gripperStopped.hasElapsed(gripperStoppedFlashTime)) {
         solid(Section.SHOULDER, Color.kGreen);
       } else if (intakeReady) {
         solid(Section.SHOULDER, Color.kPurple);
