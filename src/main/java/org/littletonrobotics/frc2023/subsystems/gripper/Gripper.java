@@ -32,7 +32,7 @@ public class Gripper extends SubsystemBase {
   private static final LoggedTunableNumber intakeVelocityWaitStart =
       new LoggedTunableNumber("Gripper/IntakeVelocityWaitStart", 0.25);
   private static final LoggedTunableNumber intakeVelocityWaitStop =
-      new LoggedTunableNumber("Gripper/IntakeVelocityWaitStop", 0.25);
+      new LoggedTunableNumber("Gripper/IntakeVelocityWaitStop", 0.5);
   private static final LoggedTunableNumber intakeStopVelocity =
       new LoggedTunableNumber("Gripper/IntakeStopVelocity", 5.0);
   private static final LoggedTunableNumber ejectVoltsFast =
@@ -42,7 +42,7 @@ public class Gripper extends SubsystemBase {
   private static final LoggedTunableNumber ejectVoltsSlow =
       new LoggedTunableNumber("Gripper/EjectVoltsSlow", -2.0);
   private static final LoggedTunableNumber ejectSecsSlow =
-      new LoggedTunableNumber("Gripper/EjectSecsSlow", 0.75);
+      new LoggedTunableNumber("Gripper/EjectSecsSlow", 0.6);
 
   private static final double tooHotTemperatureHigh = 80.0;
   private static final double tooHotTemperatureHighTime = 2.0;

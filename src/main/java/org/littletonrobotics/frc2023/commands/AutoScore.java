@@ -45,7 +45,7 @@ public class AutoScore extends SequentialCommandGroup {
   public static final Rotation2d cubeWristAngle = Rotation2d.fromDegrees(-30.0);
   public static final Translation2d uprightConeRelativePosition = new Translation2d(-0.3, -0.025);
   public static final Rotation2d uprightConeWristAngle = Rotation2d.fromDegrees(55.0);
-  public static final Translation2d tippedConeRelativePosition = new Translation2d(-0.29, -0.1);
+  public static final Translation2d tippedConeRelativePosition = new Translation2d(-0.29, -0.13);
   public static final Rotation2d tippedConeWristAngle = Rotation2d.fromDegrees(30.0);
 
   /** Auto score a game piece on the grid in full automatic mode. */

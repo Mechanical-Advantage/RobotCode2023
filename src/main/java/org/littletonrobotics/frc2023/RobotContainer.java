@@ -12,7 +12,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import java.util.List;
@@ -61,12 +60,14 @@ import org.littletonrobotics.frc2023.subsystems.objectivetracker.NodeSelectorIO;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.NodeSelectorIOServer;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.Direction;
+import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.NodeLevel;
 import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
 import org.littletonrobotics.frc2023.util.DoublePressTracker;
 import org.littletonrobotics.frc2023.util.OverrideSwitches;
 import org.littletonrobotics.frc2023.util.SparkMaxBurnManager;
+import org.littletonrobotics.junction.Logger;
 
 public class RobotContainer {
 
@@ -203,13 +204,15 @@ public class RobotContainer {
     AutoCommands autoCommands =
         new AutoCommands(drive, arm, gripper, cubeIntake, autoSelector::getResponses);
     autoSelector.addRoutine(
-        "Reset Odometry", List.of(), new InstantCommand(() -> drive.setPose(new Pose2d())));
+        "Field: Score Mid Link", List.of(), autoCommands.fieldScoreLink(NodeLevel.MID));
     autoSelector.addRoutine(
-        "Score Link",
+        "Field: Score Hybrid Link", List.of(), autoCommands.fieldScoreLink(NodeLevel.HYBRID));
+    autoSelector.addRoutine(
+        "Side: Score Two, Grab, And Maybe Balance",
         List.of(
             new AutoQuestion(
-                "Which side of the field?",
-                List.of(AutoQuestionResponse.WALL_SIDE, AutoQuestionResponse.FIELD_SIDE)),
+                "Which side?",
+                List.of(AutoQuestionResponse.FIELD_SIDE, AutoQuestionResponse.WALL_SIDE)),
             new AutoQuestion(
                 "Which level?",
                 List.of(
@@ -217,11 +220,67 @@ public class RobotContainer {
                     AutoQuestionResponse.MID,
                     AutoQuestionResponse.HYBRID)),
             new AutoQuestion(
-                "Finish with balance?",
-                List.of(AutoQuestionResponse.YES, AutoQuestionResponse.NO))),
-        autoCommands.scoreLink());
+                "Balance?", List.of(AutoQuestionResponse.YES, AutoQuestionResponse.NO))),
+        autoCommands.sideScoreTwoMaybeGrabMaybeBalance(true));
     autoSelector.addRoutine(
-        "Two Cubes Over Charge Station", List.of(), autoCommands.scoreOverChargeStation());
+        "Side: Score Two And Maybe Balance",
+        List.of(
+            new AutoQuestion(
+                "Which side?",
+                List.of(AutoQuestionResponse.FIELD_SIDE, AutoQuestionResponse.WALL_SIDE)),
+            new AutoQuestion(
+                "Which level?",
+                List.of(
+                    AutoQuestionResponse.HIGH,
+                    AutoQuestionResponse.MID,
+                    AutoQuestionResponse.HYBRID)),
+            new AutoQuestion(
+                "Balance?", List.of(AutoQuestionResponse.YES, AutoQuestionResponse.NO))),
+        autoCommands.sideScoreTwoMaybeGrabMaybeBalance(false));
+    autoSelector.addRoutine(
+        "Center: Score Two And Balance",
+        List.of(
+            new AutoQuestion(
+                "Which side to intake from?",
+                List.of(AutoQuestionResponse.FIELD_SIDE, AutoQuestionResponse.WALL_SIDE))),
+        autoCommands.centerScoreTwoAndBalance());
+    autoSelector.addRoutine(
+        "Side: Score One And Maybe Balance",
+        List.of(
+            new AutoQuestion(
+                "Which side?",
+                List.of(AutoQuestionResponse.FIELD_SIDE, AutoQuestionResponse.WALL_SIDE)),
+            new AutoQuestion(
+                "Which level?",
+                List.of(
+                    AutoQuestionResponse.HIGH,
+                    AutoQuestionResponse.MID,
+                    AutoQuestionResponse.HYBRID)),
+            new AutoQuestion(
+                "Which node?",
+                List.of(
+                    AutoQuestionResponse.FIELD_SIDE,
+                    AutoQuestionResponse.CENTER,
+                    AutoQuestionResponse.WALL_SIDE)),
+            new AutoQuestion(
+                "Balance?", List.of(AutoQuestionResponse.YES, AutoQuestionResponse.NO))),
+        autoCommands.sideScoreOneAndMaybeBalance());
+    autoSelector.addRoutine(
+        "Center: Score One And Balance",
+        List.of(
+            new AutoQuestion(
+                "Which level?",
+                List.of(
+                    AutoQuestionResponse.HIGH,
+                    AutoQuestionResponse.MID,
+                    AutoQuestionResponse.HYBRID)),
+            new AutoQuestion(
+                "Which node?",
+                List.of(
+                    AutoQuestionResponse.FIELD_SIDE,
+                    AutoQuestionResponse.CENTER,
+                    AutoQuestionResponse.WALL_SIDE))),
+        autoCommands.centerScoreOneAndBalance());
     autoSelector.addRoutine(
         "Drive Characterization",
         List.of(),
@@ -232,9 +291,12 @@ public class RobotContainer {
             drive::runCharacterizationVolts,
             drive::getCharacterizationVelocity));
 
-    // Alert if in tuning mode
+    // Startup alerts
     if (Constants.tuningMode) {
       new Alert("Tuning mode active, do not use in competition.", AlertType.INFO).set(true);
+    }
+    if (FieldConstants.isWPIField) {
+      new Alert("WPI field selected, do not use in competition.", AlertType.INFO).set(true);
     }
 
     // Bind driver and operator controls
@@ -351,8 +413,18 @@ public class RobotContainer {
         .rightBumper()
         .whileTrue(
             Commands.startEnd(
-                () -> Leds.getInstance().distraction = true,
-                () -> Leds.getInstance().distraction = false));
+                    () -> Leds.getInstance().distraction = true,
+                    () -> Leds.getInstance().distraction = false)
+                .ignoringDisable(true));
+
+    // Log marker
+    driver
+        .y()
+        .whileTrue(
+            Commands.startEnd(
+                    () -> Logger.getInstance().recordOutput("LogMarker", true),
+                    () -> Logger.getInstance().recordOutput("LogMarker", false))
+                .ignoringDisable(true));
 
     // *** OPERATOR CONTROLS ***
 

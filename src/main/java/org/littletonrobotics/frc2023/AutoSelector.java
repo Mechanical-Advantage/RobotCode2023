@@ -131,6 +131,7 @@ public class AutoSelector extends VirtualSubsystem {
     MID,
     HIGH,
     WALL_SIDE,
-    FIELD_SIDE
+    FIELD_SIDE,
+    CENTER
   }
 }
