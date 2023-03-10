@@ -32,7 +32,7 @@ import org.littletonrobotics.junction.Logger;
 
 public class AprilTagVision extends VirtualSubsystem {
   private static final double ambiguityThreshold = 0.15;
-  private static final double targetLogTimeSecs = 0.05;
+  private static final double targetLogTimeSecs = 0.1;
   private static final Pose3d[] cameraPoses;
   private static final double xyStdDevCoefficient;
   private static final double thetaStdDevCoefficient;
