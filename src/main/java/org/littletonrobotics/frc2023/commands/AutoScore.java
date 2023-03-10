@@ -77,9 +77,9 @@ public class AutoScore extends SequentialCommandGroup {
       Command driveWithJoysticks,
       Command moveArmWithJoysticks,
       Supplier<Boolean> ejectButton,
-      Supplier<Boolean> manualDriveAdjust,
-      Supplier<Boolean> manualArmAdjust,
-      Supplier<Boolean> reachScoreDisable) {
+      Supplier<Boolean> fullManual,
+      Supplier<Boolean> autoEject,
+      Supplier<Boolean> reachScoreEnable) {
 
     // Create target suppliers
     Supplier<Pose2d> driveTargetSupplier =
@@ -89,7 +89,7 @@ public class AutoScore extends SequentialCommandGroup {
                     AllianceFlipUtil.apply(drive.getPose()), // Unflip
                     objective,
                     arm,
-                    !reachScoreDisable.get()));
+                    reachScoreEnable.get()));
     Supplier<ArmPose> armTargetSupplier =
         () ->
             getArmTarget(
@@ -97,34 +97,43 @@ public class AutoScore extends SequentialCommandGroup {
                     AllianceFlipUtil.apply(drive.getPose()), // Unflip
                     objective,
                     arm,
-                    !reachScoreDisable.get()),
+                    reachScoreEnable.get()),
                 objective,
                 arm,
-                !reachScoreDisable.get());
+                reachScoreEnable.get());
 
     // Create drive and arm commands
     var driveToPose = new DriveToPose(drive, driveTargetSupplier);
     var driveCommand =
         driveToPose
             .until(
-                () -> manualDriveAdjust.get() ? atGoalForObjective(driveToPose, objective) : false)
+                () ->
+                    fullManual.get()
+                        ? true // Exit immediately and switch to joysticks in full manual
+                        : (autoEject.get()
+                            ? false // Never exit auto driving with auto eject
+                            : atGoalForObjective( // Exit after initial alignment with manual eject
+                                driveToPose, objective)))
             .andThen(driveWithJoysticks);
     var armCommand =
         Commands.waitUntil(
-                () -> driveToPose.withinTolerance(extendArmDriveTolerance, extendArmThetaTolerance))
+                () ->
+                    fullManual.get()
+                        || driveToPose.withinTolerance(
+                            extendArmDriveTolerance, extendArmThetaTolerance))
             .andThen(
                 arm.runPathCommand(armTargetSupplier),
                 Commands.either(
-                    moveArmWithJoysticks,
                     Commands.run(() -> arm.runDirect(armTargetSupplier.get()), arm),
-                    () -> manualArmAdjust.get()));
+                    moveArmWithJoysticks,
+                    () -> autoEject.get() && !fullManual.get()));
 
     // Combine all commands
     addCommands(
         Commands.either(
-                Commands.waitUntil(() -> ejectButton.get()),
                 Commands.waitUntil(() -> arm.isTrajectoryFinished() && driveToPose.atGoal()),
-                () -> manualDriveAdjust.get() || manualArmAdjust.get())
+                Commands.waitUntil(() -> ejectButton.get()),
+                () -> autoEject.get() && !fullManual.get())
             .deadlineWith(driveCommand, armCommand)
             .andThen(gripper.ejectCommand(objective))
             .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
