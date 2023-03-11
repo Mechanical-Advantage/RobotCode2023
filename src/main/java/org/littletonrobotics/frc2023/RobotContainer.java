@@ -542,6 +542,8 @@ public class RobotContainer {
         .onTrue(
             Commands.runOnce(() -> Leds.getInstance().hpGamePiece = HPGamePiece.CUBE)
                 .ignoringDisable(true));
+    new Trigger(DriverStation::isEnabled)
+        .onTrue(Commands.runOnce(() -> Leds.getInstance().hpGamePiece = HPGamePiece.NONE));
     operator.y().onTrue(objectiveTracker.toggleConeOrientationCommand());
     operator.povUp().whileTrue(objectiveTracker.shiftNodeCommand(Direction.UP));
     operator.povRight().whileTrue(objectiveTracker.shiftNodeCommand(Direction.RIGHT));
