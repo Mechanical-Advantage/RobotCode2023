@@ -147,7 +147,7 @@ public class Leds extends VirtualSubsystem {
 
       // Set special modes
       if (endgameAlert) {
-        strobe(Section.FULL, Color.kOrange, strobeSlowDuration);
+        strobe(Section.SHOULDER, Color.kOrange, strobeSlowDuration);
       } else if (!gripperStopped.hasElapsed(gripperStoppedFlashTime)) {
         solid(Section.SHOULDER, Color.kGreen);
       } else if (intakeReady) {
