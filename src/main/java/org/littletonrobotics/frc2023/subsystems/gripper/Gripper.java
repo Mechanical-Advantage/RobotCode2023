@@ -26,7 +26,7 @@ public class Gripper extends SubsystemBase {
   private final GripperIOInputsAutoLogged inputs = new GripperIOInputsAutoLogged();
 
   private static final LoggedTunableNumber holdVolts =
-      new LoggedTunableNumber("Gripper/HoldVolts", 0.9);
+      new LoggedTunableNumber("Gripper/HoldVolts", 1.5);
   private static final LoggedTunableNumber intakeVolts =
       new LoggedTunableNumber("Gripper/IntakeVolts", 10.0);
   private static final LoggedTunableNumber intakeVelocityWaitStart =
