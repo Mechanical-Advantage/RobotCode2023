@@ -60,7 +60,8 @@ public class AutoCommands {
   private static final boolean reachScoring = false;
   private static final double startX = Grids.outerX + 0.38;
   private static final double cubeIntakeDistance = 0.5;
-  private static final double cubeExtraIntakeDistance = 0.25;
+  private static final Transform2d cubeWallSideOffset =
+      new Transform2d(new Translation2d(0.25, -0.15), new Rotation2d());
   private static final double coneSweeperDistance = 0.5;
   private static final double coneSweeperBackoffDistance = 0.95;
 
@@ -205,8 +206,19 @@ public class AutoCommands {
       boolean fieldSide,
       int intakePosition,
       Pose2d startingPose,
+      boolean singleTransit) {
+    return driveAndIntake(
+        objective, fieldSide, intakePosition, startingPose, singleTransit, new Transform2d());
+  }
+
+  /** Drives to the specified game piece and grabs it. */
+  private CommandWithPose driveAndIntake(
+      Objective objective,
+      boolean fieldSide,
+      int intakePosition,
+      Pose2d startingPose,
       boolean singleTransit,
-      boolean extraIntakeDistance) {
+      Transform2d intakeOffset) {
     // Create waypoints
     List<Waypoint> waypoints = new ArrayList<>();
     waypoints.add(Waypoint.fromHolonomicPose(startingPose));
@@ -230,10 +242,11 @@ public class AutoCommands {
 
     Pose2d gamePiecePose =
         new Pose2d(
-            StagingLocations.translations[intakePosition],
-            StagingLocations.translations[intakePosition]
-                .minus(transitWaypointFar.getTranslation())
-                .getAngle());
+                StagingLocations.translations[intakePosition],
+                StagingLocations.translations[intakePosition]
+                    .minus(transitWaypointFar.getTranslation())
+                    .getAngle())
+            .transformBy(intakeOffset);
     if (objective.isConeNode()) {
       waypoints.add(
           Waypoint.fromHolonomicPose(
@@ -251,10 +264,7 @@ public class AutoCommands {
     } else {
       waypoints.add(
           Waypoint.fromHolonomicPose(
-              gamePiecePose.transformBy(
-                  translationToTransform(
-                      -cubeIntakeDistance + (extraIntakeDistance ? cubeExtraIntakeDistance : 0.0),
-                      0.0)),
+              gamePiecePose.transformBy(translationToTransform(-cubeIntakeDistance, 0.0)),
               gamePiecePose.getRotation()));
     }
 
@@ -378,10 +388,10 @@ public class AutoCommands {
     var objective2 = new Objective(6, level, ConeOrientation.TIPPED, false);
     Pose2d startingPose = startingLocations[8];
     var score0Sequence = driveAndScore(objective0, true, true, false, startingPose, true);
-    var intake0Sequence = driveAndIntake(objective1, true, 3, score0Sequence.pose(), true, false);
+    var intake0Sequence = driveAndIntake(objective1, true, 3, score0Sequence.pose(), true);
     var score1Sequence =
         driveAndScore(objective1, true, false, false, intake0Sequence.pose(), true);
-    var intake2Sequence = driveAndIntake(objective2, true, 2, score1Sequence.pose(), true, false);
+    var intake2Sequence = driveAndIntake(objective2, true, 2, score1Sequence.pose(), true);
     var score2Sequence =
         driveAndScore(objective2, true, false, true, intake2Sequence.pose(), reachScoring);
     return sequence(
@@ -433,12 +443,22 @@ public class AutoCommands {
     var score0Sequence = driveAndScore(objective0, fieldSide, true, false, startingPose, false);
     var intake1Sequence =
         driveAndIntake(
-            objective1, fieldSide, fieldSide ? 3 : 0, score0Sequence.pose(), false, !fieldSide);
+            objective1,
+            fieldSide,
+            fieldSide ? 3 : 0,
+            score0Sequence.pose(),
+            false,
+            fieldSide ? new Transform2d() : cubeWallSideOffset);
     var score1Sequence =
         driveAndScore(objective1, fieldSide, false, false, intake1Sequence.pose(), false);
     var intake2Sequence =
         driveAndIntake(
-            objective2, fieldSide, fieldSide ? 2 : 1, score1Sequence.pose(), false, !fieldSide);
+            objective2,
+            fieldSide,
+            fieldSide ? 2 : 1,
+            score1Sequence.pose(),
+            false,
+            fieldSide ? new Transform2d() : cubeWallSideOffset);
     return sequence(
         reset(startingPose),
         score0Sequence.command(),
