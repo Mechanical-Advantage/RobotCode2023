@@ -499,11 +499,11 @@ public class RobotContainer {
     operator
         .a()
         .and(operator.x().negate())
-        .whileTrue(intakeSubstationSingle.asProxy().repeatedly());
+        .whileTrue(intakeSubstationSingle.asProxy().repeatedly().ignoringDisable(false));
     operator
         .x()
         .and(operator.a().negate())
-        .whileTrue(intakeSubstationDouble.asProxy().repeatedly());
+        .whileTrue(intakeSubstationDouble.asProxy().repeatedly().ignoringDisable(false));
     operator
         .rightTrigger()
         .whileTrue(new IntakeCubeHandoff(cubeIntake, arm, gripper, objectiveTracker.objective));
