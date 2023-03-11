@@ -57,6 +57,7 @@ import org.littletonrobotics.frc2023.subsystems.gripper.Gripper.EjectSpeed;
 import org.littletonrobotics.frc2023.subsystems.gripper.GripperIO;
 import org.littletonrobotics.frc2023.subsystems.gripper.GripperIOSparkMax;
 import org.littletonrobotics.frc2023.subsystems.leds.Leds;
+import org.littletonrobotics.frc2023.subsystems.leds.Leds.HPGamePiece;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.NodeSelectorIO;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.NodeSelectorIOServer;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker;
@@ -455,22 +456,24 @@ public class RobotContainer {
                 }));
     var autoScoreTrigger = driver.rightTrigger();
     var ejectTrigger = driver.a();
-    autoScoreTrigger.whileTrue(
-        new AutoScore(
-                drive,
-                arm,
-                gripper,
-                objectiveTracker.objective,
-                driveWithJoysticksFactory.apply(true),
-                moveArmWithJoysticksFactory.get(),
-                () -> ejectTrigger.getAsBoolean(),
-                () -> manualDrive.getAsBoolean(),
-                () -> autoEject.getAsBoolean(),
-                () -> reachScoringEnable.getAsBoolean())
-            .deadlineWith(
-                Commands.startEnd(
-                    () -> Leds.getInstance().autoScore = true,
-                    () -> Leds.getInstance().autoScore = false)));
+    autoScoreTrigger
+        .whileTrue(
+            new AutoScore(
+                    drive,
+                    arm,
+                    gripper,
+                    objectiveTracker.objective,
+                    driveWithJoysticksFactory.apply(true),
+                    moveArmWithJoysticksFactory.get(),
+                    () -> ejectTrigger.getAsBoolean(),
+                    () -> manualDrive.getAsBoolean(),
+                    () -> autoEject.getAsBoolean(),
+                    () -> reachScoringEnable.getAsBoolean())
+                .deadlineWith(
+                    Commands.startEnd(
+                        () -> Leds.getInstance().autoScore = true,
+                        () -> Leds.getInstance().autoScore = false)))
+        .onTrue(Commands.runOnce(() -> Leds.getInstance().hpGamePiece = HPGamePiece.NONE));
 
     // Distraction LEDs
     driver
@@ -531,10 +534,14 @@ public class RobotContainer {
     // Objective tracking controls
     operator
         .leftBumper()
-        .onTrue(Commands.runOnce(() -> Leds.getInstance().hpCone = true).ignoringDisable(true));
+        .onTrue(
+            Commands.runOnce(() -> Leds.getInstance().hpGamePiece = HPGamePiece.CONE)
+                .ignoringDisable(true));
     operator
         .rightBumper()
-        .onTrue(Commands.runOnce(() -> Leds.getInstance().hpCone = false).ignoringDisable(true));
+        .onTrue(
+            Commands.runOnce(() -> Leds.getInstance().hpGamePiece = HPGamePiece.CUBE)
+                .ignoringDisable(true));
     operator.y().onTrue(objectiveTracker.toggleConeOrientationCommand());
     operator.povUp().whileTrue(objectiveTracker.shiftNodeCommand(Direction.UP));
     operator.povRight().whileTrue(objectiveTracker.shiftNodeCommand(Direction.RIGHT));

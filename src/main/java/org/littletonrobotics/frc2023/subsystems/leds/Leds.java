@@ -28,7 +28,7 @@ public class Leds extends VirtualSubsystem {
 
   // Robot state tracking
   public int loopCycleCount = 0;
-  public boolean hpCone = false;
+  public HPGamePiece hpGamePiece = HPGamePiece.NONE;
   public boolean hpConeTipped = false;
   public boolean hpDoubleSubstation = false;
   public boolean hpThrowGamePiece = false;
@@ -127,14 +127,20 @@ public class Leds extends VirtualSubsystem {
     } else {
       // Set HP indicator
       Color hpColor = Color.kBlack;
-      if (hpCone) {
-        if (hpConeTipped) {
-          hpColor = Color.kRed;
-        } else {
-          hpColor = Color.kGold;
-        }
-      } else {
-        hpColor = Color.kPurple;
+      switch (hpGamePiece) {
+        case NONE:
+          hpColor = Color.kBlack;
+          break;
+        case CUBE:
+          hpColor = Color.kPurple;
+          break;
+        case CONE:
+          if (hpConeTipped) {
+            hpColor = Color.kRed;
+          } else {
+            hpColor = Color.kGold;
+          }
+          break;
       }
       if (hpDoubleSubstation) {
         solid(Section.STATIC_LOW, hpColor);
@@ -227,6 +233,12 @@ public class Leds extends VirtualSubsystem {
         buffer.setLED(i, new Color(red, green, blue));
       }
     }
+  }
+
+  public static enum HPGamePiece {
+    NONE,
+    CUBE,
+    CONE
   }
 
   private static enum Section {
