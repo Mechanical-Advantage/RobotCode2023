@@ -413,6 +413,10 @@ public class RobotContainer {
                 .ignoringDisable(true));
 
     // Auto align controls
+    Command intakeSubstationSingle =
+        new IntakeSubstation(true, arm, drive, gripper, objectiveTracker.objective);
+    Command intakeSubstationDouble =
+        new IntakeSubstation(false, arm, drive, gripper, objectiveTracker.objective);
     driver
         .leftTrigger()
         .whileTrue(
@@ -420,7 +424,15 @@ public class RobotContainer {
                 .deadlineWith(
                     Commands.startEnd(
                         () -> Leds.getInstance().autoSubstation = true,
-                        () -> Leds.getInstance().autoSubstation = false)));
+                        () -> Leds.getInstance().autoSubstation = false))
+                .withName("DriveToSubstation"))
+        .onFalse(
+            Commands.runOnce(
+                () -> {
+                  // Cancel intaking, forcing the gripper to restart
+                  intakeSubstationSingle.cancel();
+                  intakeSubstationDouble.cancel();
+                }));
     var autoScoreTrigger = driver.rightTrigger();
     var ejectTrigger = driver.a();
     autoScoreTrigger.whileTrue(
@@ -463,10 +475,12 @@ public class RobotContainer {
     // Intake controls
     operator
         .a()
-        .whileTrue(new IntakeSubstation(true, arm, drive, gripper, objectiveTracker.objective));
+        .and(operator.x().negate())
+        .whileTrue(intakeSubstationSingle.asProxy().repeatedly());
     operator
         .x()
-        .whileTrue(new IntakeSubstation(false, arm, drive, gripper, objectiveTracker.objective));
+        .and(operator.a().negate())
+        .whileTrue(intakeSubstationDouble.asProxy().repeatedly());
     operator
         .rightTrigger()
         .whileTrue(new IntakeCubeHandoff(cubeIntake, arm, gripper, objectiveTracker.objective));
