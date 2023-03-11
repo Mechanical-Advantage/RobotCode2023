@@ -33,6 +33,7 @@ import org.littletonrobotics.junction.Logger;
 public class AprilTagVision extends VirtualSubsystem {
   private static final double ambiguityThreshold = 0.15;
   private static final double targetLogTimeSecs = 0.1;
+  private static final double fieldBorderMargin = 0.5;
   private static final Pose3d[] cameraPoses;
   private static final double xyStdDevCoefficient;
   private static final double thetaStdDevCoefficient;
@@ -190,6 +191,14 @@ public class AprilTagVision extends VirtualSubsystem {
 
         // Exit if no data
         if (cameraPose == null || robotPose == null) {
+          continue;
+        }
+
+        // Exit if robot pose is off the field
+        if (robotPose.getX() < -fieldBorderMargin
+            || robotPose.getX() > FieldConstants.fieldLength + fieldBorderMargin
+            || robotPose.getY() < -fieldBorderMargin
+            || robotPose.getY() > FieldConstants.fieldWidth + fieldBorderMargin) {
           continue;
         }
 
