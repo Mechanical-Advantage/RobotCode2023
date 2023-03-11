@@ -321,15 +321,15 @@ public class RobotContainer {
             Commands.startEnd(
                     () -> {
                       Leds.getInstance().endgameAlert = true;
-                      driver.getHID().setRumble(RumbleType.kRightRumble, 1.0);
-                      operator.getHID().setRumble(RumbleType.kRightRumble, 1.0);
+                      driver.getHID().setRumble(RumbleType.kRightRumble, 0.75);
+                      operator.getHID().setRumble(RumbleType.kRightRumble, 0.75);
                     },
                     () -> {
                       Leds.getInstance().endgameAlert = false;
                       driver.getHID().setRumble(RumbleType.kLeftRumble, 0.0);
                       operator.getHID().setRumble(RumbleType.kLeftRumble, 0.0);
                     })
-                .withTimeout(3.0));
+                .withTimeout(1.5));
 
     // Bind driver and operator controls
     bindControls();
