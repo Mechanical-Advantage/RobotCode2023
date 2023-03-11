@@ -39,8 +39,8 @@ public class AutoScore extends SequentialCommandGroup {
   public static final double cubeHybridDriveTolerance = 0.1;
   public static final Rotation2d cubeHybridThetaTolerance = Rotation2d.fromDegrees(5.0);
 
-  public static final Translation2d hybridRelativePosition = new Translation2d(-0.2, 0.4);
-  public static final Rotation2d hybridWristAngle = Rotation2d.fromDegrees(-45.0);
+  public static final Translation2d hybridRelativePosition = new Translation2d(-0.2, 0.7);
+  public static final Rotation2d hybridWristAngle = Rotation2d.fromDegrees(-75.0);
   public static final Translation2d cubeRelativePosition = new Translation2d(-0.4, 0.5);
   public static final Rotation2d cubeWristAngle = Rotation2d.fromDegrees(-30.0);
   public static final Translation2d uprightConeRelativePosition = new Translation2d(-0.3, -0.025);
