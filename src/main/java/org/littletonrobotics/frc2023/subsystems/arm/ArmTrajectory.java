@@ -15,9 +15,11 @@ import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.numbers.N3;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.zip.CRC32;
 
 /** Represents a trajectory of arm states that can be generated asynchronously. */
 public class ArmTrajectory {
@@ -26,14 +28,57 @@ public class ArmTrajectory {
   private List<Vector<N2>> points = new ArrayList<>();
 
   /** All of the parameters required to generate a trajectory. */
-  public static record Parameters(
-      Vector<N2> initialJointPositions,
-      Vector<N2> finalJointPositions,
-      Set<String> constraintOverrides) {
+  public static class Parameters {
+    private final Vector<N2> initialJointPositions;
+    private final Vector<N2> finalJointPositions;
+    private final Set<String> constraintOverrides;
+    private final int hashCode;
+
+    /** Creates a new Parameters object. */
+    public Parameters(
+        Vector<N2> initialJointPositions,
+        Vector<N2> finalJointPositions,
+        Set<String> constraintOverrides) {
+      this.initialJointPositions = initialJointPositions;
+      this.finalJointPositions = finalJointPositions;
+      this.constraintOverrides = constraintOverrides;
+
+      var valuesString =
+          Long.toString((long) (initialJointPositions.get(0, 0) * 1e8))
+              + Long.toString((long) (initialJointPositions.get(1, 0) * 1e8))
+              + Long.toString((long) (finalJointPositions.get(0, 0) * 1e8))
+              + Long.toString((long) (finalJointPositions.get(1, 0) * 1e8));
+      String[] constraintOverrideArray =
+          this.constraintOverrides.toArray(new String[this.constraintOverrides.size()]);
+      Arrays.sort(constraintOverrideArray);
+      for (String override : constraintOverrideArray) {
+        valuesString += override;
+      }
+      CRC32 crc = new CRC32();
+      crc.update(valuesString.getBytes());
+      hashCode = (int) crc.getValue();
+    }
 
     /** Creates a new Parameters object with no constraint overrides. */
     public Parameters(Vector<N2> initialJointPositions, Vector<N2> finalJointPositions) {
       this(initialJointPositions, finalJointPositions, Set.of());
+    }
+
+    public Vector<N2> initialJointPositions() {
+      return initialJointPositions;
+    }
+
+    public Vector<N2> finalJointPositions() {
+      return finalJointPositions;
+    }
+
+    public Set<String> constraintOverrides() {
+      return constraintOverrides;
+    }
+
+    @Override
+    public int hashCode() {
+      return hashCode;
     }
   }
 

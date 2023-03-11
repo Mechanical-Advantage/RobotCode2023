@@ -183,6 +183,14 @@ public class RobotContainer {
     if (aprilTagVision == null) {
       // In replay, match the number of instances for each robot
       switch (Constants.getRobot()) {
+        case ROBOT_2023C:
+          aprilTagVision =
+              new AprilTagVision(
+                  new AprilTagVisionIO() {},
+                  new AprilTagVisionIO() {},
+                  new AprilTagVisionIO() {},
+                  new AprilTagVisionIO() {});
+          break;
         case ROBOT_2023P:
           aprilTagVision = new AprilTagVision(new AprilTagVisionIO() {});
           break;
