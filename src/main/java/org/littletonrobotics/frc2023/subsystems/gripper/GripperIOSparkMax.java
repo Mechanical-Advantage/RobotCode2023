@@ -46,6 +46,10 @@ public class GripperIOSparkMax implements GripperIO {
       motor.setInverted(invert);
       motor.setSmartCurrentLimit(40);
       motor.enableVoltageCompensation(12.0);
+
+      encoder.setPosition(0.0);
+      encoder.setMeasurementPeriod(10);
+      encoder.setAverageDepth(2);
     }
 
     motor.setCANTimeout(0);

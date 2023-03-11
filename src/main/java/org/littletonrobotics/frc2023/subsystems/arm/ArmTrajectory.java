@@ -14,6 +14,8 @@ import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.numbers.N3;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -33,6 +35,12 @@ public class ArmTrajectory {
     private final Vector<N2> finalJointPositions;
     private final Set<String> constraintOverrides;
     private final int hashCode;
+    private static final DecimalFormat format;
+
+    static {
+      format = new DecimalFormat("#.000000");
+      format.setRoundingMode(RoundingMode.DOWN);
+    }
 
     /** Creates a new Parameters object. */
     public Parameters(
@@ -45,10 +53,10 @@ public class ArmTrajectory {
 
       // Calculate hash code
       var valuesString =
-          Long.toString((long) (initialJointPositions.get(0, 0) * 1e8))
-              + Long.toString((long) (initialJointPositions.get(1, 0) * 1e8))
-              + Long.toString((long) (finalJointPositions.get(0, 0) * 1e8))
-              + Long.toString((long) (finalJointPositions.get(1, 0) * 1e8));
+          format.format(initialJointPositions.get(0, 0))
+              + format.format(initialJointPositions.get(1, 0))
+              + format.format(finalJointPositions.get(0, 0))
+              + format.format(finalJointPositions.get(1, 0));
       String[] constraintOverrideArray =
           this.constraintOverrides.toArray(new String[this.constraintOverrides.size()]);
       Arrays.sort(constraintOverrideArray);
