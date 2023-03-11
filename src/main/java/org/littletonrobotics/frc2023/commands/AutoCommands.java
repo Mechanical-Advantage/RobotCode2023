@@ -334,7 +334,7 @@ public class AutoCommands {
         sequence(
             path(waypoints)
                 .alongWith(
-                    (firstScore ? none() : gripper.intakeCommand()),
+                    (firstScore ? none() : gripper.intakeCommand().withTimeout(1.0)),
                     sequence(
                         firstScore ? none() : armToHome(),
                         waitUntil(
