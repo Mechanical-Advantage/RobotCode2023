@@ -96,8 +96,6 @@ public class Leds extends VirtualSubsystem {
     solid(Section.FULL, Color.kBlack); // Default to off
     if (DriverStation.isEStopped()) {
       solid(Section.FULL, Color.kRed);
-    } else if (distraction) {
-      strobe(Section.FULL, Color.kWhite, strobeFastDuration);
     } else if (DriverStation.isDisabled()) {
       switch (alliance) {
         case Red:
@@ -120,7 +118,7 @@ public class Leds extends VirtualSubsystem {
           wave(Section.FULL, Color.kGold, Color.kDarkBlue, waveSlowCycleLength, waveSlowDuration);
           break;
       }
-    } else if (fallen) {
+    } else if (fallen || distraction) {
       strobe(Section.FULL, Color.kWhite, strobeFastDuration);
     } else if (DriverStation.isAutonomous()) {
       wave(Section.FULL, Color.kGold, Color.kDarkBlue, waveFastCycleLength, waveFastDuration);
