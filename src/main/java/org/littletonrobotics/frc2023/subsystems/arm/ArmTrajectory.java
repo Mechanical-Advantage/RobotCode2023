@@ -43,6 +43,7 @@ public class ArmTrajectory {
       this.finalJointPositions = finalJointPositions;
       this.constraintOverrides = constraintOverrides;
 
+      // Calculate hash code
       var valuesString =
           Long.toString((long) (initialJointPositions.get(0, 0) * 1e8))
               + Long.toString((long) (initialJointPositions.get(1, 0) * 1e8))
