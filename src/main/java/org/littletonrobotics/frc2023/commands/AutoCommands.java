@@ -26,6 +26,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -661,44 +662,44 @@ public class AutoCommands {
   }
 
   /** Scores one game piece, gets mobility over the charge station, and balances */
-  public Command centerScoreOneAndBalance() {
+  public Command centerScoreOneMobilityAndBalance() {
     return select(
         Map.of(
             AutoQuestionResponse.HYBRID,
             select(
                 Map.of(
                     AutoQuestionResponse.WALL_SIDE,
-                    centerScoreOneAndBalance(NodeLevel.HYBRID, 3),
+                    centerScoreOneMobilityAndBalance(NodeLevel.HYBRID, 3),
                     AutoQuestionResponse.CENTER,
-                    centerScoreOneAndBalance(NodeLevel.HYBRID, 4),
+                    centerScoreOneMobilityAndBalance(NodeLevel.HYBRID, 4),
                     AutoQuestionResponse.FIELD_SIDE,
-                    centerScoreOneAndBalance(NodeLevel.HYBRID, 5)),
+                    centerScoreOneMobilityAndBalance(NodeLevel.HYBRID, 5)),
                 () -> responses.get().get(1)),
             AutoQuestionResponse.MID,
             select(
                 Map.of(
                     AutoQuestionResponse.WALL_SIDE,
-                    centerScoreOneAndBalance(NodeLevel.MID, 3),
+                    centerScoreOneMobilityAndBalance(NodeLevel.MID, 3),
                     AutoQuestionResponse.CENTER,
-                    centerScoreOneAndBalance(NodeLevel.MID, 4),
+                    centerScoreOneMobilityAndBalance(NodeLevel.MID, 4),
                     AutoQuestionResponse.FIELD_SIDE,
-                    centerScoreOneAndBalance(NodeLevel.MID, 5)),
+                    centerScoreOneMobilityAndBalance(NodeLevel.MID, 5)),
                 () -> responses.get().get(1)),
             AutoQuestionResponse.HIGH,
             select(
                 Map.of(
                     AutoQuestionResponse.WALL_SIDE,
-                    centerScoreOneAndBalance(NodeLevel.HIGH, 3),
+                    centerScoreOneMobilityAndBalance(NodeLevel.HIGH, 3),
                     AutoQuestionResponse.CENTER,
-                    centerScoreOneAndBalance(NodeLevel.HIGH, 4),
+                    centerScoreOneMobilityAndBalance(NodeLevel.HIGH, 4),
                     AutoQuestionResponse.FIELD_SIDE,
-                    centerScoreOneAndBalance(NodeLevel.HIGH, 5)),
+                    centerScoreOneMobilityAndBalance(NodeLevel.HIGH, 5)),
                 () -> responses.get().get(1))),
         () -> responses.get().get(0));
   }
 
   /** Scores one game piece, gets mobility over the charge station, and balances */
-  private Command centerScoreOneAndBalance(NodeLevel level, int position) {
+  private Command centerScoreOneMobilityAndBalance(NodeLevel level, int position) {
     var objective = new Objective(position, level, ConeOrientation.UPRIGHT, false);
     var scoringSegment =
         driveAndScore(objective, false, true, false, startingLocations[position], false);
@@ -739,5 +740,55 @@ public class AutoCommands {
             .until(
                 () -> !debouncerFalling.calculate(Math.abs(drive.getPitch().getDegrees()) < 8.0)),
         new AutoBalance(drive));
+  }
+
+  /** Scores one game piece and balances from the center */
+  public Command centerScoreOneAndBalance() {
+    return select(
+        Map.of(
+            AutoQuestionResponse.HYBRID,
+            select(
+                Map.of(
+                    AutoQuestionResponse.WALL_SIDE,
+                    centerScoreOneAndBalance(NodeLevel.HYBRID, 3),
+                    AutoQuestionResponse.CENTER,
+                    centerScoreOneAndBalance(NodeLevel.HYBRID, 4),
+                    AutoQuestionResponse.FIELD_SIDE,
+                    centerScoreOneAndBalance(NodeLevel.HYBRID, 5)),
+                () -> responses.get().get(1)),
+            AutoQuestionResponse.MID,
+            select(
+                Map.of(
+                    AutoQuestionResponse.WALL_SIDE,
+                    centerScoreOneAndBalance(NodeLevel.MID, 3),
+                    AutoQuestionResponse.CENTER,
+                    centerScoreOneAndBalance(NodeLevel.MID, 4),
+                    AutoQuestionResponse.FIELD_SIDE,
+                    centerScoreOneAndBalance(NodeLevel.MID, 5)),
+                () -> responses.get().get(1)),
+            AutoQuestionResponse.HIGH,
+            select(
+                Map.of(
+                    AutoQuestionResponse.WALL_SIDE,
+                    centerScoreOneAndBalance(NodeLevel.HIGH, 3),
+                    AutoQuestionResponse.CENTER,
+                    centerScoreOneAndBalance(NodeLevel.HIGH, 4),
+                    AutoQuestionResponse.FIELD_SIDE,
+                    centerScoreOneAndBalance(NodeLevel.HIGH, 5)),
+                () -> responses.get().get(1))),
+        () -> responses.get().get(0));
+  }
+
+  /** Scores one game piece and balances from the center */
+  private Command centerScoreOneAndBalance(NodeLevel level, int position) {
+    var objective = new Objective(position, level, ConeOrientation.UPRIGHT, false);
+    var scoringSegment =
+        driveAndScore(objective, false, true, false, startingLocations[position], false);
+    return sequence(
+        reset(startingLocations[position]),
+        scoringSegment.command(),
+        armToHome(),
+        Commands.waitUntil(arm::isTrajectoryFinished),
+        driveAndBalance(scoringSegment.pose()));
   }
 }

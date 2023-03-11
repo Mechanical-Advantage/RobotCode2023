@@ -278,6 +278,22 @@ public class RobotContainer {
                 "Balance?", List.of(AutoQuestionResponse.YES, AutoQuestionResponse.NO))),
         autoCommands.sideScoreOneAndMaybeBalance());
     autoSelector.addRoutine(
+        "Center: Score One, Mobility, And Balance",
+        List.of(
+            new AutoQuestion(
+                "Which level?",
+                List.of(
+                    AutoQuestionResponse.HIGH,
+                    AutoQuestionResponse.MID,
+                    AutoQuestionResponse.HYBRID)),
+            new AutoQuestion(
+                "Which node?",
+                List.of(
+                    AutoQuestionResponse.FIELD_SIDE,
+                    AutoQuestionResponse.CENTER,
+                    AutoQuestionResponse.WALL_SIDE))),
+        autoCommands.centerScoreOneMobilityAndBalance());
+    autoSelector.addRoutine(
         "Center: Score One And Balance",
         List.of(
             new AutoQuestion(
