@@ -29,7 +29,7 @@ import org.littletonrobotics.frc2023.util.GeomUtil;
 
 public class AutoScore extends SequentialCommandGroup {
   public static final double bendCompensation =
-      Units.inchesToMeters(-1.5); // Drive Y offset in inches on the front
+      Units.inchesToMeters(-1.0); // Drive Y offset in inches on the front
 
   public static Transform2d getBendCompensation(boolean isFront) {
     return new Transform2d(
