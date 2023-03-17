@@ -168,7 +168,7 @@ public class Leds extends VirtualSubsystem {
 
     // Arm estop alert
     if (armEstopped) {
-      breath(Section.SHOULDER, Color.kRed, Color.kBlack, breathDuration);
+      strobe(Section.SHOULDER, Color.kRed, strobeFastDuration);
     }
 
     // Same battery alert
