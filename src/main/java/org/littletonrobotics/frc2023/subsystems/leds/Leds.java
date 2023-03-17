@@ -28,7 +28,7 @@ public class Leds extends VirtualSubsystem {
 
   // Robot state tracking
   public int loopCycleCount = 0;
-  public boolean hpCone = false;
+  public HPGamePiece hpGamePiece = HPGamePiece.NONE;
   public boolean hpConeTipped = false;
   public boolean hpDoubleSubstation = false;
   public boolean hpThrowGamePiece = false;
@@ -96,8 +96,6 @@ public class Leds extends VirtualSubsystem {
     solid(Section.FULL, Color.kBlack); // Default to off
     if (DriverStation.isEStopped()) {
       solid(Section.FULL, Color.kRed);
-    } else if (distraction) {
-      strobe(Section.FULL, Color.kWhite, strobeFastDuration);
     } else if (DriverStation.isDisabled()) {
       switch (alliance) {
         case Red:
@@ -120,21 +118,27 @@ public class Leds extends VirtualSubsystem {
           wave(Section.FULL, Color.kGold, Color.kDarkBlue, waveSlowCycleLength, waveSlowDuration);
           break;
       }
-    } else if (fallen) {
+    } else if (fallen || distraction) {
       strobe(Section.FULL, Color.kWhite, strobeFastDuration);
     } else if (DriverStation.isAutonomous()) {
       wave(Section.FULL, Color.kGold, Color.kDarkBlue, waveFastCycleLength, waveFastDuration);
     } else {
       // Set HP indicator
       Color hpColor = Color.kBlack;
-      if (hpCone) {
-        if (hpConeTipped) {
-          hpColor = Color.kRed;
-        } else {
-          hpColor = Color.kGold;
-        }
-      } else {
-        hpColor = Color.kPurple;
+      switch (hpGamePiece) {
+        case NONE:
+          hpColor = Color.kBlack;
+          break;
+        case CUBE:
+          hpColor = Color.kPurple;
+          break;
+        case CONE:
+          if (hpConeTipped) {
+            hpColor = Color.kRed;
+          } else {
+            hpColor = Color.kGold;
+          }
+          break;
       }
       if (hpDoubleSubstation) {
         solid(Section.STATIC_LOW, hpColor);
@@ -147,7 +151,7 @@ public class Leds extends VirtualSubsystem {
 
       // Set special modes
       if (endgameAlert) {
-        strobe(Section.FULL, Color.kOrange, strobeSlowDuration);
+        strobe(Section.SHOULDER, Color.kOrange, strobeSlowDuration);
       } else if (!gripperStopped.hasElapsed(gripperStoppedFlashTime)) {
         solid(Section.SHOULDER, Color.kGreen);
       } else if (intakeReady) {
@@ -227,6 +231,12 @@ public class Leds extends VirtualSubsystem {
         buffer.setLED(i, new Color(red, green, blue));
       }
     }
+  }
+
+  public static enum HPGamePiece {
+    NONE,
+    CUBE,
+    CONE
   }
 
   private static enum Section {

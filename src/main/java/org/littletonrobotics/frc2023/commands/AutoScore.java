@@ -10,8 +10,10 @@ package org.littletonrobotics.frc2023.commands;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
@@ -26,6 +28,15 @@ import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
 import org.littletonrobotics.frc2023.util.GeomUtil;
 
 public class AutoScore extends SequentialCommandGroup {
+  public static final double bendCompensation =
+      // Units.inchesToMeters(-1.0); // Blue alliance
+      Units.inchesToMeters(1.0); // Red alliance
+
+  public static Transform2d getBendCompensation(boolean isFront) {
+    return new Transform2d(
+        new Translation2d(0.0, bendCompensation * (isFront ? 1.0 : -1.0)), new Rotation2d());
+  }
+
   public static final double minDriveX = FieldConstants.Grids.outerX + 0.45;
   public static final double minDriveY = 0.7;
   public static final double maxDriveY = FieldConstants.Community.leftY - 0.5;
@@ -39,8 +50,8 @@ public class AutoScore extends SequentialCommandGroup {
   public static final double cubeHybridDriveTolerance = 0.1;
   public static final Rotation2d cubeHybridThetaTolerance = Rotation2d.fromDegrees(5.0);
 
-  public static final Translation2d hybridRelativePosition = new Translation2d(-0.2, 0.4);
-  public static final Rotation2d hybridWristAngle = Rotation2d.fromDegrees(-45.0);
+  public static final Translation2d hybridRelativePosition = new Translation2d(-0.2, 0.7);
+  public static final Rotation2d hybridWristAngle = Rotation2d.fromDegrees(-75.0);
   public static final Translation2d cubeRelativePosition = new Translation2d(-0.4, 0.5);
   public static final Rotation2d cubeWristAngle = Rotation2d.fromDegrees(-30.0);
   public static final Translation2d uprightConeRelativePosition = new Translation2d(-0.3, -0.025);
@@ -180,10 +191,12 @@ public class AutoScore extends SequentialCommandGroup {
 
     // If reach not allowed, return target at minimum distance
     if (!allowReach) {
+      boolean front = shouldScoreFront(pose, objective);
       return new Pose2d(
-          Math.max(minDriveX, nodeTranslation.getX() + minDistance),
-          nodeTranslation.getY(),
-          Rotation2d.fromDegrees(shouldScoreFront(pose, objective) ? 180.0 : 0.0));
+              Math.max(minDriveX, nodeTranslation.getX() + minDistance),
+              nodeTranslation.getY(),
+              Rotation2d.fromDegrees(front ? 180.0 : 0.0))
+          .transformBy(getBendCompensation(front));
     }
 
     // Calculate angle from node
@@ -217,7 +230,8 @@ public class AutoScore extends SequentialCommandGroup {
             .minus(driveTranslation)
             .getAngle()
             .plus(Rotation2d.fromDegrees(shouldScoreFront(pose, objective) ? 0.0 : 180.0));
-    return new Pose2d(driveTranslation, driveRotation);
+    return new Pose2d(driveTranslation, driveRotation)
+        .transformBy(getBendCompensation(shouldScoreFront(pose, objective)));
   }
 
   /** Returns the best arm target for the selected node and drive position. */

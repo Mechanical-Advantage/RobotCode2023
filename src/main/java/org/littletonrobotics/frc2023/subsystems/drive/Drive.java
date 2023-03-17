@@ -9,9 +9,11 @@ package org.littletonrobotics.frc2023.subsystems.drive;
 
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Twist2d;
+import edu.wpi.first.math.geometry.Twist3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -205,6 +207,28 @@ public class Drive extends SubsystemBase {
     lastGyroYaw = gyroYaw;
     poseEstimator.addDriveData(Timer.getFPGATimestamp(), twist);
     Logger.getInstance().recordOutput("Odometry/Robot", getPose());
+
+    // Log 3D odometry pose
+    Pose3d robotPose3d = new Pose3d(getPose());
+    robotPose3d =
+        robotPose3d
+            .exp(
+                new Twist3d(
+                    0.0,
+                    0.0,
+                    gyroInputs.pitchPositionRad * trackWidthX.get() / 2.0,
+                    0.0,
+                    gyroInputs.pitchPositionRad,
+                    0.0))
+            .exp(
+                new Twist3d(
+                    0.0,
+                    0.0,
+                    gyroInputs.rollPositionRad * trackWidthY.get() / 2.0,
+                    gyroInputs.rollPositionRad,
+                    0.0,
+                    0.0));
+    Logger.getInstance().recordOutput("Odometry/Robot3d", robotPose3d);
 
     // Update field velocity
     ChassisSpeeds chassisSpeeds = kinematics.toChassisSpeeds(measuredStates);

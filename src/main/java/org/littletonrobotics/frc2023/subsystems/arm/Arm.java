@@ -540,6 +540,7 @@ public class Arm extends SubsystemBase {
     driverDisableAlert.set(disableSupplier.get());
     emergencyDisableAlert.set(emergencyDisable);
     Leds.getInstance().armEstopped = emergencyDisable;
+    Logger.getInstance().recordOutput("Arm/EmergencyDisabled", emergencyDisable);
   }
 
   /** Applies a static friction and deadband to an applied voltage. */

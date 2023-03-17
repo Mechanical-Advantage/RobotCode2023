@@ -42,7 +42,7 @@ public class ObjectiveTracker extends VirtualSubsystem {
     }
 
     public Objective() {
-      this(0, NodeLevel.HYBRID, ConeOrientation.UPRIGHT, true);
+      this(0, NodeLevel.HYBRID, ConeOrientation.UPRIGHT, false);
     }
 
     public boolean isConeNode() {

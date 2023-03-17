@@ -39,7 +39,6 @@ public class CubeIntake extends SubsystemBase {
   private boolean isZeroed = false;
   private double absoluteAngleOffset = 0.0;
   private boolean isRunning = false;
-  private Supplier<Boolean> enableRollerSupplier = () -> true;
   private boolean lastCoast = false;
 
   private Supplier<Boolean> forceExtendSupplier = () -> false;
@@ -165,9 +164,6 @@ public class CubeIntake extends SubsystemBase {
 
   /** Returns whether the roller is running. */
   public boolean isRollerRunning() {
-    // return isRunning
-    //     && controller.getGoal().equals(controller.getSetpoint())
-    //     && enableRollerSupplier.get();
     return isRunning;
   }
 
@@ -179,15 +175,9 @@ public class CubeIntake extends SubsystemBase {
 
   /** Command factory to extend and run the roller. */
   public Command runCommand() {
-    return runCommand(() -> true);
-  }
-
-  /** Command factory to extend and run the roller. */
-  public Command runCommand(Supplier<Boolean> enableRollerSupplier) {
     return startEnd(
         () -> {
           isRunning = true;
-          this.enableRollerSupplier = enableRollerSupplier;
         },
         () -> isRunning = false);
   }

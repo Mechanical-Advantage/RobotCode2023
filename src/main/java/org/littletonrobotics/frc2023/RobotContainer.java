@@ -57,6 +57,7 @@ import org.littletonrobotics.frc2023.subsystems.gripper.Gripper.EjectSpeed;
 import org.littletonrobotics.frc2023.subsystems.gripper.GripperIO;
 import org.littletonrobotics.frc2023.subsystems.gripper.GripperIOSparkMax;
 import org.littletonrobotics.frc2023.subsystems.leds.Leds;
+import org.littletonrobotics.frc2023.subsystems.leds.Leds.HPGamePiece;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.NodeSelectorIO;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.NodeSelectorIOServer;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker;
@@ -183,6 +184,14 @@ public class RobotContainer {
     if (aprilTagVision == null) {
       // In replay, match the number of instances for each robot
       switch (Constants.getRobot()) {
+        case ROBOT_2023C:
+          aprilTagVision =
+              new AprilTagVision(
+                  new AprilTagVisionIO() {},
+                  new AprilTagVisionIO() {},
+                  new AprilTagVisionIO() {},
+                  new AprilTagVisionIO() {});
+          break;
         case ROBOT_2023P:
           aprilTagVision = new AprilTagVision(new AprilTagVisionIO() {});
           break;
@@ -270,6 +279,22 @@ public class RobotContainer {
                 "Balance?", List.of(AutoQuestionResponse.YES, AutoQuestionResponse.NO))),
         autoCommands.sideScoreOneAndMaybeBalance());
     autoSelector.addRoutine(
+        "Center: Score One, Mobility, And Balance",
+        List.of(
+            new AutoQuestion(
+                "Which level?",
+                List.of(
+                    AutoQuestionResponse.HIGH,
+                    AutoQuestionResponse.MID,
+                    AutoQuestionResponse.HYBRID)),
+            new AutoQuestion(
+                "Which node?",
+                List.of(
+                    AutoQuestionResponse.FIELD_SIDE,
+                    AutoQuestionResponse.CENTER,
+                    AutoQuestionResponse.WALL_SIDE))),
+        autoCommands.centerScoreOneMobilityAndBalance());
+    autoSelector.addRoutine(
         "Center: Score One And Balance",
         List.of(
             new AutoQuestion(
@@ -307,21 +332,25 @@ public class RobotContainer {
     new Trigger(
             () ->
                 DriverStation.isTeleopEnabled()
+                    // When not connected to FMS or running practice match the time counts up
+                    // instead of down
+                    // TODO: Fix this to work correctly with DS practice mode
+                    && DriverStation.isFMSAttached()
                     && DriverStation.getMatchTime() > 0.0
                     && DriverStation.getMatchTime() <= Math.round(endgameAlertTime.get()))
         .onTrue(
             Commands.startEnd(
                     () -> {
                       Leds.getInstance().endgameAlert = true;
-                      driver.getHID().setRumble(RumbleType.kBothRumble, 0.6);
-                      operator.getHID().setRumble(RumbleType.kBothRumble, 0.6);
+                      driver.getHID().setRumble(RumbleType.kRightRumble, 0.75);
+                      operator.getHID().setRumble(RumbleType.kRightRumble, 0.75);
                     },
                     () -> {
                       Leds.getInstance().endgameAlert = false;
-                      driver.getHID().setRumble(RumbleType.kBothRumble, 0.0);
-                      operator.getHID().setRumble(RumbleType.kBothRumble, 0.0);
+                      driver.getHID().setRumble(RumbleType.kLeftRumble, 0.0);
+                      operator.getHID().setRumble(RumbleType.kLeftRumble, 0.0);
                     })
-                .withTimeout(3.0));
+                .withTimeout(1.5));
 
     // Bind driver and operator controls
     bindControls();
@@ -405,6 +434,10 @@ public class RobotContainer {
                 .ignoringDisable(true));
 
     // Auto align controls
+    Command intakeSubstationSingle =
+        new IntakeSubstation(true, arm, drive, gripper, objectiveTracker.objective);
+    Command intakeSubstationDouble =
+        new IntakeSubstation(false, arm, drive, gripper, objectiveTracker.objective);
     driver
         .leftTrigger()
         .whileTrue(
@@ -412,25 +445,35 @@ public class RobotContainer {
                 .deadlineWith(
                     Commands.startEnd(
                         () -> Leds.getInstance().autoSubstation = true,
-                        () -> Leds.getInstance().autoSubstation = false)));
+                        () -> Leds.getInstance().autoSubstation = false))
+                .withName("DriveToSubstation"))
+        .onFalse(
+            Commands.runOnce(
+                () -> {
+                  // Cancel intaking, forcing the gripper to restart
+                  intakeSubstationSingle.cancel();
+                  intakeSubstationDouble.cancel();
+                }));
     var autoScoreTrigger = driver.rightTrigger();
     var ejectTrigger = driver.a();
-    autoScoreTrigger.whileTrue(
-        new AutoScore(
-                drive,
-                arm,
-                gripper,
-                objectiveTracker.objective,
-                driveWithJoysticksFactory.apply(true),
-                moveArmWithJoysticksFactory.get(),
-                () -> ejectTrigger.getAsBoolean(),
-                () -> manualDrive.getAsBoolean(),
-                () -> autoEject.getAsBoolean(),
-                () -> reachScoringEnable.getAsBoolean())
-            .deadlineWith(
-                Commands.startEnd(
-                    () -> Leds.getInstance().autoScore = true,
-                    () -> Leds.getInstance().autoScore = false)));
+    autoScoreTrigger
+        .whileTrue(
+            new AutoScore(
+                    drive,
+                    arm,
+                    gripper,
+                    objectiveTracker.objective,
+                    driveWithJoysticksFactory.apply(true),
+                    moveArmWithJoysticksFactory.get(),
+                    () -> ejectTrigger.getAsBoolean(),
+                    () -> manualDrive.getAsBoolean(),
+                    () -> autoEject.getAsBoolean(),
+                    () -> reachScoringEnable.getAsBoolean())
+                .deadlineWith(
+                    Commands.startEnd(
+                        () -> Leds.getInstance().autoScore = true,
+                        () -> Leds.getInstance().autoScore = false)))
+        .onTrue(Commands.runOnce(() -> Leds.getInstance().hpGamePiece = HPGamePiece.NONE));
 
     // Distraction LEDs
     driver
@@ -455,10 +498,12 @@ public class RobotContainer {
     // Intake controls
     operator
         .a()
-        .whileTrue(new IntakeSubstation(true, arm, drive, gripper, objectiveTracker.objective));
+        .and(operator.x().negate())
+        .whileTrue(intakeSubstationSingle.asProxy().repeatedly().ignoringDisable(false));
     operator
         .x()
-        .whileTrue(new IntakeSubstation(false, arm, drive, gripper, objectiveTracker.objective));
+        .and(operator.a().negate())
+        .whileTrue(intakeSubstationDouble.asProxy().repeatedly().ignoringDisable(false));
     operator
         .rightTrigger()
         .whileTrue(new IntakeCubeHandoff(cubeIntake, arm, gripper, objectiveTracker.objective));
@@ -489,10 +534,16 @@ public class RobotContainer {
     // Objective tracking controls
     operator
         .leftBumper()
-        .onTrue(Commands.runOnce(() -> Leds.getInstance().hpCone = true).ignoringDisable(true));
+        .onTrue(
+            Commands.runOnce(() -> Leds.getInstance().hpGamePiece = HPGamePiece.CONE)
+                .ignoringDisable(true));
     operator
         .rightBumper()
-        .onTrue(Commands.runOnce(() -> Leds.getInstance().hpCone = false).ignoringDisable(true));
+        .onTrue(
+            Commands.runOnce(() -> Leds.getInstance().hpGamePiece = HPGamePiece.CUBE)
+                .ignoringDisable(true));
+    new Trigger(DriverStation::isEnabled)
+        .onTrue(Commands.runOnce(() -> Leds.getInstance().hpGamePiece = HPGamePiece.NONE));
     operator.y().onTrue(objectiveTracker.toggleConeOrientationCommand());
     operator.povUp().whileTrue(objectiveTracker.shiftNodeCommand(Direction.UP));
     operator.povRight().whileTrue(objectiveTracker.shiftNodeCommand(Direction.RIGHT));
