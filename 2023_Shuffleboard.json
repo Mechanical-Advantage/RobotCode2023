@@ -155,7 +155,7 @@
         "vgap": 16.0,
         "titleType": 0,
         "tiles": {
-          "0,3": {
+          "0,4": {
             "size": [
               2,
               1
@@ -171,7 +171,7 @@
           "2,1": {
             "size": [
               3,
-              3
+              4
             ],
             "content": {
               "_type": "Alerts",
@@ -181,7 +181,7 @@
               "_showGlyph": true
             }
           },
-          "0,2": {
+          "0,3": {
             "size": [
               2,
               1
@@ -236,15 +236,28 @@
               "Colors/Color when true": "#FF4000FF",
               "Colors/Color when false": "#FFD91EFF"
             }
+          },
+          "0,2": {
+            "size": [
+              2,
+              1
+            ],
+            "content": {
+              "_type": "Text View",
+              "_source0": "network_table:///SmartDashboard/Endgame Alert Time",
+              "_title": "Endgame Alert Time",
+              "_glyph": 122,
+              "_showGlyph": true
+            }
           }
         }
       }
     }
   ],
   "windowGeometry": {
-    "x": -4.5,
+    "x": -5.5,
     "y": 0.0,
     "width": 758.5,
-    "height": 844.0
+    "height": 846.5
   }
 }
