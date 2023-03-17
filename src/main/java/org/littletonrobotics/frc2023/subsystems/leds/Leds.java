@@ -32,7 +32,7 @@ public class Leds extends VirtualSubsystem {
   public boolean hpConeTipped = false;
   public boolean hpDoubleSubstation = false;
   public boolean hpThrowGamePiece = false;
-  private Timer gripperStopped = new Timer();
+  public boolean gripperStopped = false;
   public boolean intakeReady = false;
   public boolean autoScore = false;
   public boolean autoSubstation = false;
@@ -44,10 +44,6 @@ public class Leds extends VirtualSubsystem {
   public boolean armEstopped = false;
   private Alliance alliance = Alliance.Invalid;
 
-  public void grippedStopped() {
-    gripperStopped.reset();
-  }
-
   // LED IO
   private final AddressableLED leds;
   private final AddressableLEDBuffer buffer;
@@ -57,7 +53,6 @@ public class Leds extends VirtualSubsystem {
   private static final int length = 43;
   private static final int staticLength = 14;
   private static final int staticSectionLength = 3;
-  private static final double gripperStoppedFlashTime = 1.0;
   private static final double strobeFastDuration = 0.1;
   private static final double strobeSlowDuration = 0.2;
   private static final double breathDuration = 1.0;
@@ -77,7 +72,6 @@ public class Leds extends VirtualSubsystem {
     leds.setLength(length);
     leds.setData(buffer);
     leds.start();
-    gripperStopped.start();
   }
 
   public void periodic() {
@@ -152,7 +146,7 @@ public class Leds extends VirtualSubsystem {
       // Set special modes
       if (endgameAlert) {
         strobe(Section.SHOULDER, Color.kOrange, strobeSlowDuration);
-      } else if (!gripperStopped.hasElapsed(gripperStoppedFlashTime)) {
+      } else if (gripperStopped) {
         solid(Section.SHOULDER, Color.kGreen);
       } else if (intakeReady) {
         solid(Section.SHOULDER, Color.kPurple);

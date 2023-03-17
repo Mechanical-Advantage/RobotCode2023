@@ -158,13 +158,8 @@ public class CubeIntake extends SubsystemBase {
       io.setArmVoltage(controller.calculate(angle));
 
       // Run roller
-      io.setRollerVoltage(isRollerRunning() ? rollerVolts.get() : 0.0);
+      io.setRollerVoltage(isRunning ? rollerVolts.get() : 0.0);
     }
-  }
-
-  /** Returns whether the roller is running. */
-  public boolean isRollerRunning() {
-    return isRunning;
   }
 
   /** Returns the 3D pose of the intake for visualization. */

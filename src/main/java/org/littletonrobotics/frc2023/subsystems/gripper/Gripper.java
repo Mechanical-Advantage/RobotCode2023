@@ -34,7 +34,7 @@ public class Gripper extends SubsystemBase {
   private static final LoggedTunableNumber intakeVelocityWaitStop =
       new LoggedTunableNumber("Gripper/IntakeVelocityWaitStop", 0.5);
   private static final LoggedTunableNumber intakeStopVelocity =
-      new LoggedTunableNumber("Gripper/IntakeStopVelocity", 5.0);
+      new LoggedTunableNumber("Gripper/IntakeStopVelocity", 3.0);
   private static final LoggedTunableNumber ejectVoltsFast =
       new LoggedTunableNumber("Gripper/EjectVoltsFast", -4.0);
   private static final LoggedTunableNumber ejectSecsFast =
@@ -51,12 +51,14 @@ public class Gripper extends SubsystemBase {
   private final Timer tooHotTimer = new Timer();
   private final Alert tooHotAlert =
       new Alert("Gripper motor disabled due to very high temperature.", AlertType.ERROR);
+  private Timer enabledTimer = new Timer();
   private Supplier<Boolean> forceEnableSupplier = () -> false;
 
   public Gripper(GripperIO io) {
     this.io = io;
     io.setBrakeMode(false);
     tooHotTimer.start();
+    enabledTimer.start();
     setDefaultCommand(
         run(() -> {
               setVoltage(holdVolts.get());
@@ -77,6 +79,14 @@ public class Gripper extends SubsystemBase {
     if (DriverStation.isDisabled() || tooHotAlertActive) {
       io.setVoltage(0.0);
     }
+
+    // Update gripper stopped LEDs
+    if (DriverStation.isDisabled()) {
+      enabledTimer.reset();
+    }
+    Leds.getInstance().gripperStopped =
+        enabledTimer.hasElapsed(intakeVelocityWaitStart.get())
+            && inputs.velocityRadPerSec < intakeStopVelocity.get();
 
     // Update too hot alert
     if (inputs.tempCelcius.length == 0 || inputs.tempCelcius[0] < tooHotTemperatureHigh) {
@@ -113,7 +123,6 @@ public class Gripper extends SubsystemBase {
             new SuppliedWaitCommand(() -> intakeVelocityWaitStart.get())
                 .andThen(
                     Commands.waitUntil(() -> inputs.velocityRadPerSec < intakeStopVelocity.get()),
-                    Commands.runOnce(() -> Leds.getInstance().grippedStopped()),
                     new SuppliedWaitCommand(() -> intakeVelocityWaitStop.get())))
         .finallyDo((interrupted) -> setVoltage(holdVolts.get()));
   }
