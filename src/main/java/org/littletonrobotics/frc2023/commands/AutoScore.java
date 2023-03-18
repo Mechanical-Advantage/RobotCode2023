@@ -40,7 +40,7 @@ public class AutoScore extends SequentialCommandGroup {
   public static final double minDriveX = FieldConstants.Grids.outerX + 0.45;
   public static final double minDriveY = 0.7;
   public static final double maxDriveY = FieldConstants.Community.leftY - 0.5;
-  public static final double minArmExtension = 0.8;
+  public static final double minArmExtension = 0.3;
   public static final double maxArmExtensionHybrid = 0.9;
   public static final double maxArmExtensionMid = 1.1;
   public static final double maxArmExtensionHigh = 1.35;
@@ -50,8 +50,8 @@ public class AutoScore extends SequentialCommandGroup {
   public static final double cubeHybridDriveTolerance = 0.1;
   public static final Rotation2d cubeHybridThetaTolerance = Rotation2d.fromDegrees(5.0);
 
-  public static final Translation2d hybridRelativePosition = new Translation2d(-0.2, 0.7);
-  public static final Rotation2d hybridWristAngle = Rotation2d.fromDegrees(-75.0);
+  public static final Translation2d hybridRelativePosition = new Translation2d(-0.8, 0.5);
+  public static final Rotation2d hybridWristAngle = new Rotation2d();
   public static final Translation2d cubeMidRelativePosition = new Translation2d(-0.4, 0.5);
   public static final Rotation2d cubeMidWristAngle = Rotation2d.fromDegrees(-30.0);
   public static final Translation2d cubeHighRelativePosition = new Translation2d(-0.5, 0.1);
