@@ -533,9 +533,9 @@ public class RobotContainer {
     // Manual arm controls
     new Trigger(
             () ->
-                Math.abs(operator.getLeftX()) > DriveWithJoysticks.deadband
-                    || Math.abs(operator.getLeftY()) > DriveWithJoysticks.deadband
-                    || Math.abs(operator.getRightY()) > DriveWithJoysticks.deadband)
+                Math.abs(operator.getLeftX()) > DriveWithJoysticks.deadband.get()
+                    || Math.abs(operator.getLeftY()) > DriveWithJoysticks.deadband.get()
+                    || Math.abs(operator.getRightY()) > DriveWithJoysticks.deadband.get())
         .and(new Trigger(() -> arm.isTrajectoryFinished(false)))
         .and(autoScoreTrigger.negate())
         .whileTrue(moveArmWithJoysticksFactory.get());

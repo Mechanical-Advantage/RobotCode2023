@@ -53,8 +53,8 @@ public class MoveArmWithJoysticks extends CommandBase {
     Rotation2d linearDirection = new Rotation2d(linearX, linearY);
 
     // Apply deadband
-    linearMagnitude = MathUtil.applyDeadband(linearMagnitude, DriveWithJoysticks.deadband);
-    wrist = MathUtil.applyDeadband(wrist, DriveWithJoysticks.deadband);
+    linearMagnitude = MathUtil.applyDeadband(linearMagnitude, DriveWithJoysticks.deadband.get());
+    wrist = MathUtil.applyDeadband(wrist, DriveWithJoysticks.deadband.get());
 
     // Apply squaring
     linearMagnitude = Math.copySign(linearMagnitude * linearMagnitude, linearMagnitude);
