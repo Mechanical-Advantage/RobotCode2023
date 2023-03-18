@@ -7,6 +7,8 @@
 
 package org.littletonrobotics.frc2023.subsystems.gripper;
 
+import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -30,11 +32,13 @@ public class Gripper extends SubsystemBase {
   private static final LoggedTunableNumber intakeVolts =
       new LoggedTunableNumber("Gripper/IntakeVolts", 12.0);
   private static final LoggedTunableNumber intakeVelocityWaitStart =
-      new LoggedTunableNumber("Gripper/IntakeVelocityWaitStart", 0.25);
+      new LoggedTunableNumber("Gripper/IntakeVelocityWaitStart", 0.3);
   private static final LoggedTunableNumber intakeVelocityWaitStop =
       new LoggedTunableNumber("Gripper/IntakeVelocityWaitStop", 0.5);
   private static final LoggedTunableNumber intakeStopVelocity =
       new LoggedTunableNumber("Gripper/IntakeStopVelocity", 3.0);
+  private static final LoggedTunableNumber ejectVoltsVeryFast =
+      new LoggedTunableNumber("Gripper/EjectVoltsVeryFast", -12.0);
   private static final LoggedTunableNumber ejectVoltsFast =
       new LoggedTunableNumber("Gripper/EjectVoltsFast", -4.0);
   private static final LoggedTunableNumber ejectSecsFast =
@@ -51,14 +55,15 @@ public class Gripper extends SubsystemBase {
   private final Timer tooHotTimer = new Timer();
   private final Alert tooHotAlert =
       new Alert("Gripper motor disabled due to very high temperature.", AlertType.ERROR);
-  private Timer enabledTimer = new Timer();
+  private Timer dsEnabledTimer = new Timer();
+  private final Debouncer stoppedLedsDebouncer = new Debouncer(0.1, DebounceType.kBoth);
   private Supplier<Boolean> forceEnableSupplier = () -> false;
 
   public Gripper(GripperIO io) {
     this.io = io;
     io.setBrakeMode(false);
     tooHotTimer.start();
-    enabledTimer.start();
+    dsEnabledTimer.start();
     setDefaultCommand(
         run(() -> {
               setVoltage(holdVolts.get());
@@ -82,11 +87,12 @@ public class Gripper extends SubsystemBase {
 
     // Update gripper stopped LEDs
     if (DriverStation.isDisabled()) {
-      enabledTimer.reset();
+      dsEnabledTimer.reset();
     }
     Leds.getInstance().gripperStopped =
-        enabledTimer.hasElapsed(intakeVelocityWaitStart.get())
-            && inputs.velocityRadPerSec < intakeStopVelocity.get();
+        stoppedLedsDebouncer.calculate(
+                Math.abs(inputs.velocityRadPerSec) < intakeStopVelocity.get())
+            && dsEnabledTimer.hasElapsed(intakeVelocityWaitStart.get());
 
     // Update too hot alert
     if (inputs.tempCelcius.length == 0 || inputs.tempCelcius[0] < tooHotTemperatureHigh) {
@@ -135,15 +141,30 @@ public class Gripper extends SubsystemBase {
 
   /** Command factory to run the gripper wheels back and eject a game piece. */
   public Command ejectCommand(EjectSpeed speed) {
-    return run(() ->
-            setVoltage(speed == EjectSpeed.FAST ? ejectVoltsFast.get() : ejectVoltsSlow.get()))
+    Supplier<Double> voltsSupplier;
+    switch (speed) {
+      case VERY_FAST:
+        voltsSupplier = () -> ejectVoltsVeryFast.get();
+        break;
+      case FAST:
+        voltsSupplier = () -> ejectVoltsFast.get();
+        break;
+      case SLOW:
+        voltsSupplier = () -> ejectVoltsSlow.get();
+        break;
+      default:
+        voltsSupplier = () -> 0.0;
+        break;
+    }
+    return run(() -> setVoltage(voltsSupplier.get()))
         .raceWith(
             new SuppliedWaitCommand(
-                () -> speed == EjectSpeed.FAST ? ejectSecsFast.get() : ejectSecsSlow.get()))
+                () -> speed == EjectSpeed.SLOW ? ejectSecsSlow.get() : ejectSecsFast.get()))
         .finallyDo((interrupted) -> setVoltage(holdVolts.get()));
   }
 
   public static enum EjectSpeed {
+    VERY_FAST,
     FAST,
     SLOW
   }

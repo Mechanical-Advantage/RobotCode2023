@@ -42,6 +42,7 @@ import org.littletonrobotics.frc2023.subsystems.arm.ArmPose;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntake;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
 import org.littletonrobotics.frc2023.subsystems.gripper.Gripper;
+import org.littletonrobotics.frc2023.subsystems.gripper.Gripper.EjectSpeed;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.ConeOrientation;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.NodeLevel;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.Objective;
@@ -355,6 +356,11 @@ public class AutoCommands {
 
   /** Drives to the charging station and balances on it. */
   private Command driveAndBalance(Pose2d startingPosition) {
+    return driveAndBalance(startingPosition, true);
+  }
+
+  /** Drives to the charging station and balances on it. */
+  private Command driveAndBalance(Pose2d startingPosition, boolean armToHome) {
     boolean enterFront =
         startingPosition.getX()
             < (Community.chargingStationInnerX + Community.chargingStationOuterX) / 2.0;
@@ -365,12 +371,11 @@ public class AutoCommands {
                 startingPosition.getY(),
                 Community.chargingStationRightY + 0.8,
                 Community.chargingStationLeftY - 0.8),
-            Rotation2d.fromDegrees(
-                Math.round(startingPosition.getRotation().getDegrees() / 90.0) * 90.0));
+            enterFront ? new Rotation2d() : Rotation2d.fromDegrees(180.0));
     Pose2d position1 =
         new Pose2d(
             (Community.chargingStationOuterX + Community.chargingStationInnerX) / 2.0
-                + (enterFront ? 0.5 : -0.5),
+                + (enterFront ? 0.35 : -0.35),
             position0.getY(),
             position0.getRotation());
     return path(
@@ -378,7 +383,7 @@ public class AutoCommands {
             Waypoint.fromHolonomicPose(
                 position0, enterFront ? new Rotation2d() : Rotation2d.fromDegrees(180.0)),
             Waypoint.fromHolonomicPose(position1))
-        .alongWith(armToHome())
+        .alongWith(armToHome ? armToHome() : none())
         .andThen(new AutoBalance(drive));
   }
 
@@ -474,73 +479,6 @@ public class AutoCommands {
                     () -> balanceSupplier.get()))
             : either(
                 driveAndBalance(score1Sequence.pose()), armToHome(), () -> balanceSupplier.get()));
-  }
-
-  /** Scores two cubes over the charge station. */
-  public Command centerScoreTwoAndBalance() {
-    return either(
-        centerScoreTwoAndBalance(true),
-        centerScoreTwoAndBalance(false),
-        () -> responses.get().get(0).equals(AutoQuestionResponse.FIELD_SIDE));
-  }
-
-  /** Scores two cubes over the charge station. */
-  private Command centerScoreTwoAndBalance(boolean fieldSide) {
-    var objective0 = new Objective(4, NodeLevel.HIGH, ConeOrientation.UPRIGHT, true);
-    var objective1 = new Objective(4, NodeLevel.MID, ConeOrientation.UPRIGHT, true);
-
-    var startingPose = startingLocations[4];
-    var transitNearPose =
-        new Pose2d(
-            Community.chargingStationInnerX,
-            (Community.chargingStationLeftY + Community.chargingStationRightY) / 2.0,
-            new Rotation2d());
-    var transitFarPose =
-        new Pose2d(
-            Community.chargingStationOuterX,
-            (Community.chargingStationLeftY + Community.chargingStationRightY) / 2.0,
-            new Rotation2d());
-    var intakePose =
-        fieldSide
-            ? new Pose2d(StagingLocations.translations[2], Rotation2d.fromDegrees(15.0))
-            : new Pose2d(StagingLocations.translations[1], Rotation2d.fromDegrees(-15.0));
-    var scorePose =
-        transitNearPose.plus(new Transform2d(new Translation2d(0.5, 0.0), new Rotation2d()));
-
-    return sequence(
-        reset(startingPose),
-        arm.runPathCommand(AutoScore.getArmTarget(startingPose, objective0, arm, true)),
-        gripper.ejectCommand(objective0),
-        path(
-                Waypoint.fromHolonomicPose(startingPose),
-                Waypoint.fromHolonomicPose(transitNearPose, new Rotation2d()),
-                Waypoint.fromHolonomicPose(transitFarPose, new Rotation2d()),
-                Waypoint.fromHolonomicPose(intakePose))
-            .alongWith(
-                sequence(
-                    armToHome(),
-                    waitUntil(
-                        () ->
-                            AllianceFlipUtil.apply(drive.getPose().getX())
-                                > Community.chargingStationOuterX),
-                    arm.runPathCommand(ArmPose.Preset.CUBE_HANDOFF),
-                    parallel(cubeIntake.runCommand(), gripper.intakeCommand()).withTimeout(1.0))),
-        path(
-                Waypoint.fromHolonomicPose(intakePose),
-                Waypoint.fromHolonomicPose(transitFarPose, Rotation2d.fromDegrees(180.0)),
-                Waypoint.fromHolonomicPose(scorePose))
-            .alongWith(
-                sequence(
-                    armToHome(),
-                    waitUntil(
-                        () ->
-                            AllianceFlipUtil.apply(drive.getPose().getX())
-                                < (Community.chargingStationInnerX
-                                        + Community.chargingStationOuterX)
-                                    / 2.0),
-                    arm.runPathCommand(ArmPose.Preset.MID_CUBE_FROM_CHARGING_STATION))),
-        gripper.ejectCommand(objective1),
-        new AutoBalance(drive).alongWith(armToHome()));
   }
 
   /** Scores one game piece, gets mobility around the charge station, and optionally balances. */
@@ -662,6 +600,115 @@ public class AutoCommands {
   }
 
   /** Scores one game piece, gets mobility over the charge station, and balances */
+  public Command centerScoreOneGrabAndBalance() {
+    Supplier<Boolean> fieldSideSupplier =
+        () -> responses.get().get(2).equals(AutoQuestionResponse.FIELD_SIDE);
+    Supplier<Boolean> scoreFinalSupplier =
+        () -> responses.get().get(3).equals(AutoQuestionResponse.YES);
+    return select(
+        Map.of(
+            AutoQuestionResponse.HYBRID,
+            select(
+                Map.of(
+                    AutoQuestionResponse.WALL_SIDE,
+                    centerScoreOneGrabAndBalance(
+                        NodeLevel.HYBRID, 3, fieldSideSupplier, scoreFinalSupplier),
+                    AutoQuestionResponse.CENTER,
+                    centerScoreOneGrabAndBalance(
+                        NodeLevel.HYBRID, 4, fieldSideSupplier, scoreFinalSupplier),
+                    AutoQuestionResponse.FIELD_SIDE,
+                    centerScoreOneGrabAndBalance(
+                        NodeLevel.HYBRID, 5, fieldSideSupplier, scoreFinalSupplier)),
+                () -> responses.get().get(1)),
+            AutoQuestionResponse.MID,
+            select(
+                Map.of(
+                    AutoQuestionResponse.WALL_SIDE,
+                    centerScoreOneGrabAndBalance(
+                        NodeLevel.MID, 3, fieldSideSupplier, scoreFinalSupplier),
+                    AutoQuestionResponse.CENTER,
+                    centerScoreOneGrabAndBalance(
+                        NodeLevel.MID, 4, fieldSideSupplier, scoreFinalSupplier),
+                    AutoQuestionResponse.FIELD_SIDE,
+                    centerScoreOneGrabAndBalance(
+                        NodeLevel.MID, 5, fieldSideSupplier, scoreFinalSupplier)),
+                () -> responses.get().get(1)),
+            AutoQuestionResponse.HIGH,
+            select(
+                Map.of(
+                    AutoQuestionResponse.WALL_SIDE,
+                    centerScoreOneGrabAndBalance(
+                        NodeLevel.HIGH, 3, fieldSideSupplier, scoreFinalSupplier),
+                    AutoQuestionResponse.CENTER,
+                    centerScoreOneGrabAndBalance(
+                        NodeLevel.HIGH, 4, fieldSideSupplier, scoreFinalSupplier),
+                    AutoQuestionResponse.FIELD_SIDE,
+                    centerScoreOneGrabAndBalance(
+                        NodeLevel.HIGH, 5, fieldSideSupplier, scoreFinalSupplier)),
+                () -> responses.get().get(1))),
+        () -> responses.get().get(0));
+  }
+
+  /** Scores one game piece, gets mobility over the charge station, and balances */
+  private Command centerScoreOneGrabAndBalance(
+      NodeLevel level,
+      int position,
+      Supplier<Boolean> fieldSideSupplier,
+      Supplier<Boolean> scoreFinalSupplier) {
+    var objective = new Objective(position, level, ConeOrientation.UPRIGHT, false);
+    var scoringSegment =
+        driveAndScore(objective, false, true, false, startingLocations[position], false);
+    var debouncerRising = new Debouncer(0.4, DebounceType.kRising);
+    Pose2d intakePoseWall =
+        new Pose2d(StagingLocations.translations[1], Rotation2d.fromDegrees(-15.0));
+    Pose2d intakePoseField =
+        new Pose2d(StagingLocations.translations[2], Rotation2d.fromDegrees(15.0));
+    var driveToPose =
+        new DriveToPose(
+            drive,
+            () ->
+                AllianceFlipUtil.apply(fieldSideSupplier.get() ? intakePoseField : intakePoseWall));
+    return sequence(
+        reset(startingLocations[position]),
+        scoringSegment.command(),
+        path(
+                Waypoint.fromHolonomicPose(scoringSegment.pose()),
+                Waypoint.fromHolonomicPose(
+                    new Pose2d(
+                        chargingStationTransitNear.plus(new Translation2d(1.0, 0.0)),
+                        new Rotation2d()),
+                    new Rotation2d()))
+            .alongWith(armToHome()),
+        run(() ->
+                drive.runVelocity(
+                    ChassisSpeeds.fromFieldRelativeSpeeds(
+                        Units.inchesToMeters(
+                            50.0 * (DriverStation.getAlliance() == Alliance.Red ? -1.0 : 1.0)),
+                        0.0,
+                        thetaController.calculate(
+                            drive.getRotation().getRadians(),
+                            AllianceFlipUtil.apply(new Rotation2d()).getRadians()),
+                        drive.getRotation())))
+            .until(() -> debouncerRising.calculate(Math.abs(drive.getPitch().getDegrees()) < 8.0)),
+        gripper
+            .intakeCommand()
+            .withTimeout(2.0)
+            .alongWith(arm.runPathCommand(ArmPose.Preset.CUBE_HANDOFF))
+            .deadlineWith(driveToPose, cubeIntake.runCommand()),
+        either(
+                driveAndBalance(intakePoseField, false),
+                driveAndBalance(intakePoseWall, false),
+                () -> fieldSideSupplier.get())
+            .alongWith(
+                arm.runPathCommand(
+                    () ->
+                        scoreFinalSupplier.get()
+                            ? ArmPose.Preset.HYBRID_CUBE_FROM_CHARGING_STATION.getPose()
+                            : ArmPose.Preset.HOMED.getPose())),
+        either(gripper.ejectCommand(EjectSpeed.VERY_FAST), none(), () -> scoreFinalSupplier.get()));
+  }
+
+  /** Scores one game piece, gets mobility over the charge station, and balances */
   public Command centerScoreOneMobilityAndBalance() {
     return select(
         Map.of(
@@ -720,7 +767,7 @@ public class AutoCommands {
                 drive.runVelocity(
                     ChassisSpeeds.fromFieldRelativeSpeeds(
                         Units.inchesToMeters(
-                            70.0 * (DriverStation.getAlliance() == Alliance.Red ? -1.0 : 1.0)),
+                            50.0 * (DriverStation.getAlliance() == Alliance.Red ? -1.0 : 1.0)),
                         0.0,
                         thetaController.calculate(
                             drive.getRotation().getRadians(),

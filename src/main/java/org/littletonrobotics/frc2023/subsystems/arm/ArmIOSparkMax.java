@@ -57,7 +57,7 @@ public class ArmIOSparkMax implements ArmIO {
     isShoulderMotorInverted = false;
     isShoulderExternalEncoderInverted = false;
     shoulderAbsoluteEncoderOffset =
-        new Rotation2d(-3.2918873072).plus(Rotation2d.fromDegrees(-90.0));
+        new Rotation2d(2.9468452222).plus(Rotation2d.fromDegrees(-90.0));
     shoulderRelativeEncoder.setDistancePerPulse((2 * Math.PI) / 2048);
 
     // Elbow config

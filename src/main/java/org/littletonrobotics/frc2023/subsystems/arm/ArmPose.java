@@ -36,24 +36,24 @@ public record ArmPose(Translation2d endEffectorPosition, Rotation2d globalWristA
                     Math.max(
                             AutoScore.minDriveX,
                             FieldConstants.Grids.midX
-                                - AutoScore.cubeRelativePosition.getX()
+                                - AutoScore.cubeMidRelativePosition.getX()
                                 + AutoScore.minArmExtension)
                         - FieldConstants.Grids.midX,
                     FieldConstants.Grids.midCubeZ)
-                .plus(AutoScore.cubeRelativePosition),
-            AutoScore.cubeWristAngle)),
+                .plus(AutoScore.cubeMidRelativePosition),
+            AutoScore.cubeMidWristAngle)),
     SCORE_HIGH_CUBE(
         new ArmPose(
             new Translation2d(
                     Math.max(
                             AutoScore.minDriveX,
                             FieldConstants.Grids.highX
-                                - AutoScore.cubeRelativePosition.getX()
+                                - AutoScore.cubeHighRelativePosition.getX()
                                 + AutoScore.minArmExtension)
                         - FieldConstants.Grids.highX,
                     FieldConstants.Grids.highCubeZ)
-                .plus(AutoScore.cubeRelativePosition),
-            AutoScore.cubeWristAngle)),
+                .plus(AutoScore.cubeHighRelativePosition),
+            AutoScore.cubeHighWristAngle)),
     SCORE_MID_UPRIGHT_CONE(
         new ArmPose(
             new Translation2d(
@@ -104,8 +104,8 @@ public record ArmPose(Translation2d endEffectorPosition, Rotation2d globalWristA
             AutoScore.tippedConeWristAngle)),
     SINGLE_SUBTATION(
         new ArmPose(
-            new Translation2d(0.49, FieldConstants.LoadingZone.singleSubstationCenterZ - 0.15),
-            Rotation2d.fromDegrees(20.0))),
+            new Translation2d(0.47, FieldConstants.LoadingZone.singleSubstationCenterZ - 0.26),
+            Rotation2d.fromDegrees(30.0))),
     DOUBLE_SUBTATION(
         new ArmPose(
             new Translation2d(0.49, FieldConstants.LoadingZone.doubleSubstationShelfZ + 0.125),
@@ -113,8 +113,8 @@ public record ArmPose(Translation2d endEffectorPosition, Rotation2d globalWristA
     CUBE_HANDOFF(new ArmPose(new Translation2d(0.42, 0.58), Rotation2d.fromDegrees(-85.0)), false),
     FLOOR_CONE(new ArmPose(new Translation2d(-0.5, 0.18), Rotation2d.fromDegrees(-165.0)), false),
     EJECT(new ArmPose(new Translation2d(0.25, 0.5), Rotation2d.fromDegrees(10.0))),
-    MID_CUBE_FROM_CHARGING_STATION(
-        new ArmPose(new Translation2d(-1.45, 1.05), Rotation2d.fromDegrees(200.0)));
+    HYBRID_CUBE_FROM_CHARGING_STATION(
+        new ArmPose(new Translation2d(0.45, 0.85), Rotation2d.fromDegrees(20.0)));
 
     private ArmPose pose;
     private boolean pregenerateFlip;

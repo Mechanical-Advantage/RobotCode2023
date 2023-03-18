@@ -251,13 +251,6 @@ public class RobotContainer {
                 "Balance?", List.of(AutoQuestionResponse.YES, AutoQuestionResponse.NO))),
         autoCommands.sideScoreTwoMaybeGrabMaybeBalance(false));
     autoSelector.addRoutine(
-        "Center: Score Two And Balance",
-        List.of(
-            new AutoQuestion(
-                "Which side to intake from?",
-                List.of(AutoQuestionResponse.FIELD_SIDE, AutoQuestionResponse.WALL_SIDE))),
-        autoCommands.centerScoreTwoAndBalance());
-    autoSelector.addRoutine(
         "Side: Score One And Maybe Balance",
         List.of(
             new AutoQuestion(
@@ -278,6 +271,28 @@ public class RobotContainer {
             new AutoQuestion(
                 "Balance?", List.of(AutoQuestionResponse.YES, AutoQuestionResponse.NO))),
         autoCommands.sideScoreOneAndMaybeBalance());
+    autoSelector.addRoutine(
+        "Center: Score One, Grab, Balance, And Maybe Score",
+        List.of(
+            new AutoQuestion(
+                "Which level?",
+                List.of(
+                    AutoQuestionResponse.HIGH,
+                    AutoQuestionResponse.MID,
+                    AutoQuestionResponse.HYBRID)),
+            new AutoQuestion(
+                "Which node?",
+                List.of(
+                    AutoQuestionResponse.FIELD_SIDE,
+                    AutoQuestionResponse.CENTER,
+                    AutoQuestionResponse.WALL_SIDE)),
+            new AutoQuestion(
+                "Which side to intake from?",
+                List.of(AutoQuestionResponse.FIELD_SIDE, AutoQuestionResponse.WALL_SIDE)),
+            new AutoQuestion(
+                "Score cube while balanced?",
+                List.of(AutoQuestionResponse.YES, AutoQuestionResponse.NO))),
+        autoCommands.centerScoreOneGrabAndBalance());
     autoSelector.addRoutine(
         "Center: Score One, Mobility, And Balance",
         List.of(

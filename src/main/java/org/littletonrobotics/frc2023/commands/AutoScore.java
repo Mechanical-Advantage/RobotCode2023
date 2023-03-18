@@ -52,8 +52,10 @@ public class AutoScore extends SequentialCommandGroup {
 
   public static final Translation2d hybridRelativePosition = new Translation2d(-0.2, 0.7);
   public static final Rotation2d hybridWristAngle = Rotation2d.fromDegrees(-75.0);
-  public static final Translation2d cubeRelativePosition = new Translation2d(-0.4, 0.5);
-  public static final Rotation2d cubeWristAngle = Rotation2d.fromDegrees(-30.0);
+  public static final Translation2d cubeMidRelativePosition = new Translation2d(-0.4, 0.5);
+  public static final Rotation2d cubeMidWristAngle = Rotation2d.fromDegrees(-30.0);
+  public static final Translation2d cubeHighRelativePosition = new Translation2d(-0.5, 0.1);
+  public static final Rotation2d cubeHighWristAngle = Rotation2d.fromDegrees(45.0);
   public static final Translation2d uprightConeRelativePosition = new Translation2d(-0.3, -0.025);
   public static final Rotation2d uprightConeWristAngle = Rotation2d.fromDegrees(55.0);
   public static final Translation2d tippedConeRelativePosition = new Translation2d(-0.29, -0.13);
@@ -288,44 +290,58 @@ public class AutoScore extends SequentialCommandGroup {
 
   /** Returns the relative arm position for the selected node. */
   public static Translation2d getRelativeArmPosition(Objective objective) {
-    switch (objective.nodeLevel) {
-      case HYBRID:
-        return hybridRelativePosition;
-      case MID:
-      case HIGH:
-        if (objective.isConeNode()) {
+    if (objective.isConeNode()) {
+      switch (objective.nodeLevel) {
+        case HYBRID:
+          return hybridRelativePosition;
+        case MID:
+        case HIGH:
           switch (objective.coneOrientation) {
             case UPRIGHT:
               return uprightConeRelativePosition;
             case TIPPED:
               return tippedConeRelativePosition;
           }
-        } else {
-          return cubeRelativePosition;
-        }
-        break;
+          break;
+      }
+    } else {
+      switch (objective.nodeLevel) {
+        case HYBRID:
+          return hybridRelativePosition;
+        case MID:
+          return cubeMidRelativePosition;
+        case HIGH:
+          return cubeHighRelativePosition;
+      }
     }
     return new Translation2d();
   }
 
   /** Returns the wrist angle for the selected node. */
   public static Rotation2d getWristAngle(Objective objective) {
-    switch (objective.nodeLevel) {
-      case HYBRID:
-        return hybridWristAngle;
-      case MID:
-      case HIGH:
-        if (objective.isConeNode()) {
+    if (objective.isConeNode()) {
+      switch (objective.nodeLevel) {
+        case HYBRID:
+          return hybridWristAngle;
+        case MID:
+        case HIGH:
           switch (objective.coneOrientation) {
             case UPRIGHT:
               return uprightConeWristAngle;
             case TIPPED:
               return tippedConeWristAngle;
           }
-        } else {
-          return cubeWristAngle;
-        }
-        break;
+          break;
+      }
+    } else {
+      switch (objective.nodeLevel) {
+        case HYBRID:
+          return hybridWristAngle;
+        case MID:
+          return cubeMidWristAngle;
+        case HIGH:
+          return cubeHighWristAngle;
+      }
     }
     return new Rotation2d();
   }
