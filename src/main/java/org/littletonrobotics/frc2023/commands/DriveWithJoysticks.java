@@ -23,17 +23,22 @@ import org.littletonrobotics.frc2023.util.LoggedTunableNumber;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 public class DriveWithJoysticks extends CommandBase {
-  public static final LoggedTunableNumber deadband = new LoggedTunableNumber("", 0.1);
+  public static final LoggedTunableNumber deadband =
+      new LoggedTunableNumber("DriveWithJoysticks/Deadband", 0.1);
   public static final LoggedTunableNumber minExtensionMaxLinearAcceleration =
-      new LoggedTunableNumber("", 20.0);
+      new LoggedTunableNumber("DriveWithJoysticks/MinExtensionMaxLinearAcceleration", 10.0);
   public static final LoggedTunableNumber fullExtensionMaxLinearAcceleration =
-      new LoggedTunableNumber("", 5.0);
+      new LoggedTunableNumber("DriveWithJoysticks/FullExtensionMaxLinearAcceleration", 3.0);
+  public static final LoggedTunableNumber maxAngularVelocityFullExtensionPercent =
+      new LoggedTunableNumber("DriveWithJoysticks/MaxAngularVelocityFullExtensionPercent", 0.3);
+  public static final LoggedTunableNumber minExtensionMaxAngularVelocity =
+      new LoggedTunableNumber("DriveWithJoysticks/MinExtensionMaxAngularVelocity", 9.0);
   public static final LoggedTunableNumber fullExtensionMaxAngularVelocity =
-      new LoggedTunableNumber("", 1.0);
+      new LoggedTunableNumber("DriveWithJoysticks/FullExtensionMaxAngularVelocity", 1.5);
   public static final LoggedTunableNumber sniperModeLinearPercent =
-      new LoggedTunableNumber("", 0.2);
+      new LoggedTunableNumber("DriveWithJoysticks/SniperModeLinearPercent", 0.2);
   public static final LoggedTunableNumber sniperModeAngularPercent =
-      new LoggedTunableNumber("", 0.2);
+      new LoggedTunableNumber("DriveWithJoysticks/SniperModeAngularPercent", 0.2);
 
   private final Drive drive;
   private final Supplier<Double> leftXSupplier;
@@ -122,7 +127,7 @@ public class DriveWithJoysticks extends CommandBase {
         new ChassisSpeeds(
             linearVelocity.getX() * drive.getMaxLinearSpeedMetersPerSec(),
             linearVelocity.getY() * drive.getMaxLinearSpeedMetersPerSec(),
-            rightY * drive.getMaxAngularSpeedRadPerSec());
+            rightY * minExtensionMaxAngularVelocity.get());
 
     // Convert from field relative
     if (!robotRelativeOverride.get()) {
@@ -146,9 +151,12 @@ public class DriveWithJoysticks extends CommandBase {
             armExtensionPercentSupplier.get());
     double maxAngularVelocity =
         MathUtil.interpolate(
-            drive.getMaxAngularSpeedRadPerSec(),
+            minExtensionMaxAngularVelocity.get(),
             fullExtensionMaxAngularVelocity.get(),
-            armExtensionPercentSupplier.get());
+            MathUtil.clamp(
+                armExtensionPercentSupplier.get() / maxAngularVelocityFullExtensionPercent.get(),
+                0.0,
+                1.0));
     speeds =
         new ChassisSpeeds(
             MathUtil.clamp(
