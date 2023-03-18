@@ -216,7 +216,7 @@ public class Drive extends SubsystemBase {
                 new Twist3d(
                     0.0,
                     0.0,
-                    gyroInputs.pitchPositionRad * trackWidthX.get() / 2.0,
+                    Math.abs(gyroInputs.pitchPositionRad) * trackWidthX.get() / 2.0,
                     0.0,
                     gyroInputs.pitchPositionRad,
                     0.0))
@@ -224,7 +224,7 @@ public class Drive extends SubsystemBase {
                 new Twist3d(
                     0.0,
                     0.0,
-                    gyroInputs.rollPositionRad * trackWidthY.get() / 2.0,
+                    Math.abs(gyroInputs.rollPositionRad) * trackWidthY.get() / 2.0,
                     gyroInputs.rollPositionRad,
                     0.0,
                     0.0));
