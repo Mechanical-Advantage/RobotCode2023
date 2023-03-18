@@ -34,6 +34,7 @@ public class AprilTagVision extends VirtualSubsystem {
   private static final double ambiguityThreshold = 0.15;
   private static final double targetLogTimeSecs = 0.1;
   private static final double fieldBorderMargin = 0.5;
+  private static final double zMargin = 0.75;
   private static final Pose3d[] cameraPoses;
   private static final double xyStdDevCoefficient;
   private static final double thetaStdDevCoefficient;
@@ -126,6 +127,7 @@ public class AprilTagVision extends VirtualSubsystem {
 
     // Loop over instances
     List<Pose2d> allRobotPoses = new ArrayList<>();
+    List<Pose3d> allRobotPoses3d = new ArrayList<>();
     List<TimestampedVisionUpdate> visionUpdates = new ArrayList<>();
     for (int instanceIndex = 0; instanceIndex < io.length; instanceIndex++) {
 
@@ -137,7 +139,7 @@ public class AprilTagVision extends VirtualSubsystem {
 
         // Switch based on number of poses
         Pose3d cameraPose = null;
-        Pose2d robotPose = null;
+        Pose3d robotPose3d = null;
         switch ((int) values[0]) {
           case 1:
             // One pose (multi-tag), use directly
@@ -147,10 +149,9 @@ public class AprilTagVision extends VirtualSubsystem {
                     values[3],
                     values[4],
                     new Rotation3d(new Quaternion(values[5], values[6], values[7], values[8])));
-            robotPose =
-                cameraPose
-                    .transformBy(GeomUtil.pose3dToTransform3d(cameraPoses[instanceIndex]).inverse())
-                    .toPose2d();
+            robotPose3d =
+                cameraPose.transformBy(
+                    GeomUtil.pose3dToTransform3d(cameraPoses[instanceIndex]).inverse());
             break;
 
           case 2:
@@ -169,38 +170,41 @@ public class AprilTagVision extends VirtualSubsystem {
                     values[11],
                     values[12],
                     new Rotation3d(new Quaternion(values[13], values[14], values[15], values[16])));
-            Pose2d robotPose0 =
-                cameraPose0
-                    .transformBy(GeomUtil.pose3dToTransform3d(cameraPoses[instanceIndex]).inverse())
-                    .toPose2d();
-            Pose2d robotPose1 =
-                cameraPose1
-                    .transformBy(GeomUtil.pose3dToTransform3d(cameraPoses[instanceIndex]).inverse())
-                    .toPose2d();
+            Pose3d robotPose3d0 =
+                cameraPose0.transformBy(
+                    GeomUtil.pose3dToTransform3d(cameraPoses[instanceIndex]).inverse());
+            Pose3d robotPose3d1 =
+                cameraPose1.transformBy(
+                    GeomUtil.pose3dToTransform3d(cameraPoses[instanceIndex]).inverse());
 
             // Select pose using projection errors
             if (error0 < error1 * ambiguityThreshold) {
               cameraPose = cameraPose0;
-              robotPose = robotPose0;
+              robotPose3d = robotPose3d0;
             } else if (error1 < error0 * ambiguityThreshold) {
               cameraPose = cameraPose1;
-              robotPose = robotPose1;
+              robotPose3d = robotPose3d1;
             }
             break;
         }
 
         // Exit if no data
-        if (cameraPose == null || robotPose == null) {
+        if (cameraPose == null || robotPose3d == null) {
           continue;
         }
 
         // Exit if robot pose is off the field
-        if (robotPose.getX() < -fieldBorderMargin
-            || robotPose.getX() > FieldConstants.fieldLength + fieldBorderMargin
-            || robotPose.getY() < -fieldBorderMargin
-            || robotPose.getY() > FieldConstants.fieldWidth + fieldBorderMargin) {
+        if (robotPose3d.getX() < -fieldBorderMargin
+            || robotPose3d.getX() > FieldConstants.fieldLength + fieldBorderMargin
+            || robotPose3d.getY() < -fieldBorderMargin
+            || robotPose3d.getY() > FieldConstants.fieldWidth + fieldBorderMargin
+            || robotPose3d.getZ() < -zMargin
+            || robotPose3d.getZ() > zMargin) {
           continue;
         }
+
+        // Get 2D robot pose
+        Pose2d robotPose = robotPose3d.toPose2d();
 
         // Get tag poses and update last detection times
         List<Pose3d> tagPoses = new ArrayList<>();
@@ -227,6 +231,7 @@ public class AprilTagVision extends VirtualSubsystem {
             new TimestampedVisionUpdate(
                 timestamp, robotPose, VecBuilder.fill(xyStdDev, xyStdDev, thetaStdDev)));
         allRobotPoses.add(robotPose);
+        allRobotPoses3d.add(robotPose3d);
 
         // Log data from instance
         Logger.getInstance()
@@ -238,6 +243,10 @@ public class AprilTagVision extends VirtualSubsystem {
                 "AprilTagVision/Inst" + Integer.toString(instanceIndex) + "/RobotPose", robotPose);
         Logger.getInstance()
             .recordOutput(
+                "AprilTagVision/Inst" + Integer.toString(instanceIndex) + "/RobotPose3d",
+                robotPose3d);
+        Logger.getInstance()
+            .recordOutput(
                 "AprilTagVision/Inst" + Integer.toString(instanceIndex) + "/TagPoses",
                 tagPoses.toArray(new Pose3d[tagPoses.size()]));
       }
@@ -247,6 +256,10 @@ public class AprilTagVision extends VirtualSubsystem {
         Logger.getInstance()
             .recordOutput(
                 "AprilTagVision/Inst" + Integer.toString(instanceIndex) + "/RobotPose",
+                new double[] {});
+        Logger.getInstance()
+            .recordOutput(
+                "AprilTagVision/Inst" + Integer.toString(instanceIndex) + "/RobotPose3d",
                 new double[] {});
       }
 
@@ -263,6 +276,10 @@ public class AprilTagVision extends VirtualSubsystem {
     Logger.getInstance()
         .recordOutput(
             "AprilTagVision/RobotPoses", allRobotPoses.toArray(new Pose2d[allRobotPoses.size()]));
+    Logger.getInstance()
+        .recordOutput(
+            "AprilTagVision/RobotPoses3d",
+            allRobotPoses3d.toArray(new Pose3d[allRobotPoses3d.size()]));
 
     // Log tag poses
     List<Pose3d> allTagPoses = new ArrayList<>();
