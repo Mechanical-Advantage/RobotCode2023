@@ -7,6 +7,7 @@
 
 package org.littletonrobotics.frc2023.subsystems.leds;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.AddressableLED;
 import edu.wpi.first.wpilibj.AddressableLEDBuffer;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -43,6 +44,10 @@ public class Leds extends VirtualSubsystem {
   public boolean armCoast = false;
   public boolean armEstopped = false;
   private Alliance alliance = Alliance.Invalid;
+  public boolean autoFinished = false;
+  public double autoFinishedTime = 0.0;
+  private boolean lastEnabledAuto = false;
+  private double lastEnabledTime = 0.0;
 
   // LED IO
   private final AddressableLED leds;
@@ -65,6 +70,8 @@ public class Leds extends VirtualSubsystem {
   private static final double waveSlowDuration = 3.0;
   private static final double waveAllianceCycleLength = 15.0;
   private static final double waveAllianceDuration = 2.0;
+  private static final double autoFadeTime = 2.5; // 3s nominal
+  private static final double autoFadeMaxTime = 8.0; // Return to normal
 
   private Leds() {
     leds = new AddressableLED(0);
@@ -86,36 +93,57 @@ public class Leds extends VirtualSubsystem {
       return;
     }
 
+    // Update auto state
+    if (DriverStation.isDisabled()) {
+      autoFinished = false;
+    } else {
+      lastEnabledAuto = DriverStation.isAutonomous();
+      lastEnabledTime = Timer.getFPGATimestamp();
+    }
+
     // Select LED mode
     solid(Section.FULL, Color.kBlack); // Default to off
     if (DriverStation.isEStopped()) {
       solid(Section.FULL, Color.kRed);
     } else if (DriverStation.isDisabled()) {
-      switch (alliance) {
-        case Red:
-          wave(
-              Section.FULL,
-              Color.kRed,
-              Color.kBlack,
-              waveAllianceCycleLength,
-              waveAllianceDuration);
-          break;
-        case Blue:
-          wave(
-              Section.FULL,
-              Color.kBlue,
-              Color.kBlack,
-              waveAllianceCycleLength,
-              waveAllianceDuration);
-          break;
-        default:
-          wave(Section.FULL, Color.kGold, Color.kDarkBlue, waveSlowCycleLength, waveSlowDuration);
-          break;
+      if (DriverStation.isFMSAttached()
+          && lastEnabledAuto
+          && Timer.getFPGATimestamp() - lastEnabledTime < autoFadeMaxTime) {
+        // Auto fade
+        solid(1.0 - ((Timer.getFPGATimestamp() - lastEnabledTime) / autoFadeTime), Color.kGreen);
+
+      } else {
+        // Default pattern
+        switch (alliance) {
+          case Red:
+            wave(
+                Section.FULL,
+                Color.kRed,
+                Color.kBlack,
+                waveAllianceCycleLength,
+                waveAllianceDuration);
+            break;
+          case Blue:
+            wave(
+                Section.FULL,
+                Color.kBlue,
+                Color.kBlack,
+                waveAllianceCycleLength,
+                waveAllianceDuration);
+            break;
+          default:
+            wave(Section.FULL, Color.kGold, Color.kDarkBlue, waveSlowCycleLength, waveSlowDuration);
+            break;
+        }
       }
     } else if (fallen || distraction) {
       strobe(Section.FULL, Color.kWhite, strobeFastDuration);
     } else if (DriverStation.isAutonomous()) {
       wave(Section.FULL, Color.kGold, Color.kDarkBlue, waveFastCycleLength, waveFastDuration);
+      if (autoFinished) {
+        double fullTime = (double) length / waveFastCycleLength * waveFastDuration;
+        solid((Timer.getFPGATimestamp() - autoFinishedTime) / fullTime, Color.kGreen);
+      }
     } else {
       // Set HP indicator
       Color hpColor = Color.kBlack;
@@ -176,6 +204,12 @@ public class Leds extends VirtualSubsystem {
 
   private void solid(Section section, Color color) {
     for (int i = section.start(); i < section.end(); i++) {
+      buffer.setLED(i, color);
+    }
+  }
+
+  private void solid(double percent, Color color) {
+    for (int i = 0; i < MathUtil.clamp(length * percent, 0, length); i++) {
       buffer.setLED(i, color);
     }
   }

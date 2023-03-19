@@ -217,6 +217,8 @@ public class Robot extends LoggedRobot {
                   "*** Auto cancelled in %.2f secs ***", Timer.getFPGATimestamp() - autoStart));
         }
         autoMessagePrinted = true;
+        Leds.getInstance().autoFinished = true;
+        Leds.getInstance().autoFinishedTime = Timer.getFPGATimestamp();
       }
     }
 
