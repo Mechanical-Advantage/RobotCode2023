@@ -87,18 +87,18 @@ public class Leds extends VirtualSubsystem {
       alliance = DriverStation.getAlliance();
     }
 
-    // Exit during initial cycles
-    loopCycleCount += 1;
-    if (loopCycleCount < minLoopCycleCount) {
-      return;
-    }
-
     // Update auto state
     if (DriverStation.isDisabled()) {
       autoFinished = false;
     } else {
       lastEnabledAuto = DriverStation.isAutonomous();
       lastEnabledTime = Timer.getFPGATimestamp();
+    }
+
+    // Exit during initial cycles
+    loopCycleCount += 1;
+    if (loopCycleCount < minLoopCycleCount) {
+      return;
     }
 
     // Select LED mode
