@@ -7,6 +7,8 @@
 
 package org.littletonrobotics.frc2023.subsystems.cubeintake;
 
+import static org.littletonrobotics.frc2023.util.ZeroIfInvalid.*;
+
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
@@ -101,7 +103,8 @@ public class CubeIntakeIOSparkMax implements CubeIntakeIO {
     inputs.armRelativePositionRad =
         armRelativeEncoder.getDistance() * (armExternalEncoderInvert ? -1 : 1);
     inputs.armInternalPositionRad =
-        Units.rotationsToRadians(armInternalEncoder.getPosition()) / armInternalEncoderReduction;
+        Units.rotationsToRadians(zeroIfInvalid(armInternalEncoder.getPosition()))
+            / armInternalEncoderReduction;
     inputs.armRelativeVelocityRadPerSec =
         armRelativeEncoder.getRate() * (armExternalEncoderInvert ? -1 : 1);
     inputs.armInternalVelocityRadPerSec =

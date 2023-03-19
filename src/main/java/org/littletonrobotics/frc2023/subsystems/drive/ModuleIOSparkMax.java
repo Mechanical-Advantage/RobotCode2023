@@ -7,6 +7,8 @@
 
 package org.littletonrobotics.frc2023.subsystems.drive;
 
+import static org.littletonrobotics.frc2023.util.ZeroIfInvalid.*;
+
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
@@ -127,6 +129,8 @@ public class ModuleIOSparkMax implements ModuleIO {
       driveEncoder.setAverageDepth(2);
 
       turnRelativeEncoder.setPosition(0.0);
+      turnRelativeEncoder.setMeasurementPeriod(10);
+      turnRelativeEncoder.setAverageDepth(2);
     }
 
     driveSparkMax.setCANTimeout(0);
@@ -140,9 +144,10 @@ public class ModuleIOSparkMax implements ModuleIO {
 
   public void updateInputs(ModuleIOInputs inputs) {
     inputs.drivePositionRad =
-        Units.rotationsToRadians(driveEncoder.getPosition()) / driveAfterEncoderReduction;
+        Units.rotationsToRadians(zeroIfInvalid(driveEncoder.getPosition()))
+            / driveAfterEncoderReduction;
     inputs.driveVelocityRadPerSec =
-        Units.rotationsPerMinuteToRadiansPerSecond(driveEncoder.getVelocity())
+        Units.rotationsPerMinuteToRadiansPerSecond(zeroIfInvalid(driveEncoder.getVelocity()))
             / driveAfterEncoderReduction;
     inputs.driveAppliedVolts = driveSparkMax.getAppliedOutput() * driveSparkMax.getBusVoltage();
     inputs.driveCurrentAmps = new double[] {driveSparkMax.getOutputCurrent()};
@@ -158,9 +163,10 @@ public class ModuleIOSparkMax implements ModuleIO {
                 .minus(absoluteEncoderOffset)
                 .getRadians());
     inputs.turnPositionRad =
-        Units.rotationsToRadians(turnRelativeEncoder.getPosition()) / turnAfterEncoderReduction;
+        Units.rotationsToRadians(zeroIfInvalid(turnRelativeEncoder.getPosition()))
+            / turnAfterEncoderReduction;
     inputs.turnVelocityRadPerSec =
-        Units.rotationsPerMinuteToRadiansPerSecond(turnRelativeEncoder.getVelocity())
+        Units.rotationsPerMinuteToRadiansPerSecond(zeroIfInvalid(turnRelativeEncoder.getVelocity()))
             / turnAfterEncoderReduction;
     inputs.turnAppliedVolts = turnSparkMax.getAppliedOutput() * turnSparkMax.getBusVoltage();
     inputs.turnCurrentAmps = new double[] {turnSparkMax.getOutputCurrent()};

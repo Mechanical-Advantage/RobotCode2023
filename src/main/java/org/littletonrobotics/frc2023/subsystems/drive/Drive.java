@@ -208,6 +208,13 @@ public class Drive extends SubsystemBase {
     poseEstimator.addDriveData(Timer.getFPGATimestamp(), twist);
     Logger.getInstance().recordOutput("Odometry/Robot", getPose());
 
+    if (Timer.getFPGATimestamp() > 18.95 && Timer.getFPGATimestamp() < 19.04) {
+      System.out.println(modules[3].getPositionMeters());
+      System.out.println(lastModulePositionsMeters[3]);
+      System.out.println(wheelDeltas[3]);
+      System.out.println(getPose());
+    }
+
     // Log 3D odometry pose
     Pose3d robotPose3d = new Pose3d(getPose());
     robotPose3d =
@@ -357,7 +364,7 @@ public class Drive extends SubsystemBase {
 
   /** Adds vision data to the pose esimation. */
   public void addVisionData(List<TimestampedVisionUpdate> visionData) {
-    poseEstimator.addVisionData(visionData);
+    // poseEstimator.addVisionData(visionData);
   }
 
   /** Returns an array of module translations. */

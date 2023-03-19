@@ -7,6 +7,8 @@
 
 package org.littletonrobotics.frc2023.subsystems.arm;
 
+import static org.littletonrobotics.frc2023.util.ZeroIfInvalid.*;
+
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
@@ -155,7 +157,7 @@ public class ArmIOSparkMax implements ArmIO {
     inputs.shoulderRelativePositionRad =
         shoulderRelativeEncoder.getDistance() * (isShoulderExternalEncoderInverted ? -1 : 1);
     inputs.shoulderInternalPositionRad =
-        Units.rotationsToRadians(shoulderInternalEncoder.getPosition())
+        Units.rotationsToRadians(zeroIfInvalid(shoulderInternalEncoder.getPosition()))
             / config.shoulder().motor().reduction();
     inputs.shoulderRelativeVelocityRadPerSec =
         shoulderRelativeEncoder.getRate() * (isShoulderExternalEncoderInverted ? -1 : 1);
@@ -181,7 +183,7 @@ public class ArmIOSparkMax implements ArmIO {
     inputs.elbowRelativePositionRad =
         elbowRelativeEncoder.getDistance() * (isElbowExternalEncoderInverted ? -1 : 1);
     inputs.elbowInternalPositionRad =
-        Units.rotationsToRadians(elbowInternalEncoder.getPosition())
+        Units.rotationsToRadians(zeroIfInvalid(elbowInternalEncoder.getPosition()))
             / config.elbow().motor().reduction();
     inputs.elbowRelativeVelocityRadPerSec =
         elbowRelativeEncoder.getRate() * (isElbowExternalEncoderInverted ? -1 : 1);
@@ -200,7 +202,7 @@ public class ArmIOSparkMax implements ArmIO {
     inputs.wristRelativePositionRad =
         wristRelativeEncoder.getDistance() * (isWristExternalEncoderInverted ? -1 : 1);
     inputs.wristInternalPositionRad =
-        Units.rotationsToRadians(wristInternalEncoder.getPosition())
+        Units.rotationsToRadians(zeroIfInvalid(wristInternalEncoder.getPosition()))
             / config.wrist().motor().reduction();
     inputs.wristRelativeVelocityRadPerSec =
         wristRelativeEncoder.getRate() * (isWristExternalEncoderInverted ? -1 : 1);

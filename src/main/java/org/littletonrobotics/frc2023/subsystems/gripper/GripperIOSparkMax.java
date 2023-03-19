@@ -7,6 +7,8 @@
 
 package org.littletonrobotics.frc2023.subsystems.gripper;
 
+import static org.littletonrobotics.frc2023.util.ZeroIfInvalid.*;
+
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
@@ -61,7 +63,7 @@ public class GripperIOSparkMax implements GripperIO {
 
   @Override
   public void updateInputs(GripperIOInputs inputs) {
-    inputs.positionRad = Units.rotationsToRadians(encoder.getPosition()) / reduction;
+    inputs.positionRad = Units.rotationsToRadians(zeroIfInvalid(encoder.getPosition())) / reduction;
     inputs.velocityRadPerSec =
         Units.rotationsPerMinuteToRadiansPerSecond(encoder.getVelocity()) / reduction;
     inputs.appliedVolts = motor.getAppliedOutput() * motor.getBusVoltage();
