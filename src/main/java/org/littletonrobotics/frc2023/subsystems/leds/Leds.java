@@ -106,9 +106,7 @@ public class Leds extends VirtualSubsystem {
     if (DriverStation.isEStopped()) {
       solid(Section.FULL, Color.kRed);
     } else if (DriverStation.isDisabled()) {
-      if (DriverStation.isFMSAttached()
-          && lastEnabledAuto
-          && Timer.getFPGATimestamp() - lastEnabledTime < autoFadeMaxTime) {
+      if (lastEnabledAuto && Timer.getFPGATimestamp() - lastEnabledTime < autoFadeMaxTime) {
         // Auto fade
         solid(1.0 - ((Timer.getFPGATimestamp() - lastEnabledTime) / autoFadeTime), Color.kGreen);
 
@@ -136,7 +134,7 @@ public class Leds extends VirtualSubsystem {
             break;
         }
       }
-    } else if (fallen || distraction) {
+    } else if (fallen) {
       strobe(Section.FULL, Color.kWhite, strobeFastDuration);
     } else if (DriverStation.isAutonomous()) {
       wave(Section.FULL, Color.kGold, Color.kDarkBlue, waveFastCycleLength, waveFastDuration);
@@ -172,13 +170,17 @@ public class Leds extends VirtualSubsystem {
       }
 
       // Set special modes
-      if (endgameAlert) {
+      if (distraction) {
+        strobe(Section.SHOULDER, Color.kWhite, strobeFastDuration);
+      } else if (endgameAlert) {
         strobe(Section.SHOULDER, Color.kOrange, strobeSlowDuration);
+      } else if (autoScore) {
+        rainbow(Section.SHOULDER, rainbowCycleLength, rainbowDuration);
       } else if (gripperStopped) {
         solid(Section.SHOULDER, Color.kGreen);
       } else if (intakeReady) {
         solid(Section.SHOULDER, Color.kPurple);
-      } else if (autoScore || autoSubstation) {
+      } else if (autoSubstation) {
         rainbow(Section.SHOULDER, rainbowCycleLength, rainbowDuration);
       }
     }

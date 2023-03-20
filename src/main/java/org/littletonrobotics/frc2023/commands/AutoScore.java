@@ -41,20 +41,22 @@ public class AutoScore extends SequentialCommandGroup {
   public static final double minDriveY = 0.7;
   public static final double maxDriveY = FieldConstants.Community.leftY - 0.5;
   public static final double minArmExtension = 0.3;
-  public static final double maxArmExtensionHybrid = 0.9;
-  public static final double maxArmExtensionMid = 1.1;
+  public static final double maxArmExtensionHybrid = 0.4;
+  public static final double maxArmExtensionMid = 1.0;
   public static final double maxArmExtensionHigh = 1.35;
 
-  public static final double extendArmDriveTolerance = 1.0;
+  public static final double extendArmDriveTolerance = 3.0;
   public static final Rotation2d extendArmThetaTolerance = Rotation2d.fromDegrees(45.0);
+  public static final Rotation2d extendArmTippingTolerancePosition = Rotation2d.fromDegrees(2.5);
+  public static final Rotation2d extendArmTippingToleranceVelocity = Rotation2d.fromDegrees(5.0);
   public static final double cubeHybridDriveTolerance = 0.1;
   public static final Rotation2d cubeHybridThetaTolerance = Rotation2d.fromDegrees(5.0);
 
-  public static final Translation2d hybridRelativePosition = new Translation2d(-0.8, 0.5);
+  public static final Translation2d hybridRelativePosition = new Translation2d(-0.6, 0.5);
   public static final Rotation2d hybridWristAngle = new Rotation2d();
   public static final Translation2d cubeMidRelativePosition = new Translation2d(-0.4, 0.5);
   public static final Rotation2d cubeMidWristAngle = Rotation2d.fromDegrees(-30.0);
-  public static final Translation2d cubeHighRelativePosition = new Translation2d(-0.5, 0.1);
+  public static final Translation2d cubeHighRelativePosition = new Translation2d(-0.5, 0.2);
   public static final Rotation2d cubeHighWristAngle = Rotation2d.fromDegrees(45.0);
   public static final Translation2d uprightConeRelativePosition = new Translation2d(-0.3, -0.025);
   public static final Rotation2d uprightConeWristAngle = Rotation2d.fromDegrees(55.0);
@@ -129,11 +131,23 @@ public class AutoScore extends SequentialCommandGroup {
                                 driveToPose, objective)))
             .andThen(driveWithJoysticks);
     var armCommand =
-        Commands.waitUntil(
-                () ->
-                    fullManual.get()
-                        || driveToPose.withinTolerance(
-                            extendArmDriveTolerance, extendArmThetaTolerance))
+        Commands.either(
+                Commands.none(),
+                Commands.waitSeconds(0.2) // Wait minimum time in case robot is about to tip
+                    .andThen(
+                        Commands.waitUntil(
+                            () ->
+                                driveToPose.withinTolerance(
+                                        extendArmDriveTolerance, extendArmThetaTolerance)
+                                    && Math.abs(drive.getPitch().getRadians())
+                                        < extendArmTippingTolerancePosition.getRadians()
+                                    && Math.abs(drive.getRoll().getRadians())
+                                        < extendArmTippingTolerancePosition.getRadians()
+                                    && Math.abs(drive.getPitchVelocity())
+                                        < extendArmTippingToleranceVelocity.getRadians()
+                                    && Math.abs(drive.getRollVelocity())
+                                        < extendArmTippingToleranceVelocity.getRadians())),
+                () -> fullManual.get())
             .andThen(
                 arm.runPathCommand(armTargetSupplier),
                 Commands.either(

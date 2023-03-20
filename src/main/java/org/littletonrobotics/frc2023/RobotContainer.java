@@ -36,6 +36,7 @@ import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVision;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIO;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIONorthstar;
 import org.littletonrobotics.frc2023.subsystems.arm.Arm;
+import org.littletonrobotics.frc2023.subsystems.arm.Arm.LiftDirection;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmIO;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmIOSim;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmIOSparkMax;
@@ -69,6 +70,7 @@ import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
 import org.littletonrobotics.frc2023.util.DoublePressTracker;
 import org.littletonrobotics.frc2023.util.OverrideSwitches;
 import org.littletonrobotics.frc2023.util.SparkMaxBurnManager;
+import org.littletonrobotics.frc2023.util.TriggerUtil;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
@@ -447,6 +449,7 @@ public class RobotContainer {
                                           -driver.getRightX() * Constants.loopPeriodSecs * 2.0))));
                     })
                 .ignoringDisable(true));
+    driver.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
 
     // Auto align controls
     Command intakeSubstationSingle =
@@ -508,17 +511,35 @@ public class RobotContainer {
                     () -> Logger.getInstance().recordOutput("LogMarker", false))
                 .ignoringDisable(true));
 
+    // Arm lift controls
+    driver
+        .povRight()
+        .whileTrue(
+            Commands.startEnd(
+                () -> arm.setEmergencyLiftDirection(LiftDirection.FRONT),
+                () -> {
+                  arm.setEmergencyLiftDirection(LiftDirection.NONE);
+                  arm.runPath(ArmPose.Preset.HOMED);
+                },
+                arm));
+    driver
+        .povLeft()
+        .whileTrue(
+            Commands.startEnd(
+                () -> arm.setEmergencyLiftDirection(LiftDirection.BACK),
+                () -> {
+                  arm.setEmergencyLiftDirection(LiftDirection.NONE);
+                  arm.runPath(ArmPose.Preset.HOMED);
+                },
+                arm));
+
     // *** OPERATOR CONTROLS ***
 
     // Intake controls
-    operator
-        .a()
-        .and(operator.x().negate())
-        .whileTrue(intakeSubstationSingle.asProxy().repeatedly().ignoringDisable(false));
-    operator
-        .x()
-        .and(operator.a().negate())
-        .whileTrue(intakeSubstationDouble.asProxy().repeatedly().ignoringDisable(false));
+    TriggerUtil.whileTrueContinuous(
+        operator.a().and(operator.x().negate()), intakeSubstationSingle);
+    TriggerUtil.whileTrueContinuous(
+        operator.x().and(operator.a().negate()), intakeSubstationDouble);
     operator
         .rightTrigger()
         .whileTrue(new IntakeCubeHandoff(cubeIntake, arm, gripper, objectiveTracker.objective));

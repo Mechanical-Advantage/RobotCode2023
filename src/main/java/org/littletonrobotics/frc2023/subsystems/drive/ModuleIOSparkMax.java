@@ -7,7 +7,7 @@
 
 package org.littletonrobotics.frc2023.subsystems.drive;
 
-import static org.littletonrobotics.frc2023.util.ZeroIfInvalid.*;
+import static org.littletonrobotics.frc2023.util.CleanSparkMaxValue.*;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.IdleMode;
@@ -144,11 +144,14 @@ public class ModuleIOSparkMax implements ModuleIO {
 
   public void updateInputs(ModuleIOInputs inputs) {
     inputs.drivePositionRad =
-        Units.rotationsToRadians(zeroIfInvalid(driveEncoder.getPosition()))
-            / driveAfterEncoderReduction;
+        cleanSparkMaxValue(
+            inputs.drivePositionRad,
+            Units.rotationsToRadians(driveEncoder.getPosition()) / driveAfterEncoderReduction);
     inputs.driveVelocityRadPerSec =
-        Units.rotationsPerMinuteToRadiansPerSecond(zeroIfInvalid(driveEncoder.getVelocity()))
-            / driveAfterEncoderReduction;
+        cleanSparkMaxValue(
+            inputs.driveVelocityRadPerSec,
+            Units.rotationsPerMinuteToRadiansPerSecond(driveEncoder.getVelocity())
+                / driveAfterEncoderReduction);
     inputs.driveAppliedVolts = driveSparkMax.getAppliedOutput() * driveSparkMax.getBusVoltage();
     inputs.driveCurrentAmps = new double[] {driveSparkMax.getOutputCurrent()};
     inputs.driveTempCelcius = new double[] {driveSparkMax.getMotorTemperature()};
@@ -163,11 +166,15 @@ public class ModuleIOSparkMax implements ModuleIO {
                 .minus(absoluteEncoderOffset)
                 .getRadians());
     inputs.turnPositionRad =
-        Units.rotationsToRadians(zeroIfInvalid(turnRelativeEncoder.getPosition()))
-            / turnAfterEncoderReduction;
+        cleanSparkMaxValue(
+            inputs.turnPositionRad,
+            Units.rotationsToRadians(turnRelativeEncoder.getPosition())
+                / turnAfterEncoderReduction);
     inputs.turnVelocityRadPerSec =
-        Units.rotationsPerMinuteToRadiansPerSecond(zeroIfInvalid(turnRelativeEncoder.getVelocity()))
-            / turnAfterEncoderReduction;
+        cleanSparkMaxValue(
+            inputs.turnVelocityRadPerSec,
+            Units.rotationsPerMinuteToRadiansPerSecond(turnRelativeEncoder.getVelocity())
+                / turnAfterEncoderReduction);
     inputs.turnAppliedVolts = turnSparkMax.getAppliedOutput() * turnSparkMax.getBusVoltage();
     inputs.turnCurrentAmps = new double[] {turnSparkMax.getOutputCurrent()};
     inputs.turnTempCelcius = new double[] {turnSparkMax.getMotorTemperature()};

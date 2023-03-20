@@ -109,6 +109,7 @@ public class Arm extends SubsystemBase {
   private ArmPose queuedPose = null; // Use as setpoint once trajectory is completed
   private final Timer trajectoryTimer = new Timer();
   private double trajectoryStartWait = 0.0;
+  private LiftDirection emergencyLiftDirection = LiftDirection.NONE;
 
   private final PIDController shoulderFeedback =
       new PIDController(0.0, 0.0, 0.0, Constants.loopPeriodSecs);
@@ -311,7 +312,7 @@ public class Arm extends SubsystemBase {
     Logger.getInstance().recordOutput("Arm/TrajectoryCountGenerated", trajectoryCountGenerated);
 
     // Set setpoint to current position when disabled (don't move when enabling)
-    if (isDisabled()) {
+    if (isDisabled() || emergencyLiftDirection != LiftDirection.NONE) {
       setpointPose =
           new ArmPose(
               kinematics.forward(VecBuilder.fill(shoulderAngle, elbowAngle)),
@@ -361,6 +362,14 @@ public class Arm extends SubsystemBase {
       io.setElbowVoltage(0.0);
       shoulderFeedback.reset();
       elbowFeedback.reset();
+
+    } else if (emergencyLiftDirection != LiftDirection.NONE) {
+      shoulderAngleSetpoint = emergencyLiftDirection == LiftDirection.FRONT ? 0.0 : Math.PI;
+      shoulderVoltageFeedback = shoulderFeedback.calculate(shoulderAngle, shoulderAngleSetpoint);
+      elbowAngleSetpoint = Math.PI;
+      elbowVoltageFeedback = elbowFeedback.calculate(elbowAngle, elbowAngleSetpoint);
+      io.setShoulderVoltage(shoulderVoltageFeedback);
+      io.setElbowVoltage(elbowVoltageFeedback);
 
     } else if (currentTrajectory != null
         && currentTrajectory.isGenerated()
@@ -426,12 +435,16 @@ public class Arm extends SubsystemBase {
     }
 
     // Run wrist
-    if (isDisabled() || wristEffectiveArmPose == null) {
+    if (isDisabled()) {
       // Stop moving when disabled
       io.setWristVoltage(0.0);
       wristFeedback.reset(wristAngle);
 
-    } else {
+    } else if (emergencyLiftDirection != LiftDirection.NONE) {
+      wristVoltageFeedback = wristFeedback.calculate(wristAngle, 0.0);
+      io.setWristVoltage(wristVoltageFeedback);
+
+    } else if (wristEffectiveArmPose != null) {
       // Go to setpoint
       Optional<Vector<N2>> shoulderElbowAngles =
           kinematics.inverse(wristEffectiveArmPose.endEffectorPosition());
@@ -494,6 +507,7 @@ public class Arm extends SubsystemBase {
     Logger.getInstance().recordOutput("Arm/Voltages/ShoulderFeedback", shoulderVoltageFeedback);
     Logger.getInstance().recordOutput("Arm/Voltages/ElbowFeedback", elbowVoltageFeedback);
     Logger.getInstance().recordOutput("Arm/Voltages/WristFeedback", wristVoltageFeedback);
+    Logger.getInstance().recordOutput("Arm/LiftDirection", emergencyLiftDirection.toString());
 
     // Calculate extension percent (for acceleration limits)
     extensionPercent =
@@ -511,9 +525,10 @@ public class Arm extends SubsystemBase {
         emergencyDisableMaxErrorTimer.reset();
       } else {
         // Check for high error
-        if (Math.abs(shoulderAngle - shoulderAngleSetpoint) < emergencyDisableMaxError
-            && Math.abs(elbowAngle - elbowAngleSetpoint) < emergencyDisableMaxError
-            && Math.abs(wristAngle - wristAngleSetpoint) < emergencyDisableMaxError) {
+        if ((Math.abs(shoulderAngle - shoulderAngleSetpoint) < emergencyDisableMaxError
+                && Math.abs(elbowAngle - elbowAngleSetpoint) < emergencyDisableMaxError
+                && Math.abs(wristAngle - wristAngleSetpoint) < emergencyDisableMaxError)
+            || emergencyLiftDirection != LiftDirection.NONE) {
           emergencyDisableMaxErrorTimer.reset();
         } else if (emergencyDisableMaxErrorTimer.hasElapsed(emergencyDisableMaxErrorTime)) {
           emergencyDisable = true;
@@ -607,7 +622,8 @@ public class Arm extends SubsystemBase {
 
   /** Returns whether the cube intake should be extended to avoid colliding with the arm. */
   public boolean cubeIntakeShouldExtend() {
-    return getTimeUntilCollision(cubeIntakeAvoidanceRect) < avoidanceLookaheadSecs;
+    return getTimeUntilCollision(cubeIntakeAvoidanceRect) < avoidanceLookaheadSecs
+        || emergencyLiftDirection == LiftDirection.BACK;
   }
 
   /** Returns the current arm setpoint. */
@@ -837,5 +853,16 @@ public class Arm extends SubsystemBase {
    */
   public double calcMaxReachAtHeight(double height) {
     return kinematics.calcMaxReachAtHeight(height);
+  }
+
+  /** Enables or disables emergency lift mode. */
+  public void setEmergencyLiftDirection(LiftDirection direction) {
+    emergencyLiftDirection = direction;
+  }
+
+  public static enum LiftDirection {
+    BACK,
+    FRONT,
+    NONE
   }
 }

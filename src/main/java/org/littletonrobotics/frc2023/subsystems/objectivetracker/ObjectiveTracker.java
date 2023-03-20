@@ -56,7 +56,9 @@ public class ObjectiveTracker extends VirtualSubsystem {
     }
 
     public ScoringSide getScoringSide() {
-      if (nodeLevel == NodeLevel.HYBRID || !isConeNode()) {
+      if (nodeLevel == NodeLevel.HYBRID) {
+        return ScoringSide.BACK;
+      } else if (!isConeNode()) {
         return ScoringSide.EITHER;
       } else {
         return coneOrientation == ConeOrientation.TIPPED ^ lastIntakeFront

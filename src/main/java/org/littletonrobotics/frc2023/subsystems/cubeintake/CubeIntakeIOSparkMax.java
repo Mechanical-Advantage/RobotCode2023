@@ -7,7 +7,7 @@
 
 package org.littletonrobotics.frc2023.subsystems.cubeintake;
 
-import static org.littletonrobotics.frc2023.util.ZeroIfInvalid.*;
+import static org.littletonrobotics.frc2023.util.CleanSparkMaxValue.*;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.IdleMode;
@@ -103,13 +103,17 @@ public class CubeIntakeIOSparkMax implements CubeIntakeIO {
     inputs.armRelativePositionRad =
         armRelativeEncoder.getDistance() * (armExternalEncoderInvert ? -1 : 1);
     inputs.armInternalPositionRad =
-        Units.rotationsToRadians(zeroIfInvalid(armInternalEncoder.getPosition()))
-            / armInternalEncoderReduction;
+        cleanSparkMaxValue(
+            inputs.armInternalPositionRad,
+            Units.rotationsToRadians(armInternalEncoder.getPosition())
+                / armInternalEncoderReduction);
     inputs.armRelativeVelocityRadPerSec =
         armRelativeEncoder.getRate() * (armExternalEncoderInvert ? -1 : 1);
     inputs.armInternalVelocityRadPerSec =
-        Units.rotationsPerMinuteToRadiansPerSecond(armInternalEncoder.getPosition())
-            / armInternalEncoderReduction;
+        cleanSparkMaxValue(
+            inputs.armInternalVelocityRadPerSec,
+            Units.rotationsPerMinuteToRadiansPerSecond(armInternalEncoder.getPosition())
+                / armInternalEncoderReduction);
     inputs.armAppliedVolts = armSparkMax.getAppliedOutput() * armSparkMax.getBusVoltage();
     inputs.armCurrentAmps = new double[] {armSparkMax.getOutputCurrent()};
     inputs.armTempCelcius = new double[] {armSparkMax.getMotorTemperature()};

@@ -7,7 +7,7 @@
 
 package org.littletonrobotics.frc2023.subsystems.arm;
 
-import static org.littletonrobotics.frc2023.util.ZeroIfInvalid.*;
+import static org.littletonrobotics.frc2023.util.CleanSparkMaxValue.*;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.IdleMode;
@@ -157,13 +157,17 @@ public class ArmIOSparkMax implements ArmIO {
     inputs.shoulderRelativePositionRad =
         shoulderRelativeEncoder.getDistance() * (isShoulderExternalEncoderInverted ? -1 : 1);
     inputs.shoulderInternalPositionRad =
-        Units.rotationsToRadians(zeroIfInvalid(shoulderInternalEncoder.getPosition()))
-            / config.shoulder().motor().reduction();
+        cleanSparkMaxValue(
+            inputs.shoulderInternalPositionRad,
+            Units.rotationsToRadians(shoulderInternalEncoder.getPosition())
+                / config.shoulder().motor().reduction());
     inputs.shoulderRelativeVelocityRadPerSec =
         shoulderRelativeEncoder.getRate() * (isShoulderExternalEncoderInverted ? -1 : 1);
     inputs.shoulderInternalVelocityRadPerSec =
-        Units.rotationsPerMinuteToRadiansPerSecond(shoulderInternalEncoder.getPosition())
-            / config.shoulder().motor().reduction();
+        cleanSparkMaxValue(
+            inputs.shoulderInternalVelocityRadPerSec,
+            Units.rotationsPerMinuteToRadiansPerSecond(shoulderInternalEncoder.getPosition())
+                / config.shoulder().motor().reduction());
     inputs.shoulderAppliedVolts =
         shoulderSparkMax.getAppliedOutput() * shoulderSparkMax.getBusVoltage();
     inputs.shoulderCurrentAmps =
@@ -183,13 +187,17 @@ public class ArmIOSparkMax implements ArmIO {
     inputs.elbowRelativePositionRad =
         elbowRelativeEncoder.getDistance() * (isElbowExternalEncoderInverted ? -1 : 1);
     inputs.elbowInternalPositionRad =
-        Units.rotationsToRadians(zeroIfInvalid(elbowInternalEncoder.getPosition()))
-            / config.elbow().motor().reduction();
+        cleanSparkMaxValue(
+            inputs.elbowInternalPositionRad,
+            Units.rotationsToRadians(elbowInternalEncoder.getPosition())
+                / config.elbow().motor().reduction());
     inputs.elbowRelativeVelocityRadPerSec =
         elbowRelativeEncoder.getRate() * (isElbowExternalEncoderInverted ? -1 : 1);
     inputs.elbowInternalVelocityRadPerSec =
-        Units.rotationsPerMinuteToRadiansPerSecond(elbowInternalEncoder.getPosition())
-            / config.elbow().motor().reduction();
+        cleanSparkMaxValue(
+            inputs.elbowInternalVelocityRadPerSec,
+            Units.rotationsPerMinuteToRadiansPerSecond(elbowInternalEncoder.getPosition())
+                / config.elbow().motor().reduction());
     inputs.elbowAppliedVolts = elbowSparkMax.getAppliedOutput() * elbowSparkMax.getBusVoltage();
     inputs.elbowCurrentAmps = new double[] {elbowSparkMax.getOutputCurrent()};
     inputs.elbowTempCelcius = new double[] {elbowSparkMax.getMotorTemperature()};
@@ -202,13 +210,17 @@ public class ArmIOSparkMax implements ArmIO {
     inputs.wristRelativePositionRad =
         wristRelativeEncoder.getDistance() * (isWristExternalEncoderInverted ? -1 : 1);
     inputs.wristInternalPositionRad =
-        Units.rotationsToRadians(zeroIfInvalid(wristInternalEncoder.getPosition()))
-            / config.wrist().motor().reduction();
+        cleanSparkMaxValue(
+            inputs.wristInternalPositionRad,
+            Units.rotationsToRadians(wristInternalEncoder.getPosition())
+                / config.wrist().motor().reduction());
     inputs.wristRelativeVelocityRadPerSec =
         wristRelativeEncoder.getRate() * (isWristExternalEncoderInverted ? -1 : 1);
     inputs.wristInternalVelocityRadPerSec =
-        Units.rotationsPerMinuteToRadiansPerSecond(wristInternalEncoder.getPosition())
-            / config.wrist().motor().reduction();
+        cleanSparkMaxValue(
+            inputs.wristInternalVelocityRadPerSec,
+            Units.rotationsPerMinuteToRadiansPerSecond(wristInternalEncoder.getPosition())
+                / config.wrist().motor().reduction());
     inputs.wristAppliedVolts = wristSparkMax.getAppliedOutput() * wristSparkMax.getBusVoltage();
     inputs.wristCurrentAmps = new double[] {wristSparkMax.getOutputCurrent()};
     inputs.wristTempCelcius = new double[] {wristSparkMax.getMotorTemperature()};

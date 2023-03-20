@@ -104,7 +104,7 @@ public record ArmPose(Translation2d endEffectorPosition, Rotation2d globalWristA
             AutoScore.tippedConeWristAngle)),
     SINGLE_SUBTATION(
         new ArmPose(
-            new Translation2d(0.47, FieldConstants.LoadingZone.singleSubstationCenterZ - 0.26),
+            new Translation2d(0.47, FieldConstants.LoadingZone.singleSubstationCenterZ - 0.275),
             Rotation2d.fromDegrees(30.0))),
     DOUBLE_SUBTATION(
         new ArmPose(
