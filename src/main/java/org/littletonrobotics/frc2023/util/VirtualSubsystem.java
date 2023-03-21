@@ -10,9 +10,7 @@ package org.littletonrobotics.frc2023.util;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Represents a subsystem unit that requires a periodic callback but not a hardware mutex.
- */
+/** Represents a subsystem unit that requires a periodic callback but not a hardware mutex. */
 public abstract class VirtualSubsystem {
   private static List<VirtualSubsystem> subsystems = new ArrayList<>();
 
