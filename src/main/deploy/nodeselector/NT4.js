@@ -89,7 +89,6 @@ export class NT4_Client {
   onDisconnect;
   serverBaseAddr;
   ws = null;
-  useSecure = false;
   serverAddr = "";
   serverConnectionActive = false;
   serverConnectionRequested = false;
@@ -395,9 +394,6 @@ export class NT4_Client {
     if (event.reason !== "") {
       console.log("[NT4] Socket is closed: ", event.reason);
     }
-    if (!event.wasClean) {
-      this.useSecure = !this.useSecure;
-    }
     if (this.serverConnectionRequested) {
       setTimeout(() => this.ws_connect(), 500);
     }
@@ -522,10 +518,6 @@ export class NT4_Client {
   ws_connect() {
     let port = 5810;
     let prefix = "ws://";
-    if (this.useSecure) {
-      prefix = "wss://";
-      port = 5811;
-    }
     this.serverAddr =
       prefix +
       this.serverBaseAddr +
