@@ -349,10 +349,6 @@ public class RobotContainer {
     new Trigger(
             () ->
                 DriverStation.isTeleopEnabled()
-                    // When not connected to FMS or running practice match the time counts up
-                    // instead of down
-                    // TODO: Fix this to work correctly with DS practice mode
-                    && DriverStation.isFMSAttached()
                     && DriverStation.getMatchTime() > 0.0
                     && DriverStation.getMatchTime() <= Math.round(endgameAlertTime.get()))
         .onTrue(

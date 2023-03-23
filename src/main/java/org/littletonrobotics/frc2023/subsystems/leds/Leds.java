@@ -73,7 +73,7 @@ public class Leds extends VirtualSubsystem {
   private static final double waveAllianceCycleLength = 15.0;
   private static final double waveAllianceDuration = 2.0;
   private static final double autoFadeTime = 2.5; // 3s nominal
-  private static final double autoFadeMaxTime = 8.0; // Return to normal
+  private static final double autoFadeMaxTime = 5.0; // Return to normal
 
   private Leds() {
     leds = new AddressableLED(0);
