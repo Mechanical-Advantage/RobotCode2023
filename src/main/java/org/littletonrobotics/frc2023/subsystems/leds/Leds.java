@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.util.Color;
+import java.util.List;
 import org.littletonrobotics.frc2023.util.VirtualSubsystem;
 
 public class Leds extends VirtualSubsystem {
@@ -54,6 +55,7 @@ public class Leds extends VirtualSubsystem {
   private final AddressableLEDBuffer buffer;
 
   // Constants
+  private static final boolean prideLeds = false;
   private static final int minLoopCycleCount = 10;
   private static final int length = 43;
   private static final int staticLength = 14;
@@ -109,6 +111,25 @@ public class Leds extends VirtualSubsystem {
       if (lastEnabledAuto && Timer.getFPGATimestamp() - lastEnabledTime < autoFadeMaxTime) {
         // Auto fade
         solid(1.0 - ((Timer.getFPGATimestamp() - lastEnabledTime) / autoFadeTime), Color.kGreen);
+
+      } else if (prideLeds) {
+        // Pride stripes
+        stripes(
+            Section.FULL,
+            List.of(
+                Color.kRed,
+                Color.kOrange,
+                Color.kYellow,
+                Color.kGreen,
+                Color.kBlue,
+                Color.kPurple,
+                Color.kSkyBlue,
+                Color.kHotPink,
+                Color.kWhite,
+                Color.kHotPink,
+                Color.kSkyBlue),
+            5,
+            8.0);
 
       } else {
         // Default pattern
@@ -260,6 +281,16 @@ public class Leds extends VirtualSubsystem {
         double blue = (c1.blue * (1 - ratio)) + (c2.blue * ratio);
         buffer.setLED(i, new Color(red, green, blue));
       }
+    }
+  }
+
+  private void stripes(Section section, List<Color> colors, int length, double duration) {
+    int offset = (int) (Timer.getFPGATimestamp() % duration / duration * length * colors.size());
+    for (int i = section.start(); i < section.end(); i++) {
+      int colorIndex =
+          (int) (Math.floor((double) (i - offset) / length) + colors.size()) % colors.size();
+      colorIndex = colors.size() - 1 - colorIndex;
+      buffer.setLED(i, colors.get(colorIndex));
     }
   }
 
