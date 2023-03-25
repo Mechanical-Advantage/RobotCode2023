@@ -41,7 +41,7 @@ public final class FieldConstants {
         Units.inchesToMeters(132.375); // Tape to the left of charging station
     public static final double outerX =
         Units.inchesToMeters(193.25); // Tape to the right of charging station
-    public static final double leftY = Units.feetToMeters(18.0);
+    public static final double leftY = Grids.nodeY[8] + Units.inchesToMeters(20.19);
     public static final double midY = leftY - Units.inchesToMeters(59.39) + tapeWidth;
     public static final double rightY = 0.0;
     public static final Translation2d[] regionCorners =
@@ -55,13 +55,13 @@ public final class FieldConstants {
         };
 
     // Charging station dimensions
-    public static final double chargingStationLength = Units.inchesToMeters(76.125);
-    public static final double chargingStationWidth = Units.inchesToMeters(97.25);
+    public static final double chargingStationInnerX = Grids.outerX + Units.inchesToMeters(60.69);
     public static final double chargingStationOuterX = outerX - tapeWidth;
-    public static final double chargingStationInnerX =
-        chargingStationOuterX - chargingStationLength;
     public static final double chargingStationLeftY = midY - tapeWidth;
-    public static final double chargingStationRightY = chargingStationLeftY - chargingStationWidth;
+    public static final double chargingStationRightY = Units.inchesToMeters(59.39);
+    public static final double chargingStationLength =
+        chargingStationOuterX - chargingStationInnerX;
+    public static final double chargingStationWidth = chargingStationLeftY - chargingStationRightY;
     public static final Translation2d[] chargingStationCorners =
         new Translation2d[] {
           new Translation2d(chargingStationInnerX, chargingStationRightY),
