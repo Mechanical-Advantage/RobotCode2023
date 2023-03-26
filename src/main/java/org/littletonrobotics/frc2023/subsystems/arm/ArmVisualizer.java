@@ -122,8 +122,8 @@ public class ArmVisualizer {
       var rightLigament =
           bottomLigament.append(new MechanismLigament2d("Right", rect[3] - rect[1], 90, 1, color));
       var topLigament =
-          rightLigament.append(new MechanismLigament2d("Right", rect[2] - rect[0], 90, 1, color));
-      topLigament.append(new MechanismLigament2d("Right", rect[3] - rect[1], 90, 1, color));
+          rightLigament.append(new MechanismLigament2d("Top", rect[2] - rect[0], 90, 1, color));
+      topLigament.append(new MechanismLigament2d("Left", rect[3] - rect[1], 90, 1, color));
     }
 
     Logger.getInstance().recordOutput("Mechanism2d/" + logKey, mechanism);
