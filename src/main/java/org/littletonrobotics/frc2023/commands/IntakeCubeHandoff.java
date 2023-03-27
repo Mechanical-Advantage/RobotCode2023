@@ -25,7 +25,6 @@ public class IntakeCubeHandoff extends SequentialCommandGroup {
             .deadlineWith(
                 arm.runPathCommand(ArmPose.Preset.CUBE_HANDOFF),
                 gripper.intakeCommand(),
-                Commands.run(() -> objective.lastIntakeFront = true),
                 Commands.waitSeconds(0.5)
                     .andThen(
                         Commands.startEnd(
