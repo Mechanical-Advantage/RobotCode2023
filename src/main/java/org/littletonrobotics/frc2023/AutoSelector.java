@@ -125,8 +125,6 @@ public class AutoSelector extends VirtualSubsystem {
   public static enum AutoQuestionResponse {
     YES,
     NO,
-    CUBE,
-    CONE,
     HYBRID,
     MID,
     HIGH,

@@ -8,6 +8,7 @@
 package org.littletonrobotics.frc2023.commands;
 
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.trajectory.Trajectory;
@@ -70,7 +71,7 @@ public class DriveTrajectory extends CommandBase {
       case ROBOT_2023P:
         maxVelocityMetersPerSec = Units.inchesToMeters(160.0);
         maxAccelerationMetersPerSec2 = Units.inchesToMeters(105.0);
-        maxCentripetalAccelerationMetersPerSec2 = Units.inchesToMeters(100.0);
+        maxCentripetalAccelerationMetersPerSec2 = Units.inchesToMeters(150.0);
 
         driveKp.initDefault(6.0);
         driveKd.initDefault(0.0);
@@ -79,8 +80,8 @@ public class DriveTrajectory extends CommandBase {
         break;
       case ROBOT_SIMBOT:
         maxVelocityMetersPerSec = Units.inchesToMeters(160.0);
-        maxAccelerationMetersPerSec2 = Units.inchesToMeters(120.0);
-        maxCentripetalAccelerationMetersPerSec2 = Units.inchesToMeters(100.0);
+        maxAccelerationMetersPerSec2 = Units.inchesToMeters(105.0);
+        maxCentripetalAccelerationMetersPerSec2 = Units.inchesToMeters(150.0);
 
         driveKp.initDefault(2.5);
         driveKd.initDefault(0.0);
@@ -155,7 +156,12 @@ public class DriveTrajectory extends CommandBase {
     }
 
     // Log trajectory
-    Logger.getInstance().recordOutput("Odometry/Trajectory", customGenerator.getDriveTrajectory());
+    Logger.getInstance()
+        .recordOutput(
+            "Odometry/Trajectory",
+            customGenerator.getDriveTrajectory().getStates().stream()
+                .map(state -> AllianceFlipUtil.apply(state.poseMeters))
+                .toArray(Pose2d[]::new));
 
     // Reset all controllers
     timer.reset();
@@ -201,11 +207,7 @@ public class DriveTrajectory extends CommandBase {
     Logger.getInstance()
         .recordOutput(
             "Odometry/TrajectorySetpoint",
-            new double[] {
-              driveState.poseMeters.getX(),
-              driveState.poseMeters.getY(),
-              holonomicRotationState.position.getRadians()
-            });
+            new Pose2d(driveState.poseMeters.getTranslation(), holonomicRotationState.position));
 
     // Calculate velocity
     ChassisSpeeds nextDriveState =
@@ -217,6 +219,8 @@ public class DriveTrajectory extends CommandBase {
   @Override
   public void end(boolean interrupted) {
     drive.stop();
+    Logger.getInstance().recordOutput("Odometry/Trajectory", new double[] {});
+    Logger.getInstance().recordOutput("Odometry/TrajectorySetpoint", new double[] {});
   }
 
   // Returns true when the command should end.

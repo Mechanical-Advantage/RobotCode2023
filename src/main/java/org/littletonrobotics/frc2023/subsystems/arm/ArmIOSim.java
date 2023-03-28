@@ -20,6 +20,7 @@ public class ArmIOSim implements ArmIO {
   private ArmDynamics dynamics;
   private Vector<N4> shoulderElbowStates = VecBuilder.fill(Math.PI / 2.0, Math.PI, 0.0, 0.0);
   private SingleJointedArmSim wristSim;
+  private boolean lastEnabled = false;
 
   private double shoulderAppliedVolts = 0.0;
   private double elbowAppliedVolts = 0.0;
@@ -39,16 +40,25 @@ public class ArmIOSim implements ArmIO {
             config.wrist().minAngle(),
             config.wrist().maxAngle(),
             false);
-    wristSim.setState(VecBuilder.fill(0.0, 0.0));
+    wristSim.setState(VecBuilder.fill(-Math.PI / 2.0, 0.0));
   }
 
   public void updateInputs(ArmIOInputs inputs) {
+    // Reset voltages when disabled
     if (DriverStation.isDisabled()) {
       setShoulderVoltage(0.0);
       setElbowVoltage(0.0);
       setWristVoltage(0.0);
     }
 
+    // Reset position on enable
+    if (DriverStation.isEnabled() && !lastEnabled) {
+      shoulderElbowStates = VecBuilder.fill(Math.PI / 2.0, Math.PI, 0.0, 0.0);
+      wristSim.setState(VecBuilder.fill(-Math.PI / 2.0, 0.0));
+    }
+    lastEnabled = DriverStation.isEnabled();
+
+    // Update sim states
     shoulderElbowStates =
         dynamics.simulate(
             shoulderElbowStates,
@@ -56,6 +66,7 @@ public class ArmIOSim implements ArmIO {
             Constants.loopPeriodSecs);
     wristSim.update(Constants.loopPeriodSecs);
 
+    // Log sim data
     inputs.shoulderAbsolutePositionRad = shoulderElbowStates.get(0, 0);
     inputs.shoulderRelativePositionRad = shoulderElbowStates.get(0, 0);
     inputs.shoulderInternalPositionRad = shoulderElbowStates.get(0, 0);
@@ -71,7 +82,6 @@ public class ArmIOSim implements ArmIO {
               .getCurrent(shoulderElbowStates.get(2, 0), shoulderAppliedVolts)
         };
     inputs.shoulderTempCelcius = new double[] {};
-
     inputs.elbowAbsolutePositionRad = shoulderElbowStates.get(1, 0);
     inputs.elbowRelativePositionRad = shoulderElbowStates.get(1, 0);
     inputs.elbowInternalPositionRad = shoulderElbowStates.get(1, 0);
@@ -87,7 +97,6 @@ public class ArmIOSim implements ArmIO {
               .getCurrent(shoulderElbowStates.get(3, 0), elbowAppliedVolts)
         };
     inputs.elbowTempCelcius = new double[] {};
-
     inputs.wristAbsolutePositionRad = wristSim.getAngleRads();
     inputs.wristRelativePositionRad = wristSim.getAngleRads();
     inputs.wristInternalPositionRad = wristSim.getAngleRads();

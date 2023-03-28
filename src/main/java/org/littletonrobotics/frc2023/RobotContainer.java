@@ -226,9 +226,6 @@ public class RobotContainer {
         "Side: Score Two, Grab, And Maybe Balance",
         List.of(
             new AutoQuestion(
-                "Which side?",
-                List.of(AutoQuestionResponse.FIELD_SIDE, AutoQuestionResponse.WALL_SIDE)),
-            new AutoQuestion(
                 "Which level?",
                 List.of(
                     AutoQuestionResponse.HIGH,
@@ -236,7 +233,7 @@ public class RobotContainer {
                     AutoQuestionResponse.HYBRID)),
             new AutoQuestion(
                 "Balance?", List.of(AutoQuestionResponse.YES, AutoQuestionResponse.NO))),
-        autoCommands.sideScoreTwoMaybeGrabMaybeBalance(true));
+        autoCommands.sideScoreTwoGrabMaybeBalance());
     autoSelector.addRoutine(
         "Side: Score Two And Maybe Balance",
         List.of(
@@ -251,7 +248,7 @@ public class RobotContainer {
                     AutoQuestionResponse.HYBRID)),
             new AutoQuestion(
                 "Balance?", List.of(AutoQuestionResponse.YES, AutoQuestionResponse.NO))),
-        autoCommands.sideScoreTwoMaybeGrabMaybeBalance(false));
+        autoCommands.sideScoreTwoMaybeBalance());
     autoSelector.addRoutine(
         "Side: Score One And Maybe Balance",
         List.of(

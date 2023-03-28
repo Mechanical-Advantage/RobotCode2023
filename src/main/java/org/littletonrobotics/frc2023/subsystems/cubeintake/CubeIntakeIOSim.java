@@ -8,6 +8,7 @@
 package org.littletonrobotics.frc2023.subsystems.cubeintake;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import org.littletonrobotics.frc2023.Constants;
@@ -17,7 +18,9 @@ public class CubeIntakeIOSim implements CubeIntakeIO {
       new SingleJointedArmSim(DCMotor.getNEO(1), 50, 0.5, 0.5, 0.0, Math.PI / 2.0, true);
   private double armAppliedVolts = 0.0;
 
-  public CubeIntakeIOSim() {}
+  public CubeIntakeIOSim() {
+    armSim.setState(VecBuilder.fill(Math.PI / 2.0, 0.0));
+  }
 
   @Override
   public void updateInputs(CubeIntakeIOInputs inputs) {

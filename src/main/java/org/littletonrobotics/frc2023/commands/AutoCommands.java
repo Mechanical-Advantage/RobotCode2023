@@ -19,6 +19,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.trajectory.constraint.EllipticalRegionConstraint;
 import edu.wpi.first.math.trajectory.constraint.MaxVelocityConstraint;
 import edu.wpi.first.math.trajectory.constraint.RectangularRegionConstraint;
 import edu.wpi.first.math.trajectory.constraint.TrajectoryConstraint;
@@ -66,6 +67,10 @@ public class AutoCommands {
       new Transform2d(new Translation2d(0.25, -0.15), new Rotation2d());
   private static final double coneSweeperDistance = 0.5;
   private static final double coneSweeperBackoffDistance = 0.95;
+  private static final double cableBumpMaxVelocity = Units.inchesToMeters(50.0);
+  private static final double chargingStationMaxVelocity = Units.inchesToMeters(40.0);
+  private static final double slowScoreConstraintRadius = 0.5;
+  private static final double slowScoreMaxVelocity = Units.inchesToMeters(35.0);
 
   // Waypoints
   private final Pose2d[] startingLocations = new Pose2d[9];
@@ -108,11 +113,11 @@ public class AutoCommands {
     }
     transitWallSideNear =
         new Translation2d(
-            Community.chargingStationInnerX,
+            Community.chargingStationInnerX + 0.5,
             (Community.chargingStationRightY + Community.rightY) / 2.0);
     transitWallSideFar =
         new Translation2d(
-            Community.chargingStationOuterX,
+            Community.chargingStationOuterX - 0.5,
             (Community.chargingStationRightY + Community.rightY) / 2.0);
     transitWallSideNearInWaypoint =
         Waypoint.fromDifferentialPose(
@@ -156,7 +161,7 @@ public class AutoCommands {
             new RectangularRegionConstraint(
                 new Translation2d(Community.chargingStationInnerX, Community.rightY),
                 new Translation2d(Community.chargingStationOuterX, Community.chargingStationRightY),
-                new MaxVelocityConstraint(Units.inchesToMeters(50.0))),
+                new MaxVelocityConstraint(cableBumpMaxVelocity)),
 
             // Charging station
             new RectangularRegionConstraint(
@@ -164,7 +169,7 @@ public class AutoCommands {
                     Community.chargingStationInnerX - 0.8, Community.chargingStationRightY),
                 new Translation2d(
                     Community.chargingStationOuterX + 0.8, Community.chargingStationLeftY),
-                new MaxVelocityConstraint(Units.inchesToMeters(40.0))));
+                new MaxVelocityConstraint(chargingStationMaxVelocity)));
     thetaController.enableContinuousInput(-Math.PI, Math.PI);
   }
 
@@ -175,6 +180,11 @@ public class AutoCommands {
 
   /** Drives along the specified trajectory. */
   private Command path(List<Waypoint> waypoints) {
+    return path(waypoints, List.of());
+  }
+
+  /** Drives along the specified trajectory. */
+  private Command path(List<Waypoint> waypoints, List<TrajectoryConstraint> extraConstraints) {
     if (waypoints.size() == 2
         && waypoints.get(0).getDriveRotation().isEmpty()
         && waypoints.get(1).getDriveRotation().isEmpty()
@@ -189,7 +199,10 @@ public class AutoCommands {
                           waypoints.get(1).getHolonomicRotation().get())));
       return driveToPose.until(driveToPose::atGoal);
     }
-    return new DriveTrajectory(drive, waypoints, trajectoryConstraints);
+    List<TrajectoryConstraint> allConstraints = new ArrayList<>();
+    allConstraints.addAll(trajectoryConstraints);
+    allConstraints.addAll(extraConstraints);
+    return new DriveTrajectory(drive, waypoints, allConstraints);
   }
 
   /** Drives along the specified trajectory. */
@@ -278,9 +291,9 @@ public class AutoCommands {
                     objective.isConeNode()
                         ? ArmPose.Preset.FLOOR_CONE
                         : ArmPose.Preset.CUBE_HANDOFF))
-            .deadlineWith(gripper.intakeCommand())
-            .andThen(gripper.intakeCommand().withTimeout(0.15))
-            .deadlineWith(objective.isConeNode() ? none() : cubeIntake.runCommand()),
+            .deadlineWith(
+                gripper.intakeCommand(),
+                (objective.isConeNode() ? none() : cubeIntake.runCommand())),
         new Pose2d(
             waypoints.get(waypoints.size() - 1).getTranslation(),
             waypoints.get(waypoints.size() - 1).getHolonomicRotation().get()));
@@ -291,7 +304,7 @@ public class AutoCommands {
       Objective objective,
       boolean fieldSide,
       boolean firstScore,
-      boolean extraAlign,
+      boolean slowAlign,
       Pose2d startingPose,
       boolean singleTransit) {
     // Create waypoints
@@ -331,10 +344,19 @@ public class AutoCommands {
     ArmPose scoringArmPose = AutoScore.getArmTarget(scoringPose, objective, arm, reachScoring);
 
     // Create command
-    var driveToPose = new DriveToPose(drive, () -> AllianceFlipUtil.apply(scoringPose));
     return new CommandWithPose(
         sequence(
-            path(waypoints)
+            path(
+                    waypoints,
+                    slowAlign
+                        ? List.of(
+                            new EllipticalRegionConstraint(
+                                scoringPose.getTranslation(),
+                                slowScoreConstraintRadius * 2.0,
+                                slowScoreConstraintRadius * 2.0,
+                                new Rotation2d(),
+                                new MaxVelocityConstraint(slowScoreMaxVelocity)))
+                        : List.of())
                 .alongWith(
                     (firstScore ? none() : gripper.intakeCommand().withTimeout(1.0)),
                     sequence(
@@ -342,14 +364,11 @@ public class AutoCommands {
                         waitUntil(
                             () ->
                                 Math.abs(
-                                            AllianceFlipUtil.apply(drive.getRotation())
-                                                .minus(scoringPose.getRotation())
-                                                .getDegrees())
-                                        < 90.0
-                                    && AllianceFlipUtil.apply(drive.getPose().getX())
-                                        < Community.chargingStationOuterX),
+                                        AllianceFlipUtil.apply(drive.getRotation())
+                                            .minus(scoringPose.getRotation())
+                                            .getDegrees())
+                                    < 90.0),
                         arm.runPathCommand(scoringArmPose))),
-            extraAlign ? driveToPose.until(driveToPose::atGoal) : none(),
             gripper.ejectCommand(objective)),
         scoringPose);
   }
@@ -397,9 +416,10 @@ public class AutoCommands {
     var intake0Sequence = driveAndIntake(objective1, true, 3, score0Sequence.pose(), true);
     var score1Sequence =
         driveAndScore(objective1, true, false, false, intake0Sequence.pose(), true);
-    var intake2Sequence = driveAndIntake(objective2, true, 2, score1Sequence.pose(), true);
+    var intake2Sequence = driveAndIntake(objective2, true, 2, score1Sequence.pose(), false);
     var score2Sequence =
-        driveAndScore(objective2, true, false, true, intake2Sequence.pose(), reachScoring);
+        driveAndScore(
+            objective2, true, false, level != NodeLevel.HYBRID, intake2Sequence.pose(), true);
     return sequence(
         reset(startingPose),
         score0Sequence.command(),
@@ -410,31 +430,42 @@ public class AutoCommands {
   }
 
   /** Scores one cone and cube, then optionally balance.s */
-  public Command sideScoreTwoMaybeGrabMaybeBalance(boolean grabThird) {
+  public Command sideScoreTwoGrabMaybeBalance() {
+    Supplier<Boolean> balanceSupplier =
+        () -> responses.get().get(1).equals(AutoQuestionResponse.YES);
+    return select(
+        Map.of(
+            AutoQuestionResponse.HYBRID,
+            sideScoreTwoMaybeGrabMaybeBalance(true, true, NodeLevel.HYBRID, balanceSupplier),
+            AutoQuestionResponse.MID,
+            sideScoreTwoMaybeGrabMaybeBalance(true, true, NodeLevel.MID, balanceSupplier),
+            AutoQuestionResponse.HIGH,
+            sideScoreTwoMaybeGrabMaybeBalance(true, true, NodeLevel.HIGH, balanceSupplier)),
+        () -> responses.get().get(0));
+  }
+
+  /** Scores one cone and cube, then optionally balance.s */
+  public Command sideScoreTwoMaybeBalance() {
     Supplier<Boolean> balanceSupplier =
         () -> responses.get().get(2).equals(AutoQuestionResponse.YES);
     return either(
         select(
             Map.of(
                 AutoQuestionResponse.HYBRID,
-                sideScoreTwoMaybeGrabMaybeBalance(
-                    true, grabThird, NodeLevel.HYBRID, balanceSupplier),
+                sideScoreTwoMaybeGrabMaybeBalance(true, false, NodeLevel.HYBRID, balanceSupplier),
                 AutoQuestionResponse.MID,
-                sideScoreTwoMaybeGrabMaybeBalance(true, grabThird, NodeLevel.MID, balanceSupplier),
+                sideScoreTwoMaybeGrabMaybeBalance(true, false, NodeLevel.MID, balanceSupplier),
                 AutoQuestionResponse.HIGH,
-                sideScoreTwoMaybeGrabMaybeBalance(
-                    true, grabThird, NodeLevel.HIGH, balanceSupplier)),
+                sideScoreTwoMaybeGrabMaybeBalance(true, false, NodeLevel.HIGH, balanceSupplier)),
             () -> responses.get().get(1)),
         select(
             Map.of(
                 AutoQuestionResponse.HYBRID,
-                sideScoreTwoMaybeGrabMaybeBalance(
-                    false, grabThird, NodeLevel.HYBRID, balanceSupplier),
+                sideScoreTwoMaybeGrabMaybeBalance(false, false, NodeLevel.HYBRID, balanceSupplier),
                 AutoQuestionResponse.MID,
-                sideScoreTwoMaybeGrabMaybeBalance(false, grabThird, NodeLevel.MID, balanceSupplier),
+                sideScoreTwoMaybeGrabMaybeBalance(false, false, NodeLevel.MID, balanceSupplier),
                 AutoQuestionResponse.HIGH,
-                sideScoreTwoMaybeGrabMaybeBalance(
-                    false, grabThird, NodeLevel.HIGH, balanceSupplier)),
+                sideScoreTwoMaybeGrabMaybeBalance(false, false, NodeLevel.HIGH, balanceSupplier)),
             () -> responses.get().get(1)),
         () -> responses.get().get(0).equals(AutoQuestionResponse.FIELD_SIDE));
   }
@@ -457,14 +488,18 @@ public class AutoCommands {
             fieldSide ? new Transform2d() : cubeWallSideOffset);
     var score1Sequence =
         driveAndScore(objective1, fieldSide, false, false, intake1Sequence.pose(), false);
-    var intake2Sequence =
-        driveAndIntake(
-            objective2,
-            fieldSide,
-            fieldSide ? 2 : 1,
-            score1Sequence.pose(),
-            false,
-            fieldSide ? new Transform2d() : cubeWallSideOffset);
+
+    // Third grab sequences (field side only)
+    var intake2Sequence = driveAndIntake(objective2, true, 2, score1Sequence.pose(), false);
+    var returnWaypoints =
+        List.of(
+            Waypoint.fromHolonomicPose(intake2Sequence.pose()),
+            transitFieldSideFarInWaypoint,
+            new Waypoint(
+                transitFieldSideNearInWaypoint.getTranslation().plus(new Translation2d(-0.75, 0.0)),
+                transitFieldSideNearInWaypoint.getDriveRotation().get(),
+                new Rotation2d()));
+
     return sequence(
         reset(startingPose),
         score0Sequence.command(),
@@ -475,7 +510,7 @@ public class AutoCommands {
                 intake2Sequence.command(),
                 either(
                     driveAndBalance(intake2Sequence.pose()).alongWith(gripper.intakeCommand()),
-                    armToHome(),
+                    path(returnWaypoints).alongWith(armToHome()),
                     () -> balanceSupplier.get()))
             : either(
                 driveAndBalance(score1Sequence.pose()), armToHome(), () -> balanceSupplier.get()));
