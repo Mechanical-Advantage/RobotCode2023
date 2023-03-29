@@ -51,6 +51,8 @@ public class Arm extends SubsystemBase {
   public static final double shiftCenterMarginMeters = 0.05;
   public static final double wristGroundMarginMeters = 0.05;
   public static final double[] cubeIntakeAvoidanceRect = new double[] {0.1, 0.0, 0.75, 0.65};
+  public static final double[] passthroughConstraintRect = new double[] {-0.2, 0.0, 0.2, 5.0};
+  public static final double passthroughConstraintWristRange = Units.degreesToRadians(45.0);
   public static final double nodeConstraintMinY =
       0.8; // If target or start is above this y, enable node constraints
   public static final double nodeConstraintMinX =
@@ -109,6 +111,7 @@ public class Arm extends SubsystemBase {
   private ArmPose queuedPose = null; // Use as setpoint once trajectory is completed
   private final Timer trajectoryTimer = new Timer();
   private double trajectoryStartWait = 0.0;
+  private double trajectoryWristStartWait = 0.0;
   private LiftDirection emergencyLiftDirection = LiftDirection.NONE;
 
   private final PIDController shoulderFeedback =
@@ -338,9 +341,73 @@ public class Arm extends SubsystemBase {
         && trajectoryTimer.get() == 0.0) {
       trajectoryTimer.start();
       trajectoryStartWait = 0.0;
-      double timeUntilCollision = getTimeUntilCollision(cubeIntakeAvoidanceRect);
+      trajectoryWristStartWait = 0.0;
+
+      // Add start wait for cube intake
+      double timeUntilCollision = getCollisionTimeRange(cubeIntakeAvoidanceRect, true)[0];
       if (timeUntilCollision < avoidanceLookaheadSecs && timeUntilCollision != 0.0) {
         trajectoryStartWait = avoidanceLookaheadSecs - timeUntilCollision;
+      }
+
+      // Update passthrough constraint
+      var shoulderElbowAnglesStart = currentTrajectory.getPoints().get(0);
+      var shoulderElbowAnglesEnd = currentTrajectory.getPoints().get(0);
+      double wristAngleStart =
+          MathUtil.angleModulus(
+              setpointPose
+                  .globalWristAngle()
+                  .minus(
+                      new Rotation2d(
+                          shoulderElbowAnglesStart.get(0, 0) + shoulderElbowAnglesStart.get(1, 0)))
+                  .getRadians());
+      double wristAngleEnd =
+          MathUtil.angleModulus(
+              queuedPose
+                  .globalWristAngle()
+                  .minus(
+                      new Rotation2d(
+                          shoulderElbowAnglesEnd.get(0, 0) + shoulderElbowAnglesEnd.get(1, 0)))
+                  .getRadians());
+      boolean wristWillPassthrough =
+          !((wristAngleStart > passthroughConstraintWristRange
+                  && wristAngleEnd > passthroughConstraintWristRange)
+              || (wristAngleStart < -passthroughConstraintWristRange
+                  && wristAngleEnd < -passthroughConstraintWristRange));
+      double[] regionPassthroughRange = getCollisionTimeRange(passthroughConstraintRect, false);
+      boolean armWillPassthrough = regionPassthroughRange[0] < Double.POSITIVE_INFINITY;
+      if (wristWillPassthrough && armWillPassthrough) {
+        boolean willStartPassthrough = regionPassthroughRange[0] <= 0.0;
+        boolean willEndPassthrough = regionPassthroughRange[1] >= currentTrajectory.getTotalTime();
+        var wristProfile =
+            new TrapezoidProfile(
+                new TrapezoidProfile.Constraints(
+                    wristMaxVelocity.get(), wristMaxAcceleration.get()),
+                new TrapezoidProfile.State(wristAngleStart, 0.0),
+                new TrapezoidProfile.State(wristAngleEnd, 0.0));
+        var wristPassthroughEndTime =
+            wristProfile.timeLeftUntil(
+                wristAngleEnd > 0.0
+                    ? passthroughConstraintWristRange
+                    : -passthroughConstraintWristRange);
+        if (willStartPassthrough && !willEndPassthrough) {
+          // Starting in passthrough region, delay wrist movement
+          trajectoryWristStartWait = trajectoryStartWait + regionPassthroughRange[1];
+        } else if (willEndPassthrough && !willStartPassthrough) {
+          // Ending in passthrough region, delay arm movement
+          trajectoryStartWait += wristPassthroughEndTime;
+        } else if (!willStartPassthrough && !willEndPassthrough) {
+          // Passthrough region in middle of trajectory
+          if (Math.abs(wristAngleStart) < passthroughConstraintWristRange) {
+            // Wrist is violating at the start, delay arm movement
+            trajectoryStartWait +=
+                Math.max(0.0, wristPassthroughEndTime - regionPassthroughRange[0]);
+          } else {
+            // Wrist is not violating or only violating at the end, delay wrist movement
+            trajectoryWristStartWait = trajectoryStartWait + regionPassthroughRange[1];
+          }
+        } else {
+          // Full trajectory in passthrough region, hope for the best...
+        }
       }
     }
 
@@ -446,14 +513,16 @@ public class Arm extends SubsystemBase {
 
     } else if (wristEffectiveArmPose != null) {
       // Go to setpoint
-      Optional<Vector<N2>> shoulderElbowAngles =
-          kinematics.inverse(wristEffectiveArmPose.endEffectorPosition());
+      boolean delayForTrajectory =
+          currentTrajectory != null
+              && currentTrajectory.isGenerated()
+              && trajectoryTimer.get() < trajectoryWristStartWait;
+      ArmPose armPose = delayForTrajectory ? setpointPose : wristEffectiveArmPose;
+      Optional<Vector<N2>> shoulderElbowAngles = kinematics.inverse(armPose.endEffectorPosition());
       if (shoulderElbowAngles.isPresent()) {
         // Calculate required angle to avoid hitting the ground
-        double globalAngleRadians =
-            MathUtil.angleModulus(wristEffectiveArmPose.globalWristAngle().getRadians());
-        double groundDistance =
-            wristEffectiveArmPose.endEffectorPosition().getY() - wristGroundMarginMeters;
+        double globalAngleRadians = MathUtil.angleModulus(armPose.globalWristAngle().getRadians());
+        double groundDistance = armPose.endEffectorPosition().getY() - wristGroundMarginMeters;
 
         if (groundDistance < config.wrist().length()) {
           double minGroundAngle = Math.acos(groundDistance / config.wrist().length());
@@ -570,20 +639,27 @@ public class Arm extends SubsystemBase {
    * Returns the predicted time until the arm will pass through the provided region. Zero if already
    * intersecting the region and infinity if no planned motion will intersect the region.
    */
-  private double getTimeUntilCollision(double[] region) {
+  private double[] getCollisionTimeRange(double[] region, boolean includeWrist) {
+    double[] range = new double[] {Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY};
+    boolean startFound = false;
+    boolean endFound = false;
+
     // Check setpoint
     if (setpointPose.endEffectorPosition().getX() >= region[0]
         && setpointPose.endEffectorPosition().getX() <= region[2]
         && setpointPose.endEffectorPosition().getY() >= region[1]
         && setpointPose.endEffectorPosition().getY() <= region[3]) {
-      return 0.0;
+      range[0] = 0.0;
+      startFound = true;
     }
     var setpointWristPosition = setpointPose.wristPosition();
     if (setpointWristPosition.getX() >= region[0]
         && setpointWristPosition.getX() <= region[2]
         && setpointWristPosition.getY() >= region[1]
-        && setpointWristPosition.getY() <= region[3]) {
-      return 0.0;
+        && setpointWristPosition.getY() <= region[3]
+        && includeWrist) {
+      range[0] = 0.0;
+      startFound = true;
     }
 
     // Check trajectory
@@ -600,29 +676,43 @@ public class Arm extends SubsystemBase {
           continue;
         }
         var endEffectorPosition = kinematics.forward(points.get(i));
+        boolean endEffectorCollision =
+            endEffectorPosition.getX() >= region[0]
+                && endEffectorPosition.getX() <= region[2]
+                && endEffectorPosition.getY() >= region[1]
+                && endEffectorPosition.getY() <= region[3];
         var wristPosition =
             new ArmPose(endEffectorPosition, setpointPose.globalWristAngle()).wristPosition();
-        if (endEffectorPosition.getX() >= region[0]
-            && endEffectorPosition.getX() <= region[2]
-            && endEffectorPosition.getY() >= region[1]
-            && endEffectorPosition.getY() <= region[3]) {
-          return time - trajectoryTime;
+        boolean wristCollision =
+            wristPosition.getX() >= region[0]
+                && wristPosition.getX() <= region[2]
+                && wristPosition.getY() >= region[1]
+                && wristPosition.getY() <= region[3];
+        boolean collision = endEffectorCollision || (includeWrist && wristCollision);
+        if (startFound) {
+          if (!collision) {
+            range[1] = time - trajectoryTime;
+            endFound = true;
+            break;
+          }
+        } else {
+          if (collision) {
+            range[0] = time - trajectoryTime;
+            startFound = true;
+          }
         }
-        if (wristPosition.getX() >= region[0]
-            && wristPosition.getX() <= region[2]
-            && wristPosition.getY() >= region[1]
-            && wristPosition.getY() <= region[3]) {
-          return time - trajectoryTime;
-        }
+      }
+      if (!endFound) {
+        range[1] = currentTrajectory.getTotalTime() - trajectoryTime;
       }
     }
 
-    return Double.POSITIVE_INFINITY;
+    return range;
   }
 
   /** Returns whether the cube intake should be extended to avoid colliding with the arm. */
   public boolean cubeIntakeShouldExtend() {
-    return getTimeUntilCollision(cubeIntakeAvoidanceRect) < avoidanceLookaheadSecs
+    return getCollisionTimeRange(cubeIntakeAvoidanceRect, true)[0] < avoidanceLookaheadSecs
         || emergencyLiftDirection == LiftDirection.BACK;
   }
 
