@@ -28,6 +28,7 @@ import org.littletonrobotics.frc2023.commands.DriveWithJoysticks;
 import org.littletonrobotics.frc2023.commands.EjectHeld;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
+import org.littletonrobotics.frc2023.commands.HoldFlippableArmPreset;
 import org.littletonrobotics.frc2023.commands.IntakeConeFloor;
 import org.littletonrobotics.frc2023.commands.IntakeCubeHandoff;
 import org.littletonrobotics.frc2023.commands.IntakeSubstation;
@@ -390,13 +391,13 @@ public class RobotContainer {
 
     // Joystick command factories
     Function<Boolean, DriveWithJoysticks> driveWithJoysticksFactory =
-        (Boolean alwaysSniper) ->
+        (Boolean sniper) ->
             new DriveWithJoysticks(
                 drive,
                 () -> -driver.getLeftY(),
                 () -> -driver.getLeftX(),
                 () -> -driver.getRightX(),
-                () -> alwaysSniper || driver.getHID().getLeftBumper(),
+                () -> sniper,
                 () -> robotRelative.getAsBoolean(),
                 arm::getExtensionPercent);
     Supplier<MoveArmWithJoysticks> moveArmWithJoysticksFactory =
@@ -485,6 +486,14 @@ public class RobotContainer {
                         () -> Leds.getInstance().autoScore = true,
                         () -> Leds.getInstance().autoScore = false)))
         .onTrue(Commands.runOnce(() -> Leds.getInstance().hpGamePiece = HPGamePiece.NONE));
+
+    // Throw game piece
+    driver
+        .leftBumper()
+        .whileTrue(
+            new HoldFlippableArmPreset(
+                arm, drive, ArmPose.Preset.THROW.getPose(), Rotation2d.fromDegrees(180.0)));
+    driver.leftBumper().onFalse(gripper.ejectCommand(EjectSpeed.VERY_FAST));
 
     // Distraction LEDs
     driver

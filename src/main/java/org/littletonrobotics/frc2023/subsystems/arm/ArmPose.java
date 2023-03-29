@@ -113,8 +113,7 @@ public record ArmPose(Translation2d endEffectorPosition, Rotation2d globalWristA
     CUBE_HANDOFF(new ArmPose(new Translation2d(0.42, 0.58), Rotation2d.fromDegrees(-85.0)), false),
     FLOOR_CONE(new ArmPose(new Translation2d(-0.5, 0.18), Rotation2d.fromDegrees(-165.0)), false),
     EJECT(new ArmPose(new Translation2d(0.25, 0.5), Rotation2d.fromDegrees(10.0))),
-    HYBRID_CUBE_FROM_CHARGING_STATION(
-        new ArmPose(new Translation2d(0.45, 0.85), Rotation2d.fromDegrees(20.0)));
+    THROW(new ArmPose(new Translation2d(0.45, 0.85), Rotation2d.fromDegrees(20.0)));
 
     private ArmPose pose;
     private boolean pregenerateFlip;

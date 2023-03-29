@@ -738,7 +738,7 @@ public class AutoCommands {
                 arm.runPathCommand(
                     () ->
                         scoreFinalSupplier.get()
-                            ? ArmPose.Preset.HYBRID_CUBE_FROM_CHARGING_STATION.getPose()
+                            ? ArmPose.Preset.THROW.getPose()
                             : ArmPose.Preset.HOMED.getPose())),
         either(gripper.ejectCommand(EjectSpeed.VERY_FAST), none(), () -> scoreFinalSupplier.get()));
   }
