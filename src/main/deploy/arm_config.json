@@ -5,7 +5,7 @@
   ],
   "shoulder": {
     "mass": 1.790329,
-    "length": 0.686,
+    "length": 0.638429,
     "moi": 0.216988,
     "cgRadius": 0.4318,
     "minAngle": 0.0,
@@ -18,7 +18,7 @@
   },
   "elbow": {
     "mass": 2.5,
-    "length": 0.84,
+    "length": 0.80645,
     "moi": 0.21851,
     "cgRadius": 0.4318,
     "minAngle": 0.2617994,
