@@ -13,7 +13,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
@@ -28,9 +27,9 @@ import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
 import org.littletonrobotics.frc2023.util.GeomUtil;
 
 public class AutoScore extends SequentialCommandGroup {
-  public static final double bendCompensation =
-      // Units.inchesToMeters(-1.0); // Blue alliance
-      Units.inchesToMeters(1.0); // Red alliance
+  public static final double bendCompensation = 0.0;
+  // Units.inchesToMeters(-1.0); // Blue alliance
+  // Units.inchesToMeters(1.0); // Red alliance
 
   public static Transform2d getBendCompensation(boolean isFront) {
     return new Transform2d(
