@@ -223,7 +223,7 @@ public class RobotContainer {
     autoSelector.addRoutine(
         "Field: Score Hybrid Link", List.of(), autoCommands.fieldScoreLink(NodeLevel.HYBRID));
     autoSelector.addRoutine(
-        "Side: Score Two, Grab, And Maybe Balance",
+        "Field: Score Two, Grab, And Maybe Balance",
         List.of(
             new AutoQuestion(
                 "Which level?",
