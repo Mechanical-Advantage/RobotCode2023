@@ -60,17 +60,17 @@ public class AutoCommands {
   private final Supplier<List<AutoQuestionResponse>> responses;
 
   // Constants
-  private static final boolean reachScoring = false;
-  private static final double startX = Grids.outerX + 0.38;
-  private static final double cubeIntakeDistance = 0.5;
-  private static final Transform2d cubeWallSideOffset =
+  public static final boolean reachScoring = false;
+  public static final double startX = Grids.outerX + 0.38;
+  public static final double cubeIntakeDistance = 0.5;
+  public static final Transform2d cubeWallSideOffset =
       new Transform2d(new Translation2d(0.25, -0.15), new Rotation2d());
-  private static final double coneSweeperDistance = 0.5;
-  private static final double coneSweeperBackoffDistance = 0.95;
-  private static final double cableBumpMaxVelocity = Units.inchesToMeters(50.0);
-  private static final double chargingStationMaxVelocity = Units.inchesToMeters(40.0);
-  private static final double slowScoreConstraintRadius = 0.5;
-  private static final double slowScoreMaxVelocity = Units.inchesToMeters(35.0);
+  public static final double coneSweeperDistance = 0.5;
+  public static final double coneSweeperBackoffDistance = 0.95;
+  public static final double cableBumpMaxVelocity = Units.inchesToMeters(50.0);
+  public static final double chargingStationMaxVelocity = Units.inchesToMeters(40.0);
+  public static final double slowScoreConstraintRadius = 0.5;
+  public static final double slowScoreMaxVelocity = Units.inchesToMeters(35.0);
 
   // Waypoints
   private final Pose2d[] startingLocations = new Pose2d[9];
@@ -202,7 +202,7 @@ public class AutoCommands {
     List<TrajectoryConstraint> allConstraints = new ArrayList<>();
     allConstraints.addAll(trajectoryConstraints);
     allConstraints.addAll(extraConstraints);
-    return new DriveTrajectory(drive, waypoints, allConstraints);
+    return new DriveTrajectory(drive, waypoints, allConstraints, 0.0);
   }
 
   /** Drives along the specified trajectory. */

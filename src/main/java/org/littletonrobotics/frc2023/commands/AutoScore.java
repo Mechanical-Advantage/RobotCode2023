@@ -13,9 +13,14 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.trajectory.constraint.EllipticalRegionConstraint;
+import edu.wpi.first.math.trajectory.constraint.MaxVelocityConstraint;
+import edu.wpi.first.math.trajectory.constraint.RectangularRegionConstraint;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Supplier;
 import org.littletonrobotics.frc2023.FieldConstants;
 import org.littletonrobotics.frc2023.subsystems.arm.Arm;
@@ -25,6 +30,7 @@ import org.littletonrobotics.frc2023.subsystems.gripper.Gripper;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.Objective;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
 import org.littletonrobotics.frc2023.util.GeomUtil;
+import org.littletonrobotics.frc2023.util.trajectory.Waypoint;
 
 public class AutoScore extends SequentialCommandGroup {
   public static final double bendCompensation = 0.0;
@@ -117,9 +123,18 @@ public class AutoScore extends SequentialCommandGroup {
                 reachScoreEnable.get());
 
     // Create drive and arm commands
-    var driveToPose = new DriveToPose(drive, driveTargetSupplier);
+    var trajectoryCommand =
+        Commands.either(
+            makeTrajectoryCommand(drive, driveTargetSupplier),
+            new DriveToPose(drive, driveTargetSupplier),
+            () ->
+                drive
+                        .getPose()
+                        .getTranslation()
+                        .getDistance(driveTargetSupplier.get().getTranslation())
+                    > 0.5);
     var driveCommand =
-        driveToPose
+        trajectoryCommand
             .until(
                 () ->
                     fullManual.get()
@@ -127,7 +142,7 @@ public class AutoScore extends SequentialCommandGroup {
                         : (autoEject.get()
                             ? false // Never exit auto driving with auto eject
                             : atGoalForObjective( // Exit after initial alignment with manual eject
-                                driveToPose, objective)))
+                                drive.getPose(), driveTargetSupplier.get(), objective)))
             .andThen(driveWithJoysticks);
     var armCommand =
         Commands.either(
@@ -135,17 +150,22 @@ public class AutoScore extends SequentialCommandGroup {
                 Commands.waitSeconds(0.2) // Wait minimum time in case robot is about to tip
                     .andThen(
                         Commands.waitUntil(
-                            () ->
-                                driveToPose.withinTolerance(
-                                        extendArmDriveTolerance, extendArmThetaTolerance)
-                                    && Math.abs(drive.getPitch().getRadians())
-                                        < extendArmTippingTolerancePosition.getRadians()
-                                    && Math.abs(drive.getRoll().getRadians())
-                                        < extendArmTippingTolerancePosition.getRadians()
-                                    && Math.abs(drive.getPitchVelocity())
-                                        < extendArmTippingToleranceVelocity.getRadians()
-                                    && Math.abs(drive.getRollVelocity())
-                                        < extendArmTippingToleranceVelocity.getRadians())),
+                            () -> {
+                              Pose2d relativePose =
+                                  drive.getPose().relativeTo(driveTargetSupplier.get());
+                              return relativePose.getTranslation().getNorm()
+                                      < extendArmDriveTolerance
+                                  && Math.abs(relativePose.getRotation().getRadians())
+                                      < extendArmThetaTolerance.getRadians()
+                                  && Math.abs(drive.getPitch().getRadians())
+                                      < extendArmTippingTolerancePosition.getRadians()
+                                  && Math.abs(drive.getRoll().getRadians())
+                                      < extendArmTippingTolerancePosition.getRadians()
+                                  && Math.abs(drive.getPitchVelocity())
+                                      < extendArmTippingToleranceVelocity.getRadians()
+                                  && Math.abs(drive.getRollVelocity())
+                                      < extendArmTippingToleranceVelocity.getRadians();
+                            })),
                 () -> fullManual.get())
             .andThen(
                 arm.runPathCommand(armTargetSupplier),
@@ -157,7 +177,8 @@ public class AutoScore extends SequentialCommandGroup {
     // Combine all commands
     addCommands(
         Commands.either(
-                Commands.waitUntil(() -> arm.isTrajectoryFinished() && driveToPose.atGoal()),
+                Commands.waitUntil(
+                    () -> arm.isTrajectoryFinished() && trajectoryCommand.isFinished()),
                 Commands.waitUntil(() -> ejectButton.get()),
                 () -> autoEject.get() && !fullManual.get())
             .deadlineWith(driveCommand, armCommand)
@@ -168,12 +189,186 @@ public class AutoScore extends SequentialCommandGroup {
   /**
    * Returns whether the drive to pose command is within the tolerance for the selected objective.
    */
-  public static boolean atGoalForObjective(DriveToPose driveToPose, Objective objective) {
+  public static boolean atGoalForObjective(Pose2d pose, Pose2d target, Objective objective) {
     if (objective.isConeNode()) {
-      return driveToPose.atGoal();
+      return false; // Allow trajectory command to exit on its own
     } else {
-      return driveToPose.withinTolerance(cubeHybridDriveTolerance, cubeHybridThetaTolerance);
+      Pose2d relativePose = pose.relativeTo(target);
+      return relativePose.getTranslation().getNorm() < cubeHybridDriveTolerance
+          && Math.abs(relativePose.getRotation().getRadians())
+              < cubeHybridThetaTolerance.getRadians();
     }
+  }
+
+  /** Returns a command to drive to the supplied target. */
+  public static Command makeTrajectoryCommand(Drive drive, Supplier<Pose2d> targetSupplier) {
+    Supplier<Boolean> movingStart =
+        () ->
+            new Translation2d(drive.getFieldVelocity().dx, drive.getFieldVelocity().dy).getNorm()
+                    > drive.getMaxLinearSpeedMetersPerSec() * 0.5
+                && drive.getPose().getX() > FieldConstants.Community.midX;
+    return new DriveTrajectory(
+        drive,
+        () -> {
+          List<Waypoint> waypoints = new ArrayList<>();
+          Pose2d startPose = drive.getPose();
+          Pose2d targetPose = targetSupplier.get();
+          waypoints.add(
+              Waypoint.fromHolonomicPose(
+                  startPose,
+                  movingStart.get()
+                      ? new Rotation2d(drive.getFieldVelocity().dx, drive.getFieldVelocity().dy)
+                      : null));
+
+          // Enter through field side passage
+          boolean addFieldSideInner =
+              startPose.getX() > FieldConstants.Community.chargingStationInnerX
+                  && startPose.getY() > FieldConstants.Community.chargingStationLeftY;
+          if (startPose.getX() > FieldConstants.Community.outerX
+              && startPose.getY()
+                  > (FieldConstants.Community.chargingStationLeftY
+                          + FieldConstants.Community.chargingStationRightY)
+                      / 2.0
+              && startPose.getY() < FieldConstants.Community.chargingStationLeftY) {
+            addFieldSideInner = true;
+            waypoints.add(
+                new Waypoint(
+                    new Translation2d(
+                        FieldConstants.Community.chargingStationOuterX - 0.4,
+                        FieldConstants.Community.chargingStationLeftY + 0.5),
+                    Rotation2d.fromDegrees(180.0),
+                    targetPose.getRotation()));
+          }
+          if (addFieldSideInner) {
+            waypoints.add(
+                new Waypoint(
+                    new Translation2d(
+                        FieldConstants.Community.chargingStationInnerX - 0.2,
+                        MathUtil.clamp(
+                            targetPose.getY(),
+                            FieldConstants.Community.chargingStationLeftY + 0.5,
+                            FieldConstants.Community.leftY - 0.5)),
+                    Rotation2d.fromDegrees(180.0),
+                    targetPose.getRotation()));
+          }
+
+          // Enter through wall side passage
+          boolean addWallSideInner =
+              startPose.getX() > FieldConstants.Community.chargingStationInnerX
+                  && startPose.getY() < FieldConstants.Community.chargingStationRightY;
+          boolean wallSideInnerSetHolonomic = false;
+          if (startPose.getX() > FieldConstants.Community.outerX
+              && startPose.getY()
+                  < (FieldConstants.Community.chargingStationLeftY
+                          + FieldConstants.Community.chargingStationRightY)
+                      / 2.0) {
+            addWallSideInner = true;
+            wallSideInnerSetHolonomic = true;
+            waypoints.add(
+                new Waypoint(
+                    new Translation2d(
+                        FieldConstants.Community.chargingStationOuterX - 0.4,
+                        MathUtil.clamp(
+                            targetPose.getY(),
+                            FieldConstants.Community.rightY + 0.5,
+                            FieldConstants.Community.chargingStationRightY - 0.5)),
+                    Rotation2d.fromDegrees(180.0),
+                    targetPose.getRotation()));
+          }
+          if (addWallSideInner) {
+            waypoints.add(
+                new Waypoint(
+                    new Translation2d(
+                        FieldConstants.Community.chargingStationInnerX - 0.2,
+                        MathUtil.clamp(
+                            targetPose.getY(),
+                            FieldConstants.Community.rightY + 0.5,
+                            FieldConstants.Community.chargingStationRightY - 0.5)),
+                    Rotation2d.fromDegrees(180.0),
+                    wallSideInnerSetHolonomic
+                        ? targetPose.getRotation()
+                        : startPose.getRotation()));
+          }
+
+          // Enter through charge station
+          if (startPose.getX() > FieldConstants.Community.chargingStationInnerX
+              && startPose.getX() < FieldConstants.Community.chargingStationOuterX
+              && startPose.getY() > FieldConstants.Community.chargingStationRightY
+              && startPose.getY() < FieldConstants.Community.chargingStationLeftY) {
+            waypoints.add(
+                new Waypoint(
+                    new Translation2d(
+                        FieldConstants.Community.chargingStationInnerX - 0.2, startPose.getY()),
+                    Rotation2d.fromDegrees(180.0),
+                    startPose.getRotation()));
+          }
+
+          // Avoid charge station corners
+          Translation2d lastTranslation = waypoints.get(waypoints.size() - 1).getTranslation();
+          if (lastTranslation.getX()
+                  > (FieldConstants.Community.midX + FieldConstants.Grids.outerX) / 2.0
+              && lastTranslation.getX() < FieldConstants.Community.midX) {
+            if (lastTranslation.getY() > FieldConstants.Community.chargingStationLeftY
+                && lastTranslation.getY() < FieldConstants.Community.leftY
+                && targetPose.getY() < FieldConstants.Community.chargingStationLeftY - 0.8) {
+              // Left corner
+              var translation =
+                  new Translation2d(
+                      (FieldConstants.Community.midX + FieldConstants.Grids.outerX) / 2.0,
+                      FieldConstants.Community.chargingStationLeftY - 0.2);
+              waypoints.add(
+                  Waypoint.fromDifferentialPose(
+                      new Pose2d(
+                          translation, targetPose.getTranslation().minus(translation).getAngle())));
+            } else if (lastTranslation.getY() < FieldConstants.Community.chargingStationRightY
+                && lastTranslation.getY() > FieldConstants.Community.rightY
+                && targetPose.getY() > FieldConstants.Community.chargingStationRightY + 0.8) {
+              // Right corner
+              var translation =
+                  new Translation2d(
+                      (FieldConstants.Community.midX + FieldConstants.Grids.outerX) / 2.0,
+                      FieldConstants.Community.chargingStationRightY + 0.2);
+              waypoints.add(
+                  Waypoint.fromDifferentialPose(
+                      new Pose2d(
+                          translation, targetPose.getTranslation().minus(translation).getAngle())));
+            }
+          }
+
+          waypoints.add(Waypoint.fromHolonomicPose(targetPose));
+          return waypoints;
+        },
+        () ->
+            List.of(
+                // Ending position
+                new EllipticalRegionConstraint(
+                    targetSupplier.get().getTranslation(),
+                    AutoCommands.slowScoreConstraintRadius * 2.0,
+                    AutoCommands.slowScoreConstraintRadius * 2.0,
+                    new Rotation2d(),
+                    new MaxVelocityConstraint(AutoCommands.slowScoreMaxVelocity)),
+
+                // Cable bump
+                new RectangularRegionConstraint(
+                    new Translation2d(
+                        FieldConstants.Community.chargingStationInnerX,
+                        FieldConstants.Community.rightY),
+                    new Translation2d(
+                        FieldConstants.Community.chargingStationOuterX,
+                        FieldConstants.Community.chargingStationRightY),
+                    new MaxVelocityConstraint(AutoCommands.cableBumpMaxVelocity)),
+
+                // Charging station
+                new RectangularRegionConstraint(
+                    new Translation2d(
+                        FieldConstants.Community.chargingStationInnerX,
+                        FieldConstants.Community.chargingStationRightY),
+                    new Translation2d(
+                        FieldConstants.Community.chargingStationOuterX,
+                        FieldConstants.Community.chargingStationLeftY),
+                    new MaxVelocityConstraint(AutoCommands.chargingStationMaxVelocity))),
+        () ->
+            movingStart.get() ? new Translation2d(drive.getFieldVelocity().dx, drive.getFieldVelocity().dy).getNorm() : 0.0);
   }
 
   /** Returns the best drive target for the selected node. */

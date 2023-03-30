@@ -13,7 +13,6 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
-import edu.wpi.first.math.trajectory.TrajectoryParameterizer.TrajectoryGenerationException;
 import edu.wpi.first.math.trajectory.constraint.CentripetalAccelerationConstraint;
 import edu.wpi.first.math.trajectory.constraint.TrajectoryConstraint;
 import edu.wpi.first.math.util.Units;
@@ -63,6 +62,7 @@ public class DriveTrajectory extends CommandBase {
 
   private Supplier<List<Waypoint>> waypointsSupplier = null;
   private Supplier<List<TrajectoryConstraint>> constraintsSupplier = null;
+  private Supplier<Double> startVelocitySupplier = null;
   private CustomTrajectoryGenerator customGenerator = new CustomTrajectoryGenerator();
 
   static {
@@ -96,41 +96,49 @@ public class DriveTrajectory extends CommandBase {
 
   /** Creates a DriveTrajectory command with a dynamic set of waypoints. */
   public DriveTrajectory(Drive drive, Supplier<List<Waypoint>> waypointsSupplier) {
-    this(drive, waypointsSupplier, () -> List.of());
+    this(drive, waypointsSupplier, () -> List.of(), () -> 0.0);
   }
 
   /** Creates a DriveTrajectory command with a dynamic set of waypoints and constraints. */
   public DriveTrajectory(
       Drive drive,
       Supplier<List<Waypoint>> waypointsSupplier,
-      Supplier<List<TrajectoryConstraint>> constraintsSupplier) {
+      Supplier<List<TrajectoryConstraint>> constraintsSupplier,
+      Supplier<Double> startVelocitySupplier) {
     this.drive = drive;
     addRequirements(drive);
     this.waypointsSupplier = waypointsSupplier;
     this.constraintsSupplier = constraintsSupplier;
+    this.startVelocitySupplier = startVelocitySupplier;
   }
 
   /** Creates a DriveTrajectory command with a static set of waypoints. */
   public DriveTrajectory(Drive drive, List<Waypoint> waypoints) {
-    this(drive, waypoints, List.of());
+    this(drive, waypoints, List.of(), 0.0);
   }
 
   /** Creates a DriveTrajectory command with a static set of waypoints and constraints. */
   public DriveTrajectory(
-      Drive drive, List<Waypoint> waypoints, List<TrajectoryConstraint> constraints) {
+      Drive drive,
+      List<Waypoint> waypoints,
+      List<TrajectoryConstraint> constraints,
+      double startVelocity) {
     this.drive = drive;
     addRequirements(drive);
-    generate(waypoints, constraints, true);
+    generate(waypoints, constraints, startVelocity, true);
   }
 
   /** Generates the trajectory. */
   private void generate(
-      List<Waypoint> waypoints, List<TrajectoryConstraint> constraints, boolean alertOnFail) {
+      List<Waypoint> waypoints,
+      List<TrajectoryConstraint> constraints,
+      double startVelocity,
+      boolean alertOnFail) {
     // Set up trajectory configuration
     TrajectoryConfig config =
         new TrajectoryConfig(maxVelocityMetersPerSec, maxAccelerationMetersPerSec2)
             .setKinematics(new SwerveDriveKinematics(drive.getModuleTranslations()))
-            .setStartVelocity(0.0)
+            .setStartVelocity(startVelocity)
             .setEndVelocity(0.0)
             .addConstraint(
                 new CentripetalAccelerationConstraint(maxCentripetalAccelerationMetersPerSec2))
@@ -140,7 +148,7 @@ public class DriveTrajectory extends CommandBase {
     customGenerator = new CustomTrajectoryGenerator(); // Reset generator
     try {
       customGenerator.generate(config, waypoints);
-    } catch (TrajectoryGenerationException exception) {
+    } catch (Exception exception) {
       if (supportedRobot && alertOnFail) {
         generatorAlert.set(true);
         exception.printStackTrace();
@@ -152,7 +160,8 @@ public class DriveTrajectory extends CommandBase {
   public void initialize() {
     // Generate trajectory if supplied
     if (waypointsSupplier != null || constraintsSupplier != null) {
-      generate(waypointsSupplier.get(), constraintsSupplier.get(), false);
+      generate(
+          waypointsSupplier.get(), constraintsSupplier.get(), startVelocitySupplier.get(), false);
     }
 
     // Log trajectory
