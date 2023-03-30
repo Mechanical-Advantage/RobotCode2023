@@ -90,7 +90,17 @@ public class DriveToPose extends CommandBase {
     // Reset all controllers
     var currentPose = drive.getPose();
     driveController.reset(
-        currentPose.getTranslation().getDistance(poseSupplier.get().getTranslation()));
+        new TrapezoidProfile.State(
+            currentPose.getTranslation().getDistance(poseSupplier.get().getTranslation()),
+            -new Translation2d(drive.getFieldVelocity().dx, drive.getFieldVelocity().dy)
+                .rotateBy(
+                    poseSupplier
+                        .get()
+                        .getTranslation()
+                        .minus(drive.getPose().getTranslation())
+                        .getAngle()
+                        .unaryMinus())
+                .getX()));
     thetaController.reset(currentPose.getRotation().getRadians());
   }
 
