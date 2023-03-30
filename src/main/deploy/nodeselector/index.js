@@ -13,9 +13,13 @@ const coneTippedRobotToDashboardTopic =
   "/nodeselector/cone_tipped_robot_to_dashboard";
 const coneTippedDashboardToRobotTopic =
   "/nodeselector/cone_tipped_dashboard_to_robot";
+const matchTimeTopic = "/nodeselector/match_time";
+const isAutoTopic = "/nodeselector/is_auto";
 
 let active = null;
 let tipped = false;
+let matchTime = 0;
+let isAuto = false;
 
 function displayActive(index) {
   active = index;
@@ -42,6 +46,25 @@ function displayTipped(newTipped) {
   }
 }
 
+function displayTime(time, isAuto) {
+  let element = document.getElementsByClassName("time")[0];
+  element.className = "time";
+  if (isAuto) {
+    element.classList.add("auto");
+  } else if (time > 30 || time == 0) {
+    element.classList.add("teleop-1");
+  } else if (time > 15) {
+    element.classList.add("teleop-2");
+  } else {
+    element.classList.add("teleop-3");
+  }
+  let secondsString = (time % 60).toString();
+  if (secondsString.length == 1) {
+    secondsString = "0" + secondsString;
+  }
+  element.innerText = Math.floor(time / 60).toString() + ":" + secondsString;
+}
+
 function toggleTipped() {
   client.addSample(coneTippedDashboardToRobotTopic, !tipped);
 }
@@ -60,8 +83,14 @@ let client = new NT4_Client(
     if (topic.name === nodeRobotToDashboardTopic) {
       document.body.style.backgroundColor = "white";
       displayActive(value);
-    } else if (topic.name == coneTippedRobotToDashboardTopic) {
+    } else if (topic.name === coneTippedRobotToDashboardTopic) {
       displayTipped(value);
+    } else if (topic.name === matchTimeTopic) {
+      matchTime = value;
+      displayTime(matchTime, isAuto);
+    } else if (topic.name === isAutoTopic) {
+      isAuto = value;
+      displayTime(matchTime, isAuto);
     }
   },
   () => {
@@ -72,13 +101,19 @@ let client = new NT4_Client(
     document.body.style.backgroundColor = "red";
     displayActive(null);
     displayTipped(false);
+    displayTime(0, false);
   }
 );
 
 window.addEventListener("load", () => {
   // Start NT connection
   client.subscribe(
-    [nodeRobotToDashboardTopic, coneTippedRobotToDashboardTopic],
+    [
+      nodeRobotToDashboardTopic,
+      coneTippedRobotToDashboardTopic,
+      matchTimeTopic,
+      isAutoTopic,
+    ],
     false,
     false,
     0.02

@@ -22,6 +22,7 @@
         overscroll-behavior: none;
         overflow: hidden;
         font-family: sans-serif;
+        user-select: none;
       }
 
       table {
@@ -37,7 +38,6 @@
       td {
         text-align: center;
         font-size: 5vw;
-        user-select: none;
       }
 
       td.hybrid {
@@ -72,10 +72,40 @@
         color: black;
       }
 
-      div.cone-orientation {
+      div.time {
         position: absolute;
         left: 0%;
-        width: 100%;
+        width: 50%;
+        bottom: 0%;
+        height: 20%;
+        font-size: 18vh;
+        text-align: center;
+      }
+
+      div.time.auto {
+        background-color: lightblue;
+        color: black;
+      }
+
+      div.time.teleop-1 {
+        background-color: black;
+        color: white;
+      }
+
+      div.time.teleop-2 {
+        background-color: orange;
+        color: black;
+      }
+
+      div.time.teleop-3 {
+        background-color: red;
+        color: black;
+      }
+
+      div.cone-orientation {
+        position: absolute;
+        left: 50%;
+        width: 50%;
         bottom: 0%;
         height: 20%;
         background-color: #ffd91e;
@@ -93,20 +123,12 @@
         transition: transform 0.25s ease;
       }
 
-      div.cone-orientation.tipped svg {
-        transform: translate(-50%, -50%) rotate(90deg);
-      }
-
-      div.cone-orientation svg:nth-child(1) {
-        left: 25%;
-      }
-
-      div.cone-orientation svg:nth-child(2) {
+      div.cone-orientation svg {
         left: 50%;
       }
 
-      div.cone-orientation svg:nth-child(3) {
-        left: 75%;
+      div.cone-orientation.tipped svg {
+        transform: translate(-50%, -50%) rotate(90deg);
       }
     </style>
   </head>
@@ -150,17 +172,9 @@
       </tbody>
     </table>
 
+    <div class="time teleop-1">0:00</div>
+
     <div class="cone-orientation">
-      <svg viewbox="0 0 16 16">
-        <path
-          d="M7.03 1.88c.252-1.01 1.688-1.01 1.94 0l2.905 11.62H14a.5.5 0 0 1 0 1H2a.5.5 0 0 1 0-1h2.125L7.03 1.88z"
-        />
-      </svg>
-      <svg viewbox="0 0 16 16">
-        <path
-          d="M7.03 1.88c.252-1.01 1.688-1.01 1.94 0l2.905 11.62H14a.5.5 0 0 1 0 1H2a.5.5 0 0 1 0-1h2.125L7.03 1.88z"
-        />
-      </svg>
       <svg viewbox="0 0 16 16">
         <path
           d="M7.03 1.88c.252-1.01 1.688-1.01 1.94 0l2.905 11.62H14a.5.5 0 0 1 0 1H2a.5.5 0 0 1 0-1h2.125L7.03 1.88z"

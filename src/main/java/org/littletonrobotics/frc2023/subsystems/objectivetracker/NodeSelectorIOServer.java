@@ -12,6 +12,7 @@ import edu.wpi.first.networktables.BooleanSubscriber;
 import edu.wpi.first.networktables.IntegerPublisher;
 import edu.wpi.first.networktables.IntegerSubscriber;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
@@ -22,6 +23,8 @@ public class NodeSelectorIOServer implements NodeSelectorIO {
   private final IntegerSubscriber nodeSubscriber;
   private final BooleanPublisher coneTippedPublisher;
   private final BooleanSubscriber coneTippedSubscriber;
+  private final IntegerPublisher timePublisher;
+  private final BooleanPublisher isAutoPublisher;
 
   public NodeSelectorIOServer() {
     // Create publisher and subscriber
@@ -30,6 +33,8 @@ public class NodeSelectorIOServer implements NodeSelectorIO {
     nodeSubscriber = table.getIntegerTopic("node_dashboard_to_robot").subscribe(-1);
     coneTippedPublisher = table.getBooleanTopic("cone_tipped_robot_to_dashboard").publish();
     coneTippedSubscriber = table.getBooleanTopic("cone_tipped_dashboard_to_robot").subscribe(false);
+    timePublisher = table.getIntegerTopic("match_time").publish();
+    isAutoPublisher = table.getBooleanTopic("is_auto").publish();
 
     // Start server
     var app =
@@ -46,6 +51,8 @@ public class NodeSelectorIOServer implements NodeSelectorIO {
   }
 
   public void updateInputs(NodeSelectorIOInputs inputs) {
+    timePublisher.set((long) Math.ceil(Math.max(0.0, DriverStation.getMatchTime())));
+    isAutoPublisher.set(DriverStation.isAutonomous());
     for (var value : nodeSubscriber.readQueueValues()) {
       inputs.selectedNode = value;
     }
