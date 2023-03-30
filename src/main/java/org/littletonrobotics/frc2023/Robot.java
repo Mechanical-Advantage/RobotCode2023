@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -48,6 +49,7 @@ public class Robot extends LoggedRobot {
   private Command autoCommand;
   private double autoStart;
   private boolean autoMessagePrinted;
+  private boolean batteryNameWritten = false;
 
   private final Alert logNoFileAlert =
       new Alert("No log path set for current robot. Data will NOT be logged.", AlertType.WARNING);
@@ -219,6 +221,21 @@ public class Robot extends LoggedRobot {
         autoMessagePrinted = true;
         Leds.getInstance().autoFinished = true;
         Leds.getInstance().autoFinishedTime = Timer.getFPGATimestamp();
+      }
+    }
+
+    // Write battery name if connected to field
+    if (Constants.getMode() == Mode.REAL
+        && !batteryNameWritten
+        && !BatteryTracker.getName().equals(BatteryTracker.defaultName)
+        && DriverStation.isFMSAttached()) {
+      batteryNameWritten = true;
+      try {
+        FileWriter fileWriter = new FileWriter(batteryNameFile);
+        fileWriter.write(BatteryTracker.getName());
+        fileWriter.close();
+      } catch (IOException e) {
+        e.printStackTrace();
       }
     }
 
