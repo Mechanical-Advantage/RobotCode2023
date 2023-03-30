@@ -328,6 +328,10 @@ public class RobotContainer {
                     AutoQuestionResponse.WALL_SIDE))),
         autoCommands.centerScoreOneAndBalance());
     autoSelector.addRoutine(
+        "Reach for Inspection",
+        List.of(),
+        arm.runPathCommand(ArmPose.Preset.SCORE_HIGH_UPRIGHT_CONE));
+    autoSelector.addRoutine(
         "Drive Characterization",
         List.of(),
         new FeedForwardCharacterization(
