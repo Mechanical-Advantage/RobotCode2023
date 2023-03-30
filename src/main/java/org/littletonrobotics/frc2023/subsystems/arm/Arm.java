@@ -146,7 +146,7 @@ public class Arm extends SubsystemBase {
           shoulderKd.initDefault(0.18);
           shoulderKs.initDefault(0.4);
           shoulderKsDeadband.initDefault(0.05);
-          elbowKp.initDefault(16.0);
+          elbowKp.initDefault(14.0);
           elbowKd.initDefault(0.0);
           elbowKs.initDefault(0.1);
           elbowKsDeadband.initDefault(0.05);
