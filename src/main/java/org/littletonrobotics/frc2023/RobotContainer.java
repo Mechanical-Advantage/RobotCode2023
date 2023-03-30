@@ -220,6 +220,8 @@ public class RobotContainer {
     AutoCommands autoCommands =
         new AutoCommands(drive, arm, gripper, cubeIntake, autoSelector::getResponses);
     autoSelector.addRoutine(
+        "Field: Score High Link", List.of(), autoCommands.fieldScoreLink(NodeLevel.HIGH));
+    autoSelector.addRoutine(
         "Field: Score Mid Link", List.of(), autoCommands.fieldScoreLink(NodeLevel.MID));
     autoSelector.addRoutine(
         "Field: Score Hybrid Link", List.of(), autoCommands.fieldScoreLink(NodeLevel.HYBRID));

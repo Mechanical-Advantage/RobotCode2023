@@ -4,10 +4,10 @@
     0.654
   ],
   "shoulder": {
-    "mass": 1.790329,
+    "mass": 4.16,
     "length": 0.638429,
-    "moi": 0.216988,
-    "cgRadius": 0.4318,
+    "moi": 0.493,
+    "cgRadius": 0.269,
     "minAngle": 0.0,
     "maxAngle": 3.1415926536,
     "motor": {
@@ -17,23 +17,23 @@
     }
   },
   "elbow": {
-    "mass": 2.5,
+    "mass": 3.252,
     "length": 0.80645,
-    "moi": 0.21851,
-    "cgRadius": 0.4318,
+    "moi": 0.548,
+    "cgRadius": 0.299,
     "minAngle": 0.2617994,
     "maxAngle": 6.0213859072,
     "motor": {
       "type": "neo",
       "count": 1,
-      "reduction": 150.0
+      "reduction": 227.5555555555
     }
   },
   "wrist": {
-    "mass": 1.5,
+    "mass": 2.958,
     "length": 0.261,
-    "moi": 0.036998,
-    "cgRadius": 0.03556,
+    "moi": 0.047,
+    "cgRadius": 0.069,
     "minAngle": -2.0943951024,
     "maxAngle": 2.0943951024,
     "motor": {
@@ -44,10 +44,10 @@
   },
   "solver": {
     "interiorPoints": 15,
-    "maxVoltageShoulder": 8,
-    "maxVoltageElbow": 8,
-    "maxAccelerationMinExtension": 15,
-    "maxAccelerationMaxExtension": 6,
+    "maxVoltageShoulder": 10,
+    "maxVoltageElbow": 12,
+    "maxAccelerationMinExtension": 16,
+    "maxAccelerationMaxExtension": 8,
     "maxJerk": 30
   },
   "constraints": {

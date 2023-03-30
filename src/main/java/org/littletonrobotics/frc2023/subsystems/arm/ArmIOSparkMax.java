@@ -59,7 +59,7 @@ public class ArmIOSparkMax implements ArmIO {
     isShoulderMotorInverted = false;
     isShoulderExternalEncoderInverted = false;
     shoulderAbsoluteEncoderOffset =
-        new Rotation2d(2.9468452222).plus(Rotation2d.fromDegrees(-90.0));
+        new Rotation2d(0.7249931091227081).plus(Rotation2d.fromDegrees(-90.0));
     shoulderRelativeEncoder.setDistancePerPulse((2 * Math.PI) / 2048);
 
     // Elbow config
@@ -68,8 +68,8 @@ public class ArmIOSparkMax implements ArmIO {
     elbowAbsoluteEncoder.setDutyCycleRange(1.0 / 1025.0, 1024.0 / 1025.0);
     elbowRelativeEncoder = new Encoder(5, 4, false);
     isElbowMotorInverted = false;
-    isElbowExternalEncoderInverted = true;
-    elbowAbsoluteEncoderOffset = new Rotation2d(-4.6001713072).plus(Rotation2d.fromDegrees(180.0));
+    isElbowExternalEncoderInverted = false;
+    elbowAbsoluteEncoderOffset = new Rotation2d(-0.08790593).plus(Rotation2d.fromDegrees(180.0));
     elbowRelativeEncoder.setDistancePerPulse((2 * Math.PI) / 2048);
 
     // Wrist config
@@ -77,9 +77,9 @@ public class ArmIOSparkMax implements ArmIO {
     wristAbsoluteEncoder = new DutyCycleEncoder(6);
     wristAbsoluteEncoder.setDutyCycleRange(1.0 / 1025.0, 1024.0 / 1025.0);
     wristRelativeEncoder = new Encoder(8, 7, false);
-    isWristMotorInverted = false;
-    isWristExternalEncoderInverted = true;
-    wristAbsoluteEncoderOffset = new Rotation2d(-1.977401);
+    isWristMotorInverted = true;
+    isWristExternalEncoderInverted = false;
+    wristAbsoluteEncoderOffset = new Rotation2d(-0.14512309719489824);
     wristRelativeEncoder.setDistancePerPulse((2 * Math.PI) / 2048);
 
     // Set remaining config

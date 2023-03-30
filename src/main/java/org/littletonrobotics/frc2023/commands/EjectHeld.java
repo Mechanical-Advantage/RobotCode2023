@@ -18,7 +18,7 @@ public class EjectHeld extends SequentialCommandGroup {
   public EjectHeld(boolean isFront, Arm arm, Gripper gripper) {
     addCommands(
         arm.runPathCommand(ArmPose.Preset.EJECT.getPose().withFlip(!isFront))
-            .andThen(gripper.ejectCommand(EjectSpeed.FAST))
+            .andThen(gripper.ejectCommand(EjectSpeed.SLOW))
             .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
   }
 }

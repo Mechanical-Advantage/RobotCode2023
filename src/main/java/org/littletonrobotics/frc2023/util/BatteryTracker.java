@@ -15,7 +15,7 @@ import org.littletonrobotics.frc2023.Constants.Mode;
 import org.littletonrobotics.frc2023.Constants.RobotType;
 
 public class BatteryTracker {
-  private static final List<RobotType> supportedRobots = List.of();
+  private static final List<RobotType> supportedRobots = List.of(RobotType.ROBOT_2023C);
   public static final String defaultName = "BAT-0000-000";
 
   private static final int nameLength = 12;
@@ -23,8 +23,7 @@ public class BatteryTracker {
       new byte[] {0x7e, 0x00, 0x08, 0x01, 0x00, 0x02, 0x01, (byte) 0xab, (byte) 0xcd};
   private static final byte[] responsePrefix =
       new byte[] {0x02, 0x00, 0x00, 0x01, 0x00, 0x33, 0x31};
-  private static final byte endMark = 0x0d; // CR
-  private static final int fullResponseLength = responsePrefix.length + nameLength + 1;
+  private static final int fullResponseLength = responsePrefix.length + nameLength;
 
   private static String name = defaultName;
 
@@ -63,13 +62,6 @@ public class BatteryTracker {
               System.out.println("[BatteryTracker] " + Arrays.toString(response));
               return name;
             }
-          }
-
-          // Ensure response ends with suffix
-          if (response[response.length - 1] != endMark) {
-            System.out.println(
-                "[BatteryTracker] Invalid suffix from scanner.  Got "
-                    + response[response.length - 1]);
           }
 
           // Read name from data

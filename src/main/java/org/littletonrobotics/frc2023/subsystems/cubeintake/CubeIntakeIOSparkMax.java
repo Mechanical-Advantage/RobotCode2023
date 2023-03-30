@@ -46,7 +46,8 @@ public class CubeIntakeIOSparkMax implements CubeIntakeIO {
         armExternalEncoderInvert = false;
         rollerInvert = true;
         armInternalEncoderReduction = 5.0 * 5.0 * (30.0 / 18.0) * (30.0 / 18.0);
-        armAbsoluteEncoderOffset = new Rotation2d(-2.624263).plus(Rotation2d.fromDegrees(-90.0));
+        armAbsoluteEncoderOffset =
+            new Rotation2d(-2.6041837668).plus(Rotation2d.fromDegrees(-90.0));
 
         armAbsoluteEncoder = new DutyCycleEncoder(10);
         armAbsoluteEncoder.setDutyCycleRange(1.0 / 1025.0, 1024.0 / 1025.0);
