@@ -407,6 +407,19 @@ public class AutoCommands {
   }
 
   /** Scores three game pieces on field-side. */
+  public Command fieldScoreLink() {
+    return select(
+        Map.of(
+            AutoQuestionResponse.HYBRID,
+            fieldScoreLink(NodeLevel.HYBRID),
+            AutoQuestionResponse.MID,
+            fieldScoreLink(NodeLevel.MID),
+            AutoQuestionResponse.HIGH,
+            fieldScoreLink(NodeLevel.HIGH)),
+        () -> responses.get().get(0));
+  }
+
+  /** Scores three game pieces on field-side. */
   public Command fieldScoreLink(NodeLevel level) {
     var objective0 = new Objective(8, level, ConeOrientation.UPRIGHT, false);
     var objective1 = new Objective(7, level, ConeOrientation.UPRIGHT, false);

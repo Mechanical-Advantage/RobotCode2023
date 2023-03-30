@@ -64,7 +64,6 @@ import org.littletonrobotics.frc2023.subsystems.objectivetracker.NodeSelectorIO;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.NodeSelectorIOServer;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.Direction;
-import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.NodeLevel;
 import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
@@ -220,11 +219,15 @@ public class RobotContainer {
     AutoCommands autoCommands =
         new AutoCommands(drive, arm, gripper, cubeIntake, autoSelector::getResponses);
     autoSelector.addRoutine(
-        "Field: Score High Link", List.of(), autoCommands.fieldScoreLink(NodeLevel.HIGH));
-    autoSelector.addRoutine(
-        "Field: Score Mid Link", List.of(), autoCommands.fieldScoreLink(NodeLevel.MID));
-    autoSelector.addRoutine(
-        "Field: Score Hybrid Link", List.of(), autoCommands.fieldScoreLink(NodeLevel.HYBRID));
+        "Field: Score Link",
+        List.of(
+            new AutoQuestion(
+                "Which level?",
+                List.of(
+                    AutoQuestionResponse.HIGH,
+                    AutoQuestionResponse.MID,
+                    AutoQuestionResponse.HYBRID))),
+        autoCommands.fieldScoreLink());
     autoSelector.addRoutine(
         "Field: Score Two, Grab, And Maybe Balance",
         List.of(
