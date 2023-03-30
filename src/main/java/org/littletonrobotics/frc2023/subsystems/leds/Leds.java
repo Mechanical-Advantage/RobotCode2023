@@ -117,19 +117,21 @@ public class Leds extends VirtualSubsystem {
         stripes(
             Section.FULL,
             List.of(
+                Color.kBlack,
                 Color.kRed,
                 Color.kOrange,
                 Color.kYellow,
                 Color.kGreen,
                 Color.kBlue,
                 Color.kPurple,
+                Color.kBlack,
                 Color.kSkyBlue,
-                Color.kHotPink,
+                Color.kLightCoral,
                 Color.kWhite,
-                Color.kHotPink,
+                Color.kLightCoral,
                 Color.kSkyBlue),
-            5,
-            8.0);
+            3,
+            5.0);
 
       } else {
         // Default pattern
