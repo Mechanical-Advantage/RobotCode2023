@@ -368,7 +368,10 @@ public class AutoScore extends SequentialCommandGroup {
                         FieldConstants.Community.chargingStationLeftY),
                     new MaxVelocityConstraint(AutoCommands.chargingStationMaxVelocity))),
         () ->
-            movingStart.get() ? new Translation2d(drive.getFieldVelocity().dx, drive.getFieldVelocity().dy).getNorm() : 0.0);
+            movingStart.get()
+                ? new Translation2d(drive.getFieldVelocity().dx, drive.getFieldVelocity().dy)
+                    .getNorm()
+                : 0.0);
   }
 
   /** Returns the best drive target for the selected node. */
