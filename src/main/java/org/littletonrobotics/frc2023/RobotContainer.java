@@ -242,7 +242,7 @@ public class RobotContainer {
                 List.of(
                     AutoQuestionResponse.RETURN,
                     AutoQuestionResponse.BALANCE,
-                    AutoQuestionResponse.BALANCE_AND_THROW))),
+                    AutoQuestionResponse.BALANCE_THROW))),
         autoCommands.sideScoreTwoGrabMaybeBalance());
     autoSelector.addRoutine(
         "Side: Score Two And Maybe Balance",

@@ -464,7 +464,7 @@ public class AutoCommands {
     Supplier<Boolean> balanceSupplier =
         () -> !responses.get().get(1).equals(AutoQuestionResponse.RETURN);
     Supplier<Boolean> scoreFinalSupplier =
-        () -> responses.get().get(1).equals(AutoQuestionResponse.BALANCE_AND_THROW);
+        () -> responses.get().get(1).equals(AutoQuestionResponse.BALANCE_THROW);
     return select(
         Map.of(
             AutoQuestionResponse.HYBRID,

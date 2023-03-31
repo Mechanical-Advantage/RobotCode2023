@@ -133,6 +133,6 @@ public class AutoSelector extends VirtualSubsystem {
     CENTER,
     RETURN,
     BALANCE,
-    BALANCE_AND_THROW
+    BALANCE_THROW
   }
 }
