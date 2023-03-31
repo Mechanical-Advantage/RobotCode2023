@@ -51,37 +51,37 @@ public class AprilTagVision extends VirtualSubsystem {
       case ROBOT_2023C:
         cameraPoses =
             new Pose3d[] {
-              // Back left (left facing)
+              // Front left (forward facing, camera 6)
               new Pose3d(
+                  Units.inchesToMeters(9.875),
+                  Units.inchesToMeters(9.55),
+                  Units.inchesToMeters(6.752) + Module.getWheelRadius(),
+                  new Rotation3d(0.0, Units.degreesToRadians(-28.125), 0.0)
+                      .rotateBy(new Rotation3d(0.0, 0.0, Units.degreesToRadians(-10.0)))),
+
+              // Back right (right facing, camera 4)
+              new Pose3d(
+                  Units.inchesToMeters(-10.375),
+                  Units.inchesToMeters(-10.242),
+                  Units.inchesToMeters(7.252) + Module.getWheelRadius(),
+                  new Rotation3d(0.0, Units.degreesToRadians(-28.125), 0.0)
+                      .rotateBy(new Rotation3d(0.0, 0.0, Units.degreesToRadians(-82.828)))),
+
+              // Back left (left facing, camera 5)
+              new Pose3d(
+                  Units.inchesToMeters(-10.15),
+                  Units.inchesToMeters(9.7),
+                  Units.inchesToMeters(5.752) + Module.getWheelRadius(),
+                  new Rotation3d(0.0, Units.degreesToRadians(-28.125), 0.0)
+                      .rotateBy(new Rotation3d(0.0, 0.0, Units.degreesToRadians(82.828)))),
+
+              // Back right (back facing, camera 3)
+              new Pose3d(
+                  Units.inchesToMeters(-10.5),
                   Units.inchesToMeters(-9.25),
-                  Units.inchesToMeters(10.75),
-                  Units.inchesToMeters(6.627) + Module.getWheelRadius(),
+                  Units.inchesToMeters(6.252) + Module.getWheelRadius(),
                   new Rotation3d(0.0, Units.degreesToRadians(-28.125), 0.0)
-                      .rotateBy(new Rotation3d(0.0, 0.0, Units.degreesToRadians(83.312)))),
-
-              // Back right (right facing)
-              new Pose3d(
-                  Units.inchesToMeters(-9.163),
-                  Units.inchesToMeters(-11.495),
-                  Units.inchesToMeters(7.127) + Module.getWheelRadius(),
-                  new Rotation3d(0.0, Units.degreesToRadians(-28.125), 0.0)
-                      .rotateBy(new Rotation3d(0.0, 0.0, Units.degreesToRadians(-83.312)))),
-
-              // Front left (forward facing)
-              new Pose3d(
-                  Units.inchesToMeters(10.5),
-                  Units.inchesToMeters(9.0),
-                  Units.inchesToMeters(7.627) + Module.getWheelRadius(),
-                  new Rotation3d(0.0, Units.degreesToRadians(-28.125), 0.0)
-                      .rotateBy(new Rotation3d(0.0, 0.0, Units.degreesToRadians(-35.124)))),
-
-              // Back right (back facing)
-              new Pose3d(
-                  Units.inchesToMeters(-11.192),
-                  Units.inchesToMeters(-9.34),
-                  Units.inchesToMeters(6.627) + Module.getWheelRadius(),
-                  new Rotation3d(0.0, Units.degreesToRadians(-28.125), 0.0)
-                      .rotateBy(new Rotation3d(0.0, 0.0, Units.degreesToRadians(144.03))))
+                      .rotateBy(new Rotation3d(0.0, 0.0, Units.degreesToRadians(170.0))))
             };
         xyStdDevCoefficient = 0.01;
         thetaStdDevCoefficient = 0.01;
