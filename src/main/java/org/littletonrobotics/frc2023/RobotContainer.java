@@ -238,7 +238,11 @@ public class RobotContainer {
                     AutoQuestionResponse.MID,
                     AutoQuestionResponse.HYBRID)),
             new AutoQuestion(
-                "Balance?", List.of(AutoQuestionResponse.YES, AutoQuestionResponse.NO))),
+                "End behavior?",
+                List.of(
+                    AutoQuestionResponse.RETURN,
+                    AutoQuestionResponse.BALANCE,
+                    AutoQuestionResponse.BALANCE_AND_THROW))),
         autoCommands.sideScoreTwoGrabMaybeBalance());
     autoSelector.addRoutine(
         "Side: Score Two And Maybe Balance",

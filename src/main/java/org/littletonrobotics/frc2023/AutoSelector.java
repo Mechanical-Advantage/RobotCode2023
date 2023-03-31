@@ -130,6 +130,9 @@ public class AutoSelector extends VirtualSubsystem {
     HIGH,
     WALL_SIDE,
     FIELD_SIDE,
-    CENTER
+    CENTER,
+    RETURN,
+    BALANCE,
+    BALANCE_AND_THROW
   }
 }

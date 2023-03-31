@@ -71,7 +71,7 @@ public class AutoCommands {
   public static final double cableBumpMaxVelocity = Units.inchesToMeters(50.0);
   public static final double chargingStationMaxVelocity = Units.inchesToMeters(40.0);
   public static final double slowScoreConstraintRadius = 0.75;
-  public static final double slowScoreMaxVelocity = Units.inchesToMeters(50.0);
+  public static final double slowScoreMaxVelocity = Units.inchesToMeters(40.0);
 
   // Waypoints
   private final Pose2d[] startingLocations = new Pose2d[9];
@@ -462,15 +462,20 @@ public class AutoCommands {
   /** Scores one cone and cube, then optionally balance.s */
   public Command sideScoreTwoGrabMaybeBalance() {
     Supplier<Boolean> balanceSupplier =
-        () -> responses.get().get(1).equals(AutoQuestionResponse.YES);
+        () -> !responses.get().get(1).equals(AutoQuestionResponse.RETURN);
+    Supplier<Boolean> scoreFinalSupplier =
+        () -> responses.get().get(1).equals(AutoQuestionResponse.BALANCE_AND_THROW);
     return select(
         Map.of(
             AutoQuestionResponse.HYBRID,
-            sideScoreTwoMaybeGrabMaybeBalance(true, true, NodeLevel.HYBRID, balanceSupplier),
+            sideScoreTwoMaybeGrabMaybeBalance(
+                true, true, NodeLevel.HYBRID, balanceSupplier, scoreFinalSupplier),
             AutoQuestionResponse.MID,
-            sideScoreTwoMaybeGrabMaybeBalance(true, true, NodeLevel.MID, balanceSupplier),
+            sideScoreTwoMaybeGrabMaybeBalance(
+                true, true, NodeLevel.MID, balanceSupplier, scoreFinalSupplier),
             AutoQuestionResponse.HIGH,
-            sideScoreTwoMaybeGrabMaybeBalance(true, true, NodeLevel.HIGH, balanceSupplier)),
+            sideScoreTwoMaybeGrabMaybeBalance(
+                true, true, NodeLevel.HIGH, balanceSupplier, scoreFinalSupplier)),
         () -> responses.get().get(0));
   }
 
@@ -482,27 +487,37 @@ public class AutoCommands {
         select(
             Map.of(
                 AutoQuestionResponse.HYBRID,
-                sideScoreTwoMaybeGrabMaybeBalance(true, false, NodeLevel.HYBRID, balanceSupplier),
+                sideScoreTwoMaybeGrabMaybeBalance(
+                    true, false, NodeLevel.HYBRID, balanceSupplier, () -> false),
                 AutoQuestionResponse.MID,
-                sideScoreTwoMaybeGrabMaybeBalance(true, false, NodeLevel.MID, balanceSupplier),
+                sideScoreTwoMaybeGrabMaybeBalance(
+                    true, false, NodeLevel.MID, balanceSupplier, () -> false),
                 AutoQuestionResponse.HIGH,
-                sideScoreTwoMaybeGrabMaybeBalance(true, false, NodeLevel.HIGH, balanceSupplier)),
+                sideScoreTwoMaybeGrabMaybeBalance(
+                    true, false, NodeLevel.HIGH, balanceSupplier, () -> false)),
             () -> responses.get().get(1)),
         select(
             Map.of(
                 AutoQuestionResponse.HYBRID,
-                sideScoreTwoMaybeGrabMaybeBalance(false, false, NodeLevel.HYBRID, balanceSupplier),
+                sideScoreTwoMaybeGrabMaybeBalance(
+                    false, false, NodeLevel.HYBRID, balanceSupplier, () -> false),
                 AutoQuestionResponse.MID,
-                sideScoreTwoMaybeGrabMaybeBalance(false, false, NodeLevel.MID, balanceSupplier),
+                sideScoreTwoMaybeGrabMaybeBalance(
+                    false, false, NodeLevel.MID, balanceSupplier, () -> false),
                 AutoQuestionResponse.HIGH,
-                sideScoreTwoMaybeGrabMaybeBalance(false, false, NodeLevel.HIGH, balanceSupplier)),
+                sideScoreTwoMaybeGrabMaybeBalance(
+                    false, false, NodeLevel.HIGH, balanceSupplier, () -> false)),
             () -> responses.get().get(1)),
         () -> responses.get().get(0).equals(AutoQuestionResponse.FIELD_SIDE));
   }
 
   /** Scores one cone and cube, then optionally balance.s */
   private Command sideScoreTwoMaybeGrabMaybeBalance(
-      boolean fieldSide, boolean grabThird, NodeLevel level, Supplier<Boolean> balanceSupplier) {
+      boolean fieldSide,
+      boolean grabThird,
+      NodeLevel level,
+      Supplier<Boolean> balanceSupplier,
+      Supplier<Boolean> scoreFinalSupplier) {
     var objective0 = new Objective(fieldSide ? 8 : 0, level, ConeOrientation.UPRIGHT, false);
     var objective1 = new Objective(fieldSide ? 7 : 1, level, ConeOrientation.UPRIGHT, true);
     var objective2 = new Objective(fieldSide ? 7 : 1, level, ConeOrientation.UPRIGHT, true);
@@ -539,7 +554,19 @@ public class AutoCommands {
             ? sequence(
                 intake2Sequence.command(),
                 either(
-                    driveAndBalance(intake2Sequence.pose()).alongWith(gripper.intakeCommand()),
+                    driveAndBalance(intake2Sequence.pose(), false)
+                        .alongWith(
+                            gripper.intakeCommand(),
+                            arm.runPathCommand(
+                                () ->
+                                    scoreFinalSupplier.get()
+                                        ? ArmPose.Preset.THROW.getPose()
+                                        : ArmPose.Preset.HOMED.getPose()))
+                        .andThen(
+                            either(
+                                gripper.ejectCommand(EjectSpeed.VERY_FAST),
+                                none(),
+                                () -> scoreFinalSupplier.get())),
                     path(returnWaypoints).alongWith(armToHome()),
                     () -> balanceSupplier.get()))
             : either(

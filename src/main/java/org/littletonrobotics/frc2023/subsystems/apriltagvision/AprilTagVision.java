@@ -57,7 +57,7 @@ public class AprilTagVision extends VirtualSubsystem {
                   Units.inchesToMeters(9.55),
                   Units.inchesToMeters(6.752) + Module.getWheelRadius(),
                   new Rotation3d(0.0, Units.degreesToRadians(-28.125), 0.0)
-                      .rotateBy(new Rotation3d(0.0, 0.0, Units.degreesToRadians(-10.0)))),
+                      .rotateBy(new Rotation3d(0.0, 0.0, Units.degreesToRadians(-35.0)))),
 
               // Back right (right facing, camera 4)
               new Pose3d(
@@ -65,7 +65,7 @@ public class AprilTagVision extends VirtualSubsystem {
                   Units.inchesToMeters(-10.242),
                   Units.inchesToMeters(7.252) + Module.getWheelRadius(),
                   new Rotation3d(0.0, Units.degreesToRadians(-28.125), 0.0)
-                      .rotateBy(new Rotation3d(0.0, 0.0, Units.degreesToRadians(-82.828)))),
+                      .rotateBy(new Rotation3d(0.0, 0.0, Units.degreesToRadians(-82.829)))),
 
               // Back left (left facing, camera 5)
               new Pose3d(
@@ -73,7 +73,7 @@ public class AprilTagVision extends VirtualSubsystem {
                   Units.inchesToMeters(9.7),
                   Units.inchesToMeters(5.752) + Module.getWheelRadius(),
                   new Rotation3d(0.0, Units.degreesToRadians(-28.125), 0.0)
-                      .rotateBy(new Rotation3d(0.0, 0.0, Units.degreesToRadians(82.828)))),
+                      .rotateBy(new Rotation3d(0.0, 0.0, Units.degreesToRadians(82.829)))),
 
               // Back right (back facing, camera 3)
               new Pose3d(
@@ -81,7 +81,7 @@ public class AprilTagVision extends VirtualSubsystem {
                   Units.inchesToMeters(-9.25),
                   Units.inchesToMeters(6.252) + Module.getWheelRadius(),
                   new Rotation3d(0.0, Units.degreesToRadians(-28.125), 0.0)
-                      .rotateBy(new Rotation3d(0.0, 0.0, Units.degreesToRadians(170.0))))
+                      .rotateBy(new Rotation3d(0.0, 0.0, Units.degreesToRadians(145.0))))
             };
         xyStdDevCoefficient = 0.01;
         thetaStdDevCoefficient = 0.01;
