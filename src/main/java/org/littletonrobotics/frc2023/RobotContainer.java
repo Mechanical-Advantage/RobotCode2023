@@ -359,18 +359,21 @@ public class RobotContainer {
                     && DriverStation.getMatchTime() > 0.0
                     && DriverStation.getMatchTime() <= Math.round(endgameAlertTime.get()))
         .onTrue(
-            Commands.startEnd(
+            Commands.run(
                     () -> {
                       Leds.getInstance().endgameAlert = true;
                       driver.getHID().setRumble(RumbleType.kRightRumble, 0.75);
                       operator.getHID().setRumble(RumbleType.kRightRumble, 0.75);
-                    },
-                    () -> {
-                      Leds.getInstance().endgameAlert = false;
-                      driver.getHID().setRumble(RumbleType.kLeftRumble, 0.0);
-                      operator.getHID().setRumble(RumbleType.kLeftRumble, 0.0);
                     })
-                .withTimeout(1.5));
+                .withTimeout(1.5)
+                .andThen(
+                    Commands.run(
+                            () -> {
+                              Leds.getInstance().endgameAlert = false;
+                              driver.getHID().setRumble(RumbleType.kRightRumble, 0.0);
+                              operator.getHID().setRumble(RumbleType.kRightRumble, 0.0);
+                            })
+                        .withTimeout(1.0)));
 
     // Bind driver and operator controls
     bindControls();
