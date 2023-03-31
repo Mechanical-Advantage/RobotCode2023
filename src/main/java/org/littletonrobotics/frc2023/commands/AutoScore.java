@@ -16,6 +16,8 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.trajectory.constraint.EllipticalRegionConstraint;
 import edu.wpi.first.math.trajectory.constraint.MaxVelocityConstraint;
 import edu.wpi.first.math.trajectory.constraint.RectangularRegionConstraint;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
@@ -125,7 +127,7 @@ public class AutoScore extends SequentialCommandGroup {
     // Create drive and arm commands
     var trajectoryCommand =
         Commands.either(
-            makeTrajectoryCommand(drive, driveTargetSupplier),
+            makeTrajectoryCommand(drive, () -> AllianceFlipUtil.apply(driveTargetSupplier.get())),
             new DriveToPose(drive, driveTargetSupplier),
             () ->
                 drive
@@ -202,22 +204,30 @@ public class AutoScore extends SequentialCommandGroup {
 
   /** Returns a command to drive to the supplied target. */
   public static Command makeTrajectoryCommand(Drive drive, Supplier<Pose2d> targetSupplier) {
+    Supplier<Pose2d> unflippedPoseSupplier = () -> AllianceFlipUtil.apply(drive.getPose());
+    Supplier<Double> unflippedFieldVelocityXSupplier =
+        () ->
+            DriverStation.getAlliance() == Alliance.Red
+                ? -drive.getFieldVelocity().dx
+                : drive.getFieldVelocity().dx;
     Supplier<Boolean> movingStart =
         () ->
-            new Translation2d(drive.getFieldVelocity().dx, drive.getFieldVelocity().dy).getNorm()
+            new Translation2d(unflippedFieldVelocityXSupplier.get(), drive.getFieldVelocity().dy)
+                        .getNorm()
                     > drive.getMaxLinearSpeedMetersPerSec() * 0.5
-                && drive.getPose().getX() > FieldConstants.Community.midX;
+                && unflippedPoseSupplier.get().getX() > FieldConstants.Community.midX;
     return new DriveTrajectory(
         drive,
         () -> {
           List<Waypoint> waypoints = new ArrayList<>();
-          Pose2d startPose = drive.getPose();
+          Pose2d startPose = unflippedPoseSupplier.get();
           Pose2d targetPose = targetSupplier.get();
           waypoints.add(
               Waypoint.fromHolonomicPose(
                   startPose,
                   movingStart.get()
-                      ? new Rotation2d(drive.getFieldVelocity().dx, drive.getFieldVelocity().dy)
+                      ? new Rotation2d(
+                          unflippedFieldVelocityXSupplier.get(), drive.getFieldVelocity().dy)
                       : null));
 
           // Enter through field side passage
@@ -369,7 +379,8 @@ public class AutoScore extends SequentialCommandGroup {
                     new MaxVelocityConstraint(AutoCommands.chargingStationMaxVelocity))),
         () ->
             movingStart.get()
-                ? new Translation2d(drive.getFieldVelocity().dx, drive.getFieldVelocity().dy)
+                ? new Translation2d(
+                        unflippedFieldVelocityXSupplier.get(), drive.getFieldVelocity().dy)
                     .getNorm()
                 : 0.0);
   }

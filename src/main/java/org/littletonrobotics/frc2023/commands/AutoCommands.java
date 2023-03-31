@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 import org.littletonrobotics.frc2023.AutoSelector.AutoQuestionResponse;
 import org.littletonrobotics.frc2023.Constants;
+import org.littletonrobotics.frc2023.FieldConstants;
 import org.littletonrobotics.frc2023.FieldConstants.Community;
 import org.littletonrobotics.frc2023.FieldConstants.Grids;
 import org.littletonrobotics.frc2023.FieldConstants.StagingLocations;
@@ -65,12 +66,12 @@ public class AutoCommands {
   public static final double cubeIntakeDistance = 0.5;
   public static final Transform2d cubeWallSideOffset =
       new Transform2d(new Translation2d(0.25, -0.15), new Rotation2d());
-  public static final double coneSweeperDistance = 0.5;
-  public static final double coneSweeperBackoffDistance = 0.95;
+  public static final double coneSweeperDistance = 0.1;
+  public static final double coneSweeperBackoffDistance = 0.5;
   public static final double cableBumpMaxVelocity = Units.inchesToMeters(50.0);
   public static final double chargingStationMaxVelocity = Units.inchesToMeters(40.0);
-  public static final double slowScoreConstraintRadius = 0.5;
-  public static final double slowScoreMaxVelocity = Units.inchesToMeters(35.0);
+  public static final double slowScoreConstraintRadius = 0.75;
+  public static final double slowScoreMaxVelocity = Units.inchesToMeters(50.0);
 
   // Waypoints
   private final Pose2d[] startingLocations = new Pose2d[9];
@@ -263,6 +264,13 @@ public class AutoCommands {
                     .getAngle())
             .transformBy(intakeOffset);
     if (objective.isConeNode()) {
+      Waypoint lastWaypoint = waypoints.get(waypoints.size() - 1);
+      waypoints.set(
+          waypoints.size() - 1,
+          new Waypoint(
+              lastWaypoint.getTranslation(),
+              lastWaypoint.getDriveRotation().get(),
+              gamePiecePose.getRotation().plus(Rotation2d.fromDegrees(180.0))));
       waypoints.add(
           Waypoint.fromHolonomicPose(
               gamePiecePose.transformBy(
@@ -287,10 +295,19 @@ public class AutoCommands {
     return new CommandWithPose(
         path(waypoints)
             .alongWith(
-                arm.runPathCommand(
-                    objective.isConeNode()
-                        ? ArmPose.Preset.FLOOR_CONE
-                        : ArmPose.Preset.CUBE_HANDOFF))
+                (objective.isConeNode()
+                        ? arm.runPathCommand(ArmPose.Preset.HOMED)
+                            .andThen(
+                                Commands.waitUntil(
+                                    () ->
+                                        AllianceFlipUtil.apply(drive.getPose().getX())
+                                            > FieldConstants.Community.chargingStationOuterX - 0.5))
+                        : none())
+                    .andThen(
+                        arm.runPathCommand(
+                            objective.isConeNode()
+                                ? ArmPose.Preset.FLOOR_CONE
+                                : ArmPose.Preset.CUBE_HANDOFF)))
             .deadlineWith(
                 gripper.intakeCommand(),
                 (objective.isConeNode() ? none() : cubeIntake.runCommand())),

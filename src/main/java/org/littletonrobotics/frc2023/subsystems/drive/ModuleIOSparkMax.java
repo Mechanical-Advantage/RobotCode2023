@@ -12,6 +12,7 @@ import static org.littletonrobotics.frc2023.util.CleanSparkMaxValue.*;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+import com.revrobotics.CANSparkMaxLowLevel.PeriodicFrame;
 import com.revrobotics.RelativeEncoder;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -116,6 +117,7 @@ public class ModuleIOSparkMax implements ModuleIO {
     for (int i = 0; i < SparkMaxBurnManager.configCount; i++) {
       SparkMaxPeriodicFrameConfig.configNotLeader(driveSparkMax);
       SparkMaxPeriodicFrameConfig.configNotLeader(turnSparkMax);
+      driveSparkMax.setPeriodicFramePeriod(PeriodicFrame.kStatus2, 10);
 
       turnSparkMax.setInverted(isTurnMotorInverted);
 
