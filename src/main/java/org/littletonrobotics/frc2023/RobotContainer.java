@@ -104,8 +104,10 @@ public class RobotContainer {
       new Alert("Operator controller disconnected (port 1).", AlertType.WARNING);
   private final Alert overrideDisconnected =
       new Alert("Override controller disconnected (port 5).", AlertType.INFO);
-  private final LoggedDashboardNumber endgameAlertTime =
-      new LoggedDashboardNumber("Endgame Alert Time", 30.0);
+  private final LoggedDashboardNumber endgameAlert1 =
+      new LoggedDashboardNumber("Endgame Alert #1", 30.0);
+  private final LoggedDashboardNumber endgameAlert2 =
+      new LoggedDashboardNumber("Endgame Alert #2", 15.0);
 
   // Auto selector
   private final AutoSelector autoSelector = new AutoSelector("Auto");
@@ -358,12 +360,12 @@ public class RobotContainer {
       new Alert("WPI field selected, do not use in competition.", AlertType.INFO).set(true);
     }
 
-    // Endgame alert
+    // Endgame alerts
     new Trigger(
             () ->
                 DriverStation.isTeleopEnabled()
                     && DriverStation.getMatchTime() > 0.0
-                    && DriverStation.getMatchTime() <= Math.round(endgameAlertTime.get()))
+                    && DriverStation.getMatchTime() <= Math.round(endgameAlert1.get()))
         .onTrue(
             Commands.run(
                     () -> {
@@ -380,6 +382,37 @@ public class RobotContainer {
                               operator.getHID().setRumble(RumbleType.kRightRumble, 0.0);
                             })
                         .withTimeout(1.0)));
+    new Trigger(
+            () ->
+                DriverStation.isTeleopEnabled()
+                    && DriverStation.getMatchTime() > 0.0
+                    && DriverStation.getMatchTime() <= Math.round(endgameAlert2.get()))
+        .onTrue(
+            Commands.sequence(
+                Commands.run(
+                        () -> {
+                          driver.getHID().setRumble(RumbleType.kRightRumble, 0.75);
+                          operator.getHID().setRumble(RumbleType.kRightRumble, 0.75);
+                        })
+                    .withTimeout(0.5),
+                Commands.run(
+                        () -> {
+                          driver.getHID().setRumble(RumbleType.kRightRumble, 0.0);
+                          operator.getHID().setRumble(RumbleType.kRightRumble, 0.0);
+                        })
+                    .withTimeout(0.5),
+                Commands.run(
+                        () -> {
+                          driver.getHID().setRumble(RumbleType.kRightRumble, 0.75);
+                          operator.getHID().setRumble(RumbleType.kRightRumble, 0.75);
+                        })
+                    .withTimeout(0.5),
+                Commands.run(
+                        () -> {
+                          driver.getHID().setRumble(RumbleType.kRightRumble, 0.0);
+                          operator.getHID().setRumble(RumbleType.kRightRumble, 0.0);
+                        })
+                    .withTimeout(1.0)));
 
     // Bind driver and operator controls
     bindControls();
