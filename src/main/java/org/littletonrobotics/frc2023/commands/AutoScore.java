@@ -55,8 +55,8 @@ public class AutoScore extends SequentialCommandGroup {
   public static final Rotation2d hybridWristAngle = new Rotation2d();
   public static final Translation2d cubeMidRelativePosition = new Translation2d(-0.4, 0.5);
   public static final Rotation2d cubeMidWristAngle = Rotation2d.fromDegrees(-30.0);
-  public static final Translation2d cubeHighRelativePosition = new Translation2d(-0.6, 0.3);
-  public static final Rotation2d cubeHighWristAngle = Rotation2d.fromDegrees(10.0);
+  public static final Translation2d cubeHighRelativePosition = new Translation2d(-0.5, 0.2);
+  public static final Rotation2d cubeHighWristAngle = Rotation2d.fromDegrees(45.0);
   public static final Translation2d uprightConeRelativePosition = new Translation2d(-0.3, -0.025);
   public static final Rotation2d uprightConeWristAngle = Rotation2d.fromDegrees(55.0);
   public static final Translation2d tippedConeRelativePosition = new Translation2d(-0.29, -0.13);

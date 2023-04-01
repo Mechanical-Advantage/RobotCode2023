@@ -141,9 +141,9 @@ public class Gripper extends SubsystemBase {
     return Commands.either(
         ejectCommand(EjectSpeed.SLOW),
         Commands.either(
-            ejectCommand(EjectSpeed.MEDIUM),
             ejectCommand(EjectSpeed.FAST),
-            () -> objective.nodeLevel == NodeLevel.HYBRID),
+            ejectCommand(EjectSpeed.MEDIUM),
+            () -> objective.nodeLevel == NodeLevel.MID),
         () -> objective.isConeNode());
   }
 
