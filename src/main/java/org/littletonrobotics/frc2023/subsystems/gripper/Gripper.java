@@ -44,6 +44,8 @@ public class Gripper extends SubsystemBase {
       new LoggedTunableNumber("Gripper/EjectVoltsFast", -3.5);
   private static final LoggedTunableNumber ejectSecsFast =
       new LoggedTunableNumber("Gripper/EjectSecsFast", 0.4);
+  private static final LoggedTunableNumber ejectVoltsMedium =
+      new LoggedTunableNumber("Gripper/EjectVoltsSlow", -3.0);
   private static final LoggedTunableNumber ejectVoltsSlow =
       new LoggedTunableNumber("Gripper/EjectVoltsSlow", -2.0);
   private static final LoggedTunableNumber ejectSecsSlow =
@@ -138,8 +140,11 @@ public class Gripper extends SubsystemBase {
   public Command ejectCommand(Objective objective) {
     return Commands.either(
         ejectCommand(EjectSpeed.SLOW),
-        ejectCommand(EjectSpeed.FAST),
-        () -> objective.nodeLevel == NodeLevel.HYBRID || objective.isConeNode());
+        Commands.either(
+            ejectCommand(EjectSpeed.MEDIUM),
+            ejectCommand(EjectSpeed.FAST),
+            () -> objective.nodeLevel == NodeLevel.HYBRID),
+        () -> objective.isConeNode());
   }
 
   /** Command factory to run the gripper wheels back and eject a game piece. */
@@ -152,6 +157,9 @@ public class Gripper extends SubsystemBase {
       case FAST:
         voltsSupplier = () -> ejectVoltsFast.get();
         break;
+      case MEDIUM:
+        voltsSupplier = () -> ejectVoltsMedium.get();
+        break;
       case SLOW:
         voltsSupplier = () -> ejectVoltsSlow.get();
         break;
@@ -162,13 +170,17 @@ public class Gripper extends SubsystemBase {
     return run(() -> setVoltage(voltsSupplier.get()))
         .raceWith(
             new SuppliedWaitCommand(
-                () -> speed == EjectSpeed.SLOW ? ejectSecsSlow.get() : ejectSecsFast.get()))
+                () ->
+                    speed == EjectSpeed.SLOW || speed == EjectSpeed.MEDIUM
+                        ? ejectSecsSlow.get()
+                        : ejectSecsFast.get()))
         .finallyDo((interrupted) -> setVoltage(holdVolts.get()));
   }
 
   public static enum EjectSpeed {
     VERY_FAST,
     FAST,
+    MEDIUM,
     SLOW
   }
 }
