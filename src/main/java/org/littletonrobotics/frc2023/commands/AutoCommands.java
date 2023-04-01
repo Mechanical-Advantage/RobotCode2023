@@ -424,6 +424,28 @@ public class AutoCommands {
   }
 
   /** Scores three game pieces on field-side. */
+  public Command fieldScoreThreeCombo() {
+    var objective0 = new Objective(8, NodeLevel.HIGH, ConeOrientation.UPRIGHT, false);
+    var objective1 = new Objective(7, NodeLevel.HIGH, ConeOrientation.UPRIGHT, false);
+    var objective2 = new Objective(7, NodeLevel.MID, ConeOrientation.TIPPED, false);
+    Pose2d startingPose = startingLocations[8];
+    var score0Sequence = driveAndScore(objective0, true, true, false, startingPose, true);
+    var intake0Sequence = driveAndIntake(objective1, true, 3, score0Sequence.pose(), true);
+    var score1Sequence =
+        driveAndScore(objective1, true, false, false, intake0Sequence.pose(), true);
+    var intake2Sequence = driveAndIntake(objective2, true, 2, score1Sequence.pose(), false);
+    var score2Sequence =
+        driveAndScore(objective2, true, false, false, intake2Sequence.pose(), true);
+    return sequence(
+        reset(startingPose),
+        score0Sequence.command(),
+        intake0Sequence.command(),
+        score1Sequence.command(),
+        intake2Sequence.command(),
+        score2Sequence.command());
+  }
+
+  /** Scores three game pieces on field-side. */
   public Command fieldScoreLink() {
     return select(
         Map.of(
