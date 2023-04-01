@@ -8,12 +8,10 @@
 package org.littletonrobotics.frc2023.util;
 
 public class CleanSparkMaxValue {
-  private static final double maxDiff = 60.0;
-
   public static double cleanSparkMaxValue(double lastValue, double value) {
     if (Double.isNaN(value)
         || Double.isInfinite(value)
-        || (value == 0.0 && Math.abs(lastValue) > maxDiff)) {
+        || (Math.abs(value) < 1.0e-4 && Math.abs(lastValue) > 60.0)) {
       return lastValue;
     } else {
       return value;
