@@ -108,7 +108,7 @@ public record ArmPose(Translation2d endEffectorPosition, Rotation2d globalWristA
             Rotation2d.fromDegrees(30.0))),
     DOUBLE_SUBTATION(
         new ArmPose(
-            new Translation2d(0.49, FieldConstants.LoadingZone.doubleSubstationShelfZ + 0.15),
+            new Translation2d(0.49, FieldConstants.LoadingZone.doubleSubstationShelfZ + 0.165),
             new Rotation2d())),
     CUBE_HANDOFF(new ArmPose(new Translation2d(0.42, 0.58), Rotation2d.fromDegrees(-85.0)), false),
     FLOOR_CONE(new ArmPose(new Translation2d(-0.55, 0.25), Rotation2d.fromDegrees(-165.0)), false),
