@@ -26,7 +26,7 @@ import java.util.List;
  * methods to flip these values based on the current alliance color.
  */
 public final class FieldConstants {
-  public static final boolean isWPIField = false; // Red alliance
+  public static final boolean isWPIField = true; // Red alliance
 
   public static final double fieldLength = Units.inchesToMeters(651.25);
   public static final double fieldWidth =
