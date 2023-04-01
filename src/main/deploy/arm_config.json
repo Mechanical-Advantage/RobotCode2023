@@ -47,7 +47,7 @@
     "maxVoltageShoulder": 10,
     "maxVoltageElbow": 12,
     "maxAccelerationMinExtension": 16,
-    "maxAccelerationMaxExtension": 6,
+    "maxAccelerationMaxExtension": 5,
     "maxJerk": 30
   },
   "constraints": {
