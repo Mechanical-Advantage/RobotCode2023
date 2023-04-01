@@ -74,7 +74,7 @@ public class AutoCommands {
   public static final double slowScoreMaxVelocity = Units.inchesToMeters(40.0);
 
   // Waypoints
-  private final Pose2d[] startingLocations = new Pose2d[9];
+  public final Pose2d[] startingLocations = new Pose2d[9];
   private final Translation2d transitWallSideNear;
   private final Translation2d transitWallSideFar;
   private final Waypoint transitWallSideNearOutWaypoint;
@@ -396,7 +396,7 @@ public class AutoCommands {
   }
 
   /** Drives to the charging station and balances on it. */
-  private Command driveAndBalance(Pose2d startingPosition, boolean armToHome) {
+  public Command driveAndBalance(Pose2d startingPosition, boolean armToHome) {
     boolean enterFront =
         startingPosition.getX()
             < (Community.chargingStationInnerX + Community.chargingStationOuterX) / 2.0;

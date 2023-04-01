@@ -221,6 +221,11 @@ public class RobotContainer {
     AutoCommands autoCommands =
         new AutoCommands(drive, arm, gripper, cubeIntake, autoSelector::getResponses);
     autoSelector.addRoutine(
+        "Drive and Balance",
+        List.of(),
+        Commands.runOnce(() -> drive.setPose(autoCommands.startingLocations[4]))
+            .andThen(autoCommands.driveAndBalance(autoCommands.startingLocations[4], false)));
+    autoSelector.addRoutine(
         "Field: Score Three Combo", List.of(), autoCommands.fieldScoreThreeCombo());
     autoSelector.addRoutine(
         "Field: Score Link",
