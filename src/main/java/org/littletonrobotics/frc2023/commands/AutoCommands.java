@@ -423,7 +423,7 @@ public class AutoCommands {
         .andThen(new AutoBalance(drive));
   }
 
-  /** Scores three game pieces on field-side. */
+  /** Scores three game pieces on field-side (high cone, high cube, mid cube). */
   public Command fieldScoreThreeCombo() {
     var objective0 = new Objective(8, NodeLevel.HIGH, ConeOrientation.UPRIGHT, false);
     var objective1 = new Objective(7, NodeLevel.HIGH, ConeOrientation.UPRIGHT, false);
