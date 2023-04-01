@@ -196,7 +196,7 @@ public class Leds extends VirtualSubsystem {
       if (distraction) {
         strobe(Section.SHOULDER, Color.kWhite, strobeFastDuration);
       } else if (endgameAlert) {
-        strobe(Section.SHOULDER, Color.kOrange, strobeSlowDuration);
+        strobe(Section.SHOULDER, Color.kBlue, strobeSlowDuration);
       } else if (autoScore) {
         rainbow(Section.SHOULDER, rainbowCycleLength, rainbowDuration);
       } else if (gripperStopped) {

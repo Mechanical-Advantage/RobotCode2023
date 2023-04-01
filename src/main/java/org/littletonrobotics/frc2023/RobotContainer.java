@@ -370,16 +370,16 @@ public class RobotContainer {
             Commands.run(
                     () -> {
                       Leds.getInstance().endgameAlert = true;
-                      driver.getHID().setRumble(RumbleType.kRightRumble, 0.75);
-                      operator.getHID().setRumble(RumbleType.kRightRumble, 0.75);
+                      driver.getHID().setRumble(RumbleType.kBothRumble, 1.0);
+                      operator.getHID().setRumble(RumbleType.kBothRumble, 1.0);
                     })
                 .withTimeout(1.5)
                 .andThen(
                     Commands.run(
                             () -> {
                               Leds.getInstance().endgameAlert = false;
-                              driver.getHID().setRumble(RumbleType.kRightRumble, 0.0);
-                              operator.getHID().setRumble(RumbleType.kRightRumble, 0.0);
+                              driver.getHID().setRumble(RumbleType.kBothRumble, 0.0);
+                              operator.getHID().setRumble(RumbleType.kBothRumble, 0.0);
                             })
                         .withTimeout(1.0)));
     new Trigger(
@@ -392,29 +392,29 @@ public class RobotContainer {
                 Commands.run(
                         () -> {
                           Leds.getInstance().endgameAlert = true;
-                          driver.getHID().setRumble(RumbleType.kRightRumble, 0.75);
-                          operator.getHID().setRumble(RumbleType.kRightRumble, 0.75);
+                          driver.getHID().setRumble(RumbleType.kBothRumble, 1.0);
+                          operator.getHID().setRumble(RumbleType.kBothRumble, 1.0);
                         })
                     .withTimeout(0.5),
                 Commands.run(
                         () -> {
                           Leds.getInstance().endgameAlert = false;
-                          driver.getHID().setRumble(RumbleType.kRightRumble, 0.0);
-                          operator.getHID().setRumble(RumbleType.kRightRumble, 0.0);
+                          driver.getHID().setRumble(RumbleType.kBothRumble, 0.0);
+                          operator.getHID().setRumble(RumbleType.kBothRumble, 0.0);
                         })
                     .withTimeout(0.5),
                 Commands.run(
                         () -> {
                           Leds.getInstance().endgameAlert = true;
-                          driver.getHID().setRumble(RumbleType.kRightRumble, 0.75);
-                          operator.getHID().setRumble(RumbleType.kRightRumble, 0.75);
+                          driver.getHID().setRumble(RumbleType.kBothRumble, 1.0);
+                          operator.getHID().setRumble(RumbleType.kBothRumble, 1.0);
                         })
                     .withTimeout(0.5),
                 Commands.run(
                         () -> {
                           Leds.getInstance().endgameAlert = false;
-                          driver.getHID().setRumble(RumbleType.kRightRumble, 0.0);
-                          operator.getHID().setRumble(RumbleType.kRightRumble, 0.0);
+                          driver.getHID().setRumble(RumbleType.kBothRumble, 0.0);
+                          operator.getHID().setRumble(RumbleType.kBothRumble, 0.0);
                         })
                     .withTimeout(1.0)));
 
