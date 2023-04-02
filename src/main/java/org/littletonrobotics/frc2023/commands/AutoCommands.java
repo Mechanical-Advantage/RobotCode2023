@@ -324,6 +324,25 @@ public class AutoCommands {
       boolean slowAlign,
       Pose2d startingPose,
       boolean singleTransit) {
+    return driveAndScore(
+        objective,
+        fieldSide,
+        firstScore,
+        slowAlign,
+        startingPose,
+        singleTransit,
+        new Transform2d());
+  }
+
+  /** Drives to the specified node and scores. */
+  private CommandWithPose driveAndScore(
+      Objective objective,
+      boolean fieldSide,
+      boolean firstScore,
+      boolean slowAlign,
+      Pose2d startingPose,
+      boolean singleTransit,
+      Transform2d scoreOffset) {
     // Create waypoints
     List<Waypoint> waypoints = new ArrayList<>();
     waypoints.add(Waypoint.fromHolonomicPose(startingPose));
@@ -349,14 +368,15 @@ public class AutoCommands {
     }
     Pose2d scoringPose =
         AutoScore.getDriveTarget(
-            new Pose2d(
-                includeTransit
-                    ? transitWaypointNear.getTranslation()
-                    : startingPose.getTranslation(),
-                startingPose.getRotation()),
-            objective,
-            arm,
-            reachScoring);
+                new Pose2d(
+                    includeTransit
+                        ? transitWaypointNear.getTranslation()
+                        : startingPose.getTranslation(),
+                    startingPose.getRotation()),
+                objective,
+                arm,
+                reachScoring)
+            .transformBy(scoreOffset);
     waypoints.add(Waypoint.fromHolonomicPose(scoringPose));
     ArmPose scoringArmPose = AutoScore.getArmTarget(scoringPose, objective, arm, reachScoring);
 
@@ -432,7 +452,14 @@ public class AutoCommands {
     var score0Sequence = driveAndScore(objective0, true, true, false, startingPose, true);
     var intake0Sequence = driveAndIntake(objective1, true, 3, score0Sequence.pose(), true);
     var score1Sequence =
-        driveAndScore(objective1, true, false, false, intake0Sequence.pose(), true);
+        driveAndScore(
+            objective1,
+            true,
+            false,
+            false,
+            intake0Sequence.pose(),
+            true,
+            new Transform2d(new Translation2d(0.1, 0.0), new Rotation2d()));
     var intake2Sequence = driveAndIntake(objective2, true, 2, score1Sequence.pose(), false);
     var score2Sequence =
         driveAndScore(objective2, true, false, false, intake2Sequence.pose(), true);
