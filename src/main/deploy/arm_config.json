@@ -45,7 +45,7 @@
   "solver": {
     "interiorPoints": 15,
     "maxVoltageShoulder": 10,
-    "maxVoltageElbow": 12,
+    "maxVoltageElbow": 11,
     "maxAccelerationMinExtension": 16,
     "maxAccelerationMaxExtension": 5,
     "maxJerk": 30
