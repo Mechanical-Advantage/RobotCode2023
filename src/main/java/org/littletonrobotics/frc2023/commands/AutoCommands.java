@@ -534,7 +534,7 @@ public class AutoCommands {
   }
 
   /** Scores one cone and cube, then optionally balance.s */
-  private Command sideScoreTwoMaybeGrabMaybeBalance(
+  public Command sideScoreTwoMaybeGrabMaybeBalance(
       boolean fieldSide,
       boolean grabThird,
       NodeLevel level,
@@ -557,14 +557,19 @@ public class AutoCommands {
         driveAndScore(objective1, fieldSide, false, false, intake1Sequence.pose(), false);
 
     // Third grab sequences (field side only)
-    var intake2Sequence = driveAndIntake(objective2, true, 2, score1Sequence.pose(), false);
+    var intake2Sequence =
+        driveAndIntake(objective2, fieldSide, fieldSide ? 2 : 1, score1Sequence.pose(), false);
     var returnWaypoints =
         List.of(
             Waypoint.fromHolonomicPose(intake2Sequence.pose()),
-            transitFieldSideFarInWaypoint,
+            fieldSide ? transitFieldSideFarInWaypoint : transitWallSideFarInWaypoint,
             new Waypoint(
-                transitFieldSideNearInWaypoint.getTranslation().plus(new Translation2d(-0.75, 0.0)),
-                transitFieldSideNearInWaypoint.getDriveRotation().get(),
+                (fieldSide ? transitFieldSideNearInWaypoint : transitWallSideNearInWaypoint)
+                    .getTranslation()
+                    .plus(new Translation2d(-0.75, 0.0)),
+                (fieldSide ? transitFieldSideNearInWaypoint : transitWallSideNearInWaypoint)
+                    .getDriveRotation()
+                    .get(),
                 new Rotation2d()));
 
     return sequence(
