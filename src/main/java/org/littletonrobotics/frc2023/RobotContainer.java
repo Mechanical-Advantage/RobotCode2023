@@ -465,7 +465,8 @@ public class RobotContainer {
                 () -> -driver.getRightX(),
                 () -> sniper,
                 () -> robotRelative.getAsBoolean(),
-                arm::getExtensionPercent);
+                arm::getExtensionPercent,
+                cubeIntake::getExtended);
     Supplier<MoveArmWithJoysticks> moveArmWithJoysticksFactory =
         () ->
             new MoveArmWithJoysticks(
