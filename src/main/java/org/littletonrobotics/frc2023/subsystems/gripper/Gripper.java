@@ -45,7 +45,7 @@ public class Gripper extends SubsystemBase {
   private static final LoggedTunableNumber ejectSecsFast =
       new LoggedTunableNumber("Gripper/EjectSecsFast", 0.4);
   private static final LoggedTunableNumber ejectVoltsMedium =
-      new LoggedTunableNumber("Gripper/EjectVoltsSlow", -3.0);
+      new LoggedTunableNumber("Gripper/EjectVoltsMedium", -3.0);
   private static final LoggedTunableNumber ejectVoltsSlow =
       new LoggedTunableNumber("Gripper/EjectVoltsSlow", -2.0);
   private static final LoggedTunableNumber ejectSecsSlow =
@@ -141,9 +141,9 @@ public class Gripper extends SubsystemBase {
     return Commands.either(
         ejectCommand(EjectSpeed.SLOW),
         Commands.either(
-            ejectCommand(EjectSpeed.FAST),
             ejectCommand(EjectSpeed.MEDIUM),
-            () -> objective.nodeLevel == NodeLevel.MID),
+            ejectCommand(EjectSpeed.FAST),
+            () -> objective.nodeLevel == NodeLevel.HYBRID),
         () -> objective.isConeNode());
   }
 
