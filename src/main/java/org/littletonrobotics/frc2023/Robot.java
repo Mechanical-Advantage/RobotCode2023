@@ -11,6 +11,7 @@ import edu.wpi.first.hal.AllianceStationID;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Threads;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
@@ -44,12 +45,15 @@ import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
 public class Robot extends LoggedRobot {
   private static final String batteryNameFile = "/home/lvuser/battery-name.txt";
+  private static final double canErrorTimeThreshold = 0.5; // Seconds to disable alert
 
   private RobotContainer robotContainer;
   private Command autoCommand;
   private double autoStart;
   private boolean autoMessagePrinted;
   private boolean batteryNameWritten = false;
+  private Timer canErrorTimer = new Timer();
+  private Timer canErrorTimerInitial = new Timer();
 
   private final Alert logNoFileAlert =
       new Alert("No log path set for current robot. Data will NOT be logged.", AlertType.WARNING);
@@ -57,6 +61,8 @@ public class Robot extends LoggedRobot {
       new Alert("Logging queue exceeded capacity, data will NOT be logged.", AlertType.ERROR);
   private final Alert sameBatteryAlert =
       new Alert("The battery has not been changed since the last match.", AlertType.WARNING);
+  private final Alert canErrorAlert =
+      new Alert("CAN errors detected, robot may not be controllable.", AlertType.ERROR);
 
   public Robot() {
     super(Constants.loopPeriodSecs);
@@ -176,6 +182,12 @@ public class Robot extends LoggedRobot {
       DriverStationSim.setAllianceStationId(AllianceStationID.Blue1);
     }
 
+    // Start CAN error timer
+    canErrorTimer.reset();
+    canErrorTimer.start();
+    canErrorTimerInitial.reset();
+    canErrorTimerInitial.start();
+
     // Instantiate RobotContainer
     robotContainer = new RobotContainer();
   }
@@ -192,6 +204,15 @@ public class Robot extends LoggedRobot {
     // Robot container periodic methods
     robotContainer.checkControllers();
     robotContainer.updateHPModeLeds();
+
+    // Update CAN error alert
+    var canStatus = RobotController.getCANStatus();
+    if (canStatus.receiveErrorCount > 0 || canStatus.transmitErrorCount > 0) {
+      canErrorTimer.reset();
+    }
+    canErrorAlert.set(
+        !canErrorTimer.hasElapsed(canErrorTimeThreshold)
+            && canErrorTimerInitial.hasElapsed(canErrorTimeThreshold));
 
     // Log list of NT clients
     List<String> clientNames = new ArrayList<>();
