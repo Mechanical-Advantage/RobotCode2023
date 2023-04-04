@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.function.Supplier;
 import org.littletonrobotics.frc2023.subsystems.leds.Leds;
+import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.NodeLevel;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.Objective;
 import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
@@ -36,13 +37,15 @@ public class Gripper extends SubsystemBase {
   private static final LoggedTunableNumber intakeVelocityWaitStop =
       new LoggedTunableNumber("Gripper/IntakeVelocityWaitStop", 0.5);
   private static final LoggedTunableNumber intakeStopVelocity =
-      new LoggedTunableNumber("Gripper/IntakeStopVelocity", 3.0);
+      new LoggedTunableNumber("Gripper/IntakeStopVelocity", 0.4);
   private static final LoggedTunableNumber ejectVoltsVeryFast =
       new LoggedTunableNumber("Gripper/EjectVoltsVeryFast", -12.0);
   private static final LoggedTunableNumber ejectVoltsFast =
-      new LoggedTunableNumber("Gripper/EjectVoltsFast", -4.0);
+      new LoggedTunableNumber("Gripper/EjectVoltsFast", -3.5);
   private static final LoggedTunableNumber ejectSecsFast =
       new LoggedTunableNumber("Gripper/EjectSecsFast", 0.4);
+  private static final LoggedTunableNumber ejectVoltsMedium =
+      new LoggedTunableNumber("Gripper/EjectVoltsMedium", -3.0);
   private static final LoggedTunableNumber ejectVoltsSlow =
       new LoggedTunableNumber("Gripper/EjectVoltsSlow", -2.0);
   private static final LoggedTunableNumber ejectSecsSlow =
@@ -136,7 +139,12 @@ public class Gripper extends SubsystemBase {
   /** Command factory to run the gripper wheels back and eject a game piece. */
   public Command ejectCommand(Objective objective) {
     return Commands.either(
-        ejectCommand(EjectSpeed.SLOW), ejectCommand(EjectSpeed.FAST), objective::isConeNode);
+        ejectCommand(EjectSpeed.SLOW),
+        Commands.either(
+            ejectCommand(EjectSpeed.MEDIUM),
+            ejectCommand(EjectSpeed.FAST),
+            () -> objective.nodeLevel == NodeLevel.HYBRID),
+        () -> objective.isConeNode());
   }
 
   /** Command factory to run the gripper wheels back and eject a game piece. */
@@ -149,6 +157,9 @@ public class Gripper extends SubsystemBase {
       case FAST:
         voltsSupplier = () -> ejectVoltsFast.get();
         break;
+      case MEDIUM:
+        voltsSupplier = () -> ejectVoltsMedium.get();
+        break;
       case SLOW:
         voltsSupplier = () -> ejectVoltsSlow.get();
         break;
@@ -159,13 +170,17 @@ public class Gripper extends SubsystemBase {
     return run(() -> setVoltage(voltsSupplier.get()))
         .raceWith(
             new SuppliedWaitCommand(
-                () -> speed == EjectSpeed.SLOW ? ejectSecsSlow.get() : ejectSecsFast.get()))
+                () ->
+                    speed == EjectSpeed.SLOW || speed == EjectSpeed.MEDIUM
+                        ? ejectSecsSlow.get()
+                        : ejectSecsFast.get()))
         .finallyDo((interrupted) -> setVoltage(holdVolts.get()));
   }
 
   public static enum EjectSpeed {
     VERY_FAST,
     FAST,
+    MEDIUM,
     SLOW
   }
 }

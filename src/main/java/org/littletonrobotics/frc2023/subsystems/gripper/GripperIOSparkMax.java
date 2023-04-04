@@ -29,7 +29,7 @@ public class GripperIOSparkMax implements GripperIO {
       case ROBOT_2023C:
         invert = true;
         reduction = 5.23 * (40.0 / 18.0);
-        motor = new CANSparkMax(13, MotorType.kBrushless);
+        motor = new CANSparkMax(60, MotorType.kBrushless);
         encoder = motor.getEncoder();
         break;
       default:

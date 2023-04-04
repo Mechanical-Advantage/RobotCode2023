@@ -71,10 +71,10 @@ public class AutoCommands {
   public static final double cableBumpMaxVelocity = Units.inchesToMeters(50.0);
   public static final double chargingStationMaxVelocity = Units.inchesToMeters(40.0);
   public static final double slowScoreConstraintRadius = 0.75;
-  public static final double slowScoreMaxVelocity = Units.inchesToMeters(50.0);
+  public static final double slowScoreMaxVelocity = Units.inchesToMeters(40.0);
 
   // Waypoints
-  private final Pose2d[] startingLocations = new Pose2d[9];
+  public final Pose2d[] startingLocations = new Pose2d[9];
   private final Translation2d transitWallSideNear;
   private final Translation2d transitWallSideFar;
   private final Waypoint transitWallSideNearOutWaypoint;
@@ -324,6 +324,25 @@ public class AutoCommands {
       boolean slowAlign,
       Pose2d startingPose,
       boolean singleTransit) {
+    return driveAndScore(
+        objective,
+        fieldSide,
+        firstScore,
+        slowAlign,
+        startingPose,
+        singleTransit,
+        new Transform2d());
+  }
+
+  /** Drives to the specified node and scores. */
+  private CommandWithPose driveAndScore(
+      Objective objective,
+      boolean fieldSide,
+      boolean firstScore,
+      boolean slowAlign,
+      Pose2d startingPose,
+      boolean singleTransit,
+      Transform2d scoreOffset) {
     // Create waypoints
     List<Waypoint> waypoints = new ArrayList<>();
     waypoints.add(Waypoint.fromHolonomicPose(startingPose));
@@ -349,14 +368,15 @@ public class AutoCommands {
     }
     Pose2d scoringPose =
         AutoScore.getDriveTarget(
-            new Pose2d(
-                includeTransit
-                    ? transitWaypointNear.getTranslation()
-                    : startingPose.getTranslation(),
-                startingPose.getRotation()),
-            objective,
-            arm,
-            reachScoring);
+                new Pose2d(
+                    includeTransit
+                        ? transitWaypointNear.getTranslation()
+                        : startingPose.getTranslation(),
+                    startingPose.getRotation()),
+                objective,
+                arm,
+                reachScoring)
+            .transformBy(scoreOffset);
     waypoints.add(Waypoint.fromHolonomicPose(scoringPose));
     ArmPose scoringArmPose = AutoScore.getArmTarget(scoringPose, objective, arm, reachScoring);
 
@@ -396,7 +416,7 @@ public class AutoCommands {
   }
 
   /** Drives to the charging station and balances on it. */
-  private Command driveAndBalance(Pose2d startingPosition, boolean armToHome) {
+  public Command driveAndBalance(Pose2d startingPosition, boolean armToHome) {
     boolean enterFront =
         startingPosition.getX()
             < (Community.chargingStationInnerX + Community.chargingStationOuterX) / 2.0;
@@ -421,6 +441,35 @@ public class AutoCommands {
             Waypoint.fromHolonomicPose(position1))
         .alongWith(armToHome ? armToHome() : none())
         .andThen(new AutoBalance(drive));
+  }
+
+  /** Scores three game pieces on field-side (high cone, high cube, mid cube). */
+  public Command fieldScoreThreeCombo() {
+    var objective0 = new Objective(8, NodeLevel.HIGH, ConeOrientation.UPRIGHT, false);
+    var objective1 = new Objective(7, NodeLevel.HIGH, ConeOrientation.UPRIGHT, false);
+    var objective2 = new Objective(7, NodeLevel.MID, ConeOrientation.TIPPED, false);
+    Pose2d startingPose = startingLocations[8];
+    var score0Sequence = driveAndScore(objective0, true, true, false, startingPose, true);
+    var intake0Sequence = driveAndIntake(objective1, true, 3, score0Sequence.pose(), true);
+    var score1Sequence =
+        driveAndScore(
+            objective1,
+            true,
+            false,
+            false,
+            intake0Sequence.pose(),
+            true,
+            new Transform2d(new Translation2d(0.1, 0.0), new Rotation2d()));
+    var intake2Sequence = driveAndIntake(objective2, true, 2, score1Sequence.pose(), false);
+    var score2Sequence =
+        driveAndScore(objective2, true, false, false, intake2Sequence.pose(), true);
+    return sequence(
+        reset(startingPose),
+        score0Sequence.command(),
+        intake0Sequence.command(),
+        score1Sequence.command(),
+        intake2Sequence.command(),
+        score2Sequence.command());
   }
 
   /** Scores three game pieces on field-side. */
@@ -460,17 +509,37 @@ public class AutoCommands {
   }
 
   /** Scores one cone and cube, then optionally balance.s */
-  public Command sideScoreTwoGrabMaybeBalance() {
+  public Command fieldScoreTwoGrabMaybeBalance() {
     Supplier<Boolean> balanceSupplier =
-        () -> responses.get().get(1).equals(AutoQuestionResponse.YES);
+        () -> !responses.get().get(1).equals(AutoQuestionResponse.RETURN);
+    Supplier<Boolean> scoreFinalSupplier =
+        () -> responses.get().get(1).equals(AutoQuestionResponse.BALANCE_THROW);
     return select(
         Map.of(
             AutoQuestionResponse.HYBRID,
-            sideScoreTwoMaybeGrabMaybeBalance(true, true, NodeLevel.HYBRID, balanceSupplier),
+            sideScoreTwoMaybeGrabMaybeBalance(
+                true, true, NodeLevel.HYBRID, balanceSupplier, scoreFinalSupplier),
             AutoQuestionResponse.MID,
-            sideScoreTwoMaybeGrabMaybeBalance(true, true, NodeLevel.MID, balanceSupplier),
+            sideScoreTwoMaybeGrabMaybeBalance(
+                true, true, NodeLevel.MID, balanceSupplier, scoreFinalSupplier),
             AutoQuestionResponse.HIGH,
-            sideScoreTwoMaybeGrabMaybeBalance(true, true, NodeLevel.HIGH, balanceSupplier)),
+            sideScoreTwoMaybeGrabMaybeBalance(
+                true, true, NodeLevel.HIGH, balanceSupplier, scoreFinalSupplier)),
+        () -> responses.get().get(0));
+  }
+
+  /** Scores one cone and cube, then grabs a cube. */
+  public Command wallScoreTwoAndGrab() {
+    return select(
+        Map.of(
+            AutoQuestionResponse.HYBRID,
+            sideScoreTwoMaybeGrabMaybeBalance(
+                false, true, NodeLevel.HYBRID, () -> false, () -> false),
+            AutoQuestionResponse.MID,
+            sideScoreTwoMaybeGrabMaybeBalance(false, true, NodeLevel.MID, () -> false, () -> false),
+            AutoQuestionResponse.HIGH,
+            sideScoreTwoMaybeGrabMaybeBalance(
+                false, true, NodeLevel.HIGH, () -> false, () -> false)),
         () -> responses.get().get(0));
   }
 
@@ -482,27 +551,37 @@ public class AutoCommands {
         select(
             Map.of(
                 AutoQuestionResponse.HYBRID,
-                sideScoreTwoMaybeGrabMaybeBalance(true, false, NodeLevel.HYBRID, balanceSupplier),
+                sideScoreTwoMaybeGrabMaybeBalance(
+                    true, false, NodeLevel.HYBRID, balanceSupplier, () -> false),
                 AutoQuestionResponse.MID,
-                sideScoreTwoMaybeGrabMaybeBalance(true, false, NodeLevel.MID, balanceSupplier),
+                sideScoreTwoMaybeGrabMaybeBalance(
+                    true, false, NodeLevel.MID, balanceSupplier, () -> false),
                 AutoQuestionResponse.HIGH,
-                sideScoreTwoMaybeGrabMaybeBalance(true, false, NodeLevel.HIGH, balanceSupplier)),
+                sideScoreTwoMaybeGrabMaybeBalance(
+                    true, false, NodeLevel.HIGH, balanceSupplier, () -> false)),
             () -> responses.get().get(1)),
         select(
             Map.of(
                 AutoQuestionResponse.HYBRID,
-                sideScoreTwoMaybeGrabMaybeBalance(false, false, NodeLevel.HYBRID, balanceSupplier),
+                sideScoreTwoMaybeGrabMaybeBalance(
+                    false, false, NodeLevel.HYBRID, balanceSupplier, () -> false),
                 AutoQuestionResponse.MID,
-                sideScoreTwoMaybeGrabMaybeBalance(false, false, NodeLevel.MID, balanceSupplier),
+                sideScoreTwoMaybeGrabMaybeBalance(
+                    false, false, NodeLevel.MID, balanceSupplier, () -> false),
                 AutoQuestionResponse.HIGH,
-                sideScoreTwoMaybeGrabMaybeBalance(false, false, NodeLevel.HIGH, balanceSupplier)),
+                sideScoreTwoMaybeGrabMaybeBalance(
+                    false, false, NodeLevel.HIGH, balanceSupplier, () -> false)),
             () -> responses.get().get(1)),
         () -> responses.get().get(0).equals(AutoQuestionResponse.FIELD_SIDE));
   }
 
   /** Scores one cone and cube, then optionally balance.s */
   private Command sideScoreTwoMaybeGrabMaybeBalance(
-      boolean fieldSide, boolean grabThird, NodeLevel level, Supplier<Boolean> balanceSupplier) {
+      boolean fieldSide,
+      boolean grabThird,
+      NodeLevel level,
+      Supplier<Boolean> balanceSupplier,
+      Supplier<Boolean> scoreFinalSupplier) {
     var objective0 = new Objective(fieldSide ? 8 : 0, level, ConeOrientation.UPRIGHT, false);
     var objective1 = new Objective(fieldSide ? 7 : 1, level, ConeOrientation.UPRIGHT, true);
     var objective2 = new Objective(fieldSide ? 7 : 1, level, ConeOrientation.UPRIGHT, true);
@@ -520,14 +599,19 @@ public class AutoCommands {
         driveAndScore(objective1, fieldSide, false, false, intake1Sequence.pose(), false);
 
     // Third grab sequences (field side only)
-    var intake2Sequence = driveAndIntake(objective2, true, 2, score1Sequence.pose(), false);
+    var intake2Sequence =
+        driveAndIntake(objective2, fieldSide, fieldSide ? 2 : 1, score1Sequence.pose(), false);
     var returnWaypoints =
         List.of(
             Waypoint.fromHolonomicPose(intake2Sequence.pose()),
-            transitFieldSideFarInWaypoint,
+            fieldSide ? transitFieldSideFarInWaypoint : transitWallSideFarInWaypoint,
             new Waypoint(
-                transitFieldSideNearInWaypoint.getTranslation().plus(new Translation2d(-0.75, 0.0)),
-                transitFieldSideNearInWaypoint.getDriveRotation().get(),
+                (fieldSide ? transitFieldSideNearInWaypoint : transitWallSideNearInWaypoint)
+                    .getTranslation()
+                    .plus(new Translation2d(-0.75, 0.0)),
+                (fieldSide ? transitFieldSideNearInWaypoint : transitWallSideNearInWaypoint)
+                    .getDriveRotation()
+                    .get(),
                 new Rotation2d()));
 
     return sequence(
@@ -539,7 +623,19 @@ public class AutoCommands {
             ? sequence(
                 intake2Sequence.command(),
                 either(
-                    driveAndBalance(intake2Sequence.pose()).alongWith(gripper.intakeCommand()),
+                    driveAndBalance(intake2Sequence.pose(), false)
+                        .alongWith(
+                            gripper.intakeCommand(),
+                            arm.runPathCommand(
+                                () ->
+                                    scoreFinalSupplier.get()
+                                        ? ArmPose.Preset.THROW.getPose()
+                                        : ArmPose.Preset.HOMED.getPose()))
+                        .andThen(
+                            either(
+                                gripper.ejectCommand(EjectSpeed.VERY_FAST),
+                                none(),
+                                () -> scoreFinalSupplier.get())),
                     path(returnWaypoints).alongWith(armToHome()),
                     () -> balanceSupplier.get()))
             : either(

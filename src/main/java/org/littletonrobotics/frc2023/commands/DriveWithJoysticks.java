@@ -29,6 +29,8 @@ public class DriveWithJoysticks extends CommandBase {
       new LoggedTunableNumber("DriveWithJoysticks/MinExtensionMaxLinearAcceleration", 10.0);
   public static final LoggedTunableNumber fullExtensionMaxLinearAcceleration =
       new LoggedTunableNumber("DriveWithJoysticks/FullExtensionMaxLinearAcceleration", 3.0);
+  public static final LoggedTunableNumber cubeIntakeMaxLinearAccelerationFactor =
+      new LoggedTunableNumber("DriveWithJoysticks/CubeIntakeMaxLinearAccelerationFactor", 0.6);
   public static final LoggedTunableNumber maxAngularVelocityFullExtensionPercent =
       new LoggedTunableNumber("DriveWithJoysticks/MaxAngularVelocityFullExtensionPercent", 0.3);
   public static final LoggedTunableNumber minExtensionMaxAngularVelocity =
@@ -47,6 +49,7 @@ public class DriveWithJoysticks extends CommandBase {
   private final Supplier<Boolean> sniperModeSupplier;
   private final Supplier<Boolean> robotRelativeOverride;
   private final Supplier<Double> armExtensionPercentSupplier;
+  private final Supplier<Boolean> cubeIntakeExtendedSupplier;
   private ChassisSpeeds lastSpeeds = new ChassisSpeeds();
 
   private static final LoggedDashboardChooser<Double> linearSpeedLimitChooser =
@@ -73,7 +76,8 @@ public class DriveWithJoysticks extends CommandBase {
       Supplier<Double> rightYSupplier,
       Supplier<Boolean> sniperModeSupplier,
       Supplier<Boolean> robotRelativeOverride,
-      Supplier<Double> armExtensionPercentSupplier) {
+      Supplier<Double> armExtensionPercentSupplier,
+      Supplier<Boolean> cubeIntakeExtendedSupplier) {
     addRequirements(drive);
     this.drive = drive;
     this.leftXSupplier = leftXSupplier;
@@ -82,6 +86,7 @@ public class DriveWithJoysticks extends CommandBase {
     this.sniperModeSupplier = sniperModeSupplier;
     this.robotRelativeOverride = robotRelativeOverride;
     this.armExtensionPercentSupplier = armExtensionPercentSupplier;
+    this.cubeIntakeExtendedSupplier = cubeIntakeExtendedSupplier;
   }
 
   @Override
@@ -146,9 +151,12 @@ public class DriveWithJoysticks extends CommandBase {
     // Apply acceleration and velocity limits based on arm extension
     double maxLinearAcceleration =
         MathUtil.interpolate(
-            minExtensionMaxLinearAcceleration.get(),
-            fullExtensionMaxLinearAcceleration.get(),
-            armExtensionPercentSupplier.get());
+                minExtensionMaxLinearAcceleration.get(),
+                fullExtensionMaxLinearAcceleration.get(),
+                armExtensionPercentSupplier.get())
+            * (cubeIntakeExtendedSupplier.get()
+                ? cubeIntakeMaxLinearAccelerationFactor.get()
+                : 1.0);
     double maxAngularVelocity =
         MathUtil.interpolate(
             minExtensionMaxAngularVelocity.get(),

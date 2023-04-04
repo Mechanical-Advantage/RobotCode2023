@@ -70,7 +70,7 @@ public class DriveTrajectory extends CommandBase {
       case ROBOT_2023C:
       case ROBOT_2023P:
         maxVelocityMetersPerSec = Units.inchesToMeters(160.0);
-        maxAccelerationMetersPerSec2 = Units.inchesToMeters(105.0);
+        maxAccelerationMetersPerSec2 = Units.inchesToMeters(95.0);
         maxCentripetalAccelerationMetersPerSec2 = Units.inchesToMeters(150.0);
 
         driveKp.initDefault(6.0);

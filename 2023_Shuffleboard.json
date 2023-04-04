@@ -155,19 +155,6 @@
         "vgap": 16.0,
         "titleType": 0,
         "tiles": {
-          "0,4": {
-            "size": [
-              2,
-              1
-            ],
-            "content": {
-              "_type": "ComboBox Chooser",
-              "_source0": "network_table:///SmartDashboard/Angular Speed Limit",
-              "_title": "Angular Speed Limit",
-              "_glyph": 418,
-              "_showGlyph": false
-            }
-          },
           "2,1": {
             "size": [
               3,
@@ -179,19 +166,6 @@
               "_title": "Alerts",
               "_glyph": 180,
               "_showGlyph": true
-            }
-          },
-          "0,3": {
-            "size": [
-              2,
-              1
-            ],
-            "content": {
-              "_type": "ComboBox Chooser",
-              "_source0": "network_table:///SmartDashboard/Linear Speed Limit",
-              "_title": "Linear Speed Limit",
-              "_glyph": 323,
-              "_showGlyph": false
             }
           },
           "0,0": {
@@ -244,9 +218,35 @@
             ],
             "content": {
               "_type": "Text View",
-              "_source0": "network_table:///SmartDashboard/Endgame Alert Time",
-              "_title": "Endgame Alert Time",
+              "_source0": "network_table:///SmartDashboard/Endgame Alert #1",
+              "_title": "Endgame Alert #1",
               "_glyph": 122,
+              "_showGlyph": true
+            }
+          },
+          "0,3": {
+            "size": [
+              2,
+              1
+            ],
+            "content": {
+              "_type": "Text View",
+              "_source0": "network_table:///SmartDashboard/Endgame Alert #2",
+              "_title": "Endgame Alert #2",
+              "_glyph": 122,
+              "_showGlyph": true
+            }
+          },
+          "0,4": {
+            "size": [
+              2,
+              1
+            ],
+            "content": {
+              "_type": "Text View",
+              "_source0": "network_table:///AdvantageKit/RealMetadata/BatteryName",
+              "_title": "Battery Name",
+              "_glyph": 223,
               "_showGlyph": true
             }
           }
@@ -257,7 +257,7 @@
   "windowGeometry": {
     "x": -5.5,
     "y": 0.0,
-    "width": 758.5,
+    "width": 760.0,
     "height": 846.5
   }
 }

@@ -104,8 +104,10 @@ public class RobotContainer {
       new Alert("Operator controller disconnected (port 1).", AlertType.WARNING);
   private final Alert overrideDisconnected =
       new Alert("Override controller disconnected (port 5).", AlertType.INFO);
-  private final LoggedDashboardNumber endgameAlertTime =
-      new LoggedDashboardNumber("Endgame Alert Time", 30.0);
+  private final LoggedDashboardNumber endgameAlert1 =
+      new LoggedDashboardNumber("Endgame Alert #1", 30.0);
+  private final LoggedDashboardNumber endgameAlert2 =
+      new LoggedDashboardNumber("Endgame Alert #2", 15.0);
 
   // Auto selector
   private final AutoSelector autoSelector = new AutoSelector("Auto");
@@ -219,6 +221,8 @@ public class RobotContainer {
     AutoCommands autoCommands =
         new AutoCommands(drive, arm, gripper, cubeIntake, autoSelector::getResponses);
     autoSelector.addRoutine(
+        "Field: Score Three Combo", List.of(), autoCommands.fieldScoreThreeCombo());
+    autoSelector.addRoutine(
         "Field: Score Link",
         List.of(
             new AutoQuestion(
@@ -238,8 +242,22 @@ public class RobotContainer {
                     AutoQuestionResponse.MID,
                     AutoQuestionResponse.HYBRID)),
             new AutoQuestion(
-                "Balance?", List.of(AutoQuestionResponse.YES, AutoQuestionResponse.NO))),
-        autoCommands.sideScoreTwoGrabMaybeBalance());
+                "End behavior?",
+                List.of(
+                    AutoQuestionResponse.RETURN,
+                    AutoQuestionResponse.BALANCE,
+                    AutoQuestionResponse.BALANCE_THROW))),
+        autoCommands.fieldScoreTwoGrabMaybeBalance());
+    autoSelector.addRoutine(
+        "Wall: Score Two And Grab",
+        List.of(
+            new AutoQuestion(
+                "Which level?",
+                List.of(
+                    AutoQuestionResponse.HIGH,
+                    AutoQuestionResponse.MID,
+                    AutoQuestionResponse.HYBRID))),
+        autoCommands.wallScoreTwoAndGrab());
     autoSelector.addRoutine(
         "Side: Score Two And Maybe Balance",
         List.of(
@@ -331,6 +349,11 @@ public class RobotContainer {
                     AutoQuestionResponse.WALL_SIDE))),
         autoCommands.centerScoreOneAndBalance());
     autoSelector.addRoutine(
+        "Center: Balance",
+        List.of(),
+        Commands.runOnce(() -> drive.setPose(autoCommands.startingLocations[4]))
+            .andThen(autoCommands.driveAndBalance(autoCommands.startingLocations[4], false)));
+    autoSelector.addRoutine(
         "Reach for Inspection",
         List.of(),
         arm.runPathCommand(ArmPose.Preset.SCORE_HIGH_UPRIGHT_CONE));
@@ -352,28 +375,63 @@ public class RobotContainer {
       new Alert("WPI field selected, do not use in competition.", AlertType.INFO).set(true);
     }
 
-    // Endgame alert
+    // Endgame alerts
     new Trigger(
             () ->
                 DriverStation.isTeleopEnabled()
                     && DriverStation.getMatchTime() > 0.0
-                    && DriverStation.getMatchTime() <= Math.round(endgameAlertTime.get()))
+                    && DriverStation.getMatchTime() <= Math.round(endgameAlert1.get()))
         .onTrue(
             Commands.run(
                     () -> {
                       Leds.getInstance().endgameAlert = true;
-                      driver.getHID().setRumble(RumbleType.kRightRumble, 0.75);
-                      operator.getHID().setRumble(RumbleType.kRightRumble, 0.75);
+                      driver.getHID().setRumble(RumbleType.kBothRumble, 1.0);
+                      operator.getHID().setRumble(RumbleType.kBothRumble, 1.0);
                     })
                 .withTimeout(1.5)
                 .andThen(
                     Commands.run(
                             () -> {
                               Leds.getInstance().endgameAlert = false;
-                              driver.getHID().setRumble(RumbleType.kRightRumble, 0.0);
-                              operator.getHID().setRumble(RumbleType.kRightRumble, 0.0);
+                              driver.getHID().setRumble(RumbleType.kBothRumble, 0.0);
+                              operator.getHID().setRumble(RumbleType.kBothRumble, 0.0);
                             })
                         .withTimeout(1.0)));
+    new Trigger(
+            () ->
+                DriverStation.isTeleopEnabled()
+                    && DriverStation.getMatchTime() > 0.0
+                    && DriverStation.getMatchTime() <= Math.round(endgameAlert2.get()))
+        .onTrue(
+            Commands.sequence(
+                Commands.run(
+                        () -> {
+                          Leds.getInstance().endgameAlert = true;
+                          driver.getHID().setRumble(RumbleType.kBothRumble, 1.0);
+                          operator.getHID().setRumble(RumbleType.kBothRumble, 1.0);
+                        })
+                    .withTimeout(0.5),
+                Commands.run(
+                        () -> {
+                          Leds.getInstance().endgameAlert = false;
+                          driver.getHID().setRumble(RumbleType.kBothRumble, 0.0);
+                          operator.getHID().setRumble(RumbleType.kBothRumble, 0.0);
+                        })
+                    .withTimeout(0.5),
+                Commands.run(
+                        () -> {
+                          Leds.getInstance().endgameAlert = true;
+                          driver.getHID().setRumble(RumbleType.kBothRumble, 1.0);
+                          operator.getHID().setRumble(RumbleType.kBothRumble, 1.0);
+                        })
+                    .withTimeout(0.5),
+                Commands.run(
+                        () -> {
+                          Leds.getInstance().endgameAlert = false;
+                          driver.getHID().setRumble(RumbleType.kBothRumble, 0.0);
+                          operator.getHID().setRumble(RumbleType.kBothRumble, 0.0);
+                        })
+                    .withTimeout(1.0)));
 
     // Bind driver and operator controls
     bindControls();
@@ -411,7 +469,8 @@ public class RobotContainer {
                 () -> -driver.getRightX(),
                 () -> sniper,
                 () -> robotRelative.getAsBoolean(),
-                arm::getExtensionPercent);
+                arm::getExtensionPercent,
+                cubeIntake::getExtended);
     Supplier<MoveArmWithJoysticks> moveArmWithJoysticksFactory =
         () ->
             new MoveArmWithJoysticks(

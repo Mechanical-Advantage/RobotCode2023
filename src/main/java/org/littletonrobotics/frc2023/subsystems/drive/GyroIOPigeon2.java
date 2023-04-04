@@ -9,6 +9,7 @@ package org.littletonrobotics.frc2023.subsystems.drive;
 
 import com.ctre.phoenix.ErrorCode;
 import com.ctre.phoenix.sensors.Pigeon2;
+import com.ctre.phoenix.sensors.PigeonIMU_StatusFrame;
 import edu.wpi.first.math.util.Units;
 import org.littletonrobotics.frc2023.Constants;
 
@@ -31,6 +32,7 @@ public class GyroIOPigeon2 implements GyroIO {
     pigeon.configFactoryDefault();
     pigeon.zeroGyroBiasNow();
     pigeon.setYaw(0.0);
+    pigeon.setStatusFramePeriod(PigeonIMU_StatusFrame.BiasedStatus_2_Gyro, 20);
   }
 
   public void updateInputs(GyroIOInputs inputs) {
