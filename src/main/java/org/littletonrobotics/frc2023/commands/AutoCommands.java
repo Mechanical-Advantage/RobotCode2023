@@ -509,7 +509,7 @@ public class AutoCommands {
   }
 
   /** Scores one cone and cube, then optionally balance.s */
-  public Command sideScoreTwoGrabMaybeBalance() {
+  public Command fieldScoreTwoGrabMaybeBalance() {
     Supplier<Boolean> balanceSupplier =
         () -> !responses.get().get(1).equals(AutoQuestionResponse.RETURN);
     Supplier<Boolean> scoreFinalSupplier =
@@ -525,6 +525,21 @@ public class AutoCommands {
             AutoQuestionResponse.HIGH,
             sideScoreTwoMaybeGrabMaybeBalance(
                 true, true, NodeLevel.HIGH, balanceSupplier, scoreFinalSupplier)),
+        () -> responses.get().get(0));
+  }
+
+  /** Scores one cone and cube, then grabs a cube. */
+  public Command wallScoreTwoAndGrab() {
+    return select(
+        Map.of(
+            AutoQuestionResponse.HYBRID,
+            sideScoreTwoMaybeGrabMaybeBalance(
+                false, true, NodeLevel.HYBRID, () -> false, () -> false),
+            AutoQuestionResponse.MID,
+            sideScoreTwoMaybeGrabMaybeBalance(false, true, NodeLevel.MID, () -> false, () -> false),
+            AutoQuestionResponse.HIGH,
+            sideScoreTwoMaybeGrabMaybeBalance(
+                false, true, NodeLevel.HIGH, () -> false, () -> false)),
         () -> responses.get().get(0));
   }
 
@@ -561,7 +576,7 @@ public class AutoCommands {
   }
 
   /** Scores one cone and cube, then optionally balance.s */
-  public Command sideScoreTwoMaybeGrabMaybeBalance(
+  private Command sideScoreTwoMaybeGrabMaybeBalance(
       boolean fieldSide,
       boolean grabThird,
       NodeLevel level,

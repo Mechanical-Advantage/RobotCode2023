@@ -64,7 +64,6 @@ import org.littletonrobotics.frc2023.subsystems.objectivetracker.NodeSelectorIO;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.NodeSelectorIOServer;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.Direction;
-import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.NodeLevel;
 import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
@@ -248,12 +247,17 @@ public class RobotContainer {
                     AutoQuestionResponse.RETURN,
                     AutoQuestionResponse.BALANCE,
                     AutoQuestionResponse.BALANCE_THROW))),
-        autoCommands.sideScoreTwoGrabMaybeBalance());
+        autoCommands.fieldScoreTwoGrabMaybeBalance());
     autoSelector.addRoutine(
-        "Wall: Score Two High And Grab",
-        List.of(),
-        autoCommands.sideScoreTwoMaybeGrabMaybeBalance(
-            false, true, NodeLevel.HIGH, () -> false, () -> false));
+        "Wall: Score Two And Grab",
+        List.of(
+            new AutoQuestion(
+                "Which level?",
+                List.of(
+                    AutoQuestionResponse.HIGH,
+                    AutoQuestionResponse.MID,
+                    AutoQuestionResponse.HYBRID))),
+        autoCommands.wallScoreTwoAndGrab());
     autoSelector.addRoutine(
         "Side: Score Two And Maybe Balance",
         List.of(
