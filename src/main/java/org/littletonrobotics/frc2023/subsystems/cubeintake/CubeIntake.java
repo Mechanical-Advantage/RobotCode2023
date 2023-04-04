@@ -168,6 +168,7 @@ public class CubeIntake extends SubsystemBase {
         rootPosition.getX(), 0.0, rootPosition.getY(), new Rotation3d(0.0, -angle, 0.0));
   }
 
+  /** Returns whether the intake is extended. */
   public boolean getExtended() {
     return isRunning || forceExtendSupplier.get();
   }
