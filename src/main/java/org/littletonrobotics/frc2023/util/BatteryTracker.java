@@ -16,9 +16,9 @@ import org.littletonrobotics.frc2023.Constants.RobotType;
 
 public class BatteryTracker {
   private static final List<RobotType> supportedRobots = List.of(RobotType.ROBOT_2023C);
-  public static final String defaultName = "BAT-0000-000";
+  public static final String defaultName = "0000-000";
 
-  private static final int nameLength = 12;
+  private static final int nameLength = 8;
   private static final byte[] scanCommand =
       new byte[] {0x7e, 0x00, 0x08, 0x01, 0x00, 0x02, 0x01, (byte) 0xab, (byte) 0xcd};
   private static final byte[] responsePrefix =
