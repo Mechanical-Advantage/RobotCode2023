@@ -55,8 +55,8 @@ public class AutoScore extends SequentialCommandGroup {
   public static final Rotation2d hybridWristAngle = new Rotation2d();
   public static final Translation2d cubeMidRelativePosition = new Translation2d(-0.4, 0.5);
   public static final Rotation2d cubeMidWristAngle = Rotation2d.fromDegrees(-30.0);
-  public static final Translation2d cubeHighRelativePosition = new Translation2d(-0.5, 0.2);
-  public static final Rotation2d cubeHighWristAngle = Rotation2d.fromDegrees(45.0);
+  public static final Translation2d cubeHighRelativePosition = new Translation2d(-0.6, 0.5);
+  public static final Rotation2d cubeHighWristAngle = Rotation2d.fromDegrees(-10.0);
   public static final Translation2d uprightConeRelativePosition = new Translation2d(-0.3, -0.025);
   public static final Rotation2d uprightConeWristAngle = Rotation2d.fromDegrees(55.0);
   public static final Translation2d tippedConeRelativePosition = new Translation2d(-0.29, -0.13);
@@ -104,7 +104,7 @@ public class AutoScore extends SequentialCommandGroup {
                   objective,
                   arm,
                   reachScoreEnable.get());
-          Pose2d currentPose = drive.getPose();
+          Pose2d currentPose = AllianceFlipUtil.apply(drive.getPose());
           double intermediateY =
               currentPose.getY()
                       > (FieldConstants.Community.chargingStationLeftY
@@ -124,19 +124,21 @@ public class AutoScore extends SequentialCommandGroup {
             double intermediateX =
                 MathUtil.interpolate(
                     FieldConstants.Community.chargingStationInnerX, targetPose.getX(), t);
-            return new Pose2d(intermediateX, intermediateY, targetPose.getRotation());
+            return AllianceFlipUtil.apply(
+                new Pose2d(intermediateX, intermediateY, targetPose.getRotation()));
           } else if (currentPose.getX() > FieldConstants.Community.chargingStationInnerX - 0.8) {
             double t =
                 (currentPose.getX() - (FieldConstants.Community.chargingStationInnerX - 0.8))
                     / (FieldConstants.Community.chargingStationInnerX
                         - (FieldConstants.Community.chargingStationInnerX - 0.8));
             t = 1.0 - MathUtil.clamp(t, 0.0, 1.0);
-            return new Pose2d(
-                targetPose.getX(),
-                MathUtil.interpolate(intermediateY, targetPose.getY(), t),
-                targetPose.getRotation());
+            return AllianceFlipUtil.apply(
+                new Pose2d(
+                    targetPose.getX(),
+                    MathUtil.interpolate(intermediateY, targetPose.getY(), t),
+                    targetPose.getRotation()));
           } else {
-            return targetPose;
+            return AllianceFlipUtil.apply(targetPose);
           }
         };
     Supplier<ArmPose> armTargetSupplier =
@@ -171,7 +173,9 @@ public class AutoScore extends SequentialCommandGroup {
                     .andThen(
                         Commands.waitUntil(
                             () ->
-                                driveToPose.withinTolerance(
+                                AllianceFlipUtil.apply(drive.getPose().getX())
+                                        < FieldConstants.Community.chargingStationInnerX - 0.2
+                                    && driveToPose.withinTolerance(
                                         extendArmDriveTolerance, extendArmThetaTolerance)
                                     && Math.abs(drive.getPitch().getRadians())
                                         < extendArmTippingTolerancePosition.getRadians()
