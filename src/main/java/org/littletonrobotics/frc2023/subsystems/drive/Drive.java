@@ -330,6 +330,11 @@ public class Drive extends SubsystemBase {
     return new Rotation2d(gyroInputs.rollPositionRad);
   }
 
+  /** Returns the current yaw velocity (Z rotation) in radians per second. */
+  public double getYawVelocity() {
+    return gyroInputs.yawVelocityRadPerSec;
+  }
+
   /** Returns the current pitch velocity (Y rotation) in radians per second. */
   public double getPitchVelocity() {
     return gyroInputs.pitchVelocityRadPerSec;

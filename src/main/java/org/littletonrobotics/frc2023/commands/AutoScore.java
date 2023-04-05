@@ -97,13 +97,48 @@ public class AutoScore extends SequentialCommandGroup {
 
     // Create target suppliers
     Supplier<Pose2d> driveTargetSupplier =
-        () ->
-            AllianceFlipUtil.apply( // Flip
-                getDriveTarget(
-                    AllianceFlipUtil.apply(drive.getPose()), // Unflip
-                    objective,
-                    arm,
-                    reachScoreEnable.get()));
+        () -> {
+          Pose2d targetPose =
+              getDriveTarget(
+                  AllianceFlipUtil.apply(drive.getPose()), // Unflip
+                  objective,
+                  arm,
+                  reachScoreEnable.get());
+          Pose2d currentPose = drive.getPose();
+          double intermediateY =
+              currentPose.getY()
+                      > (FieldConstants.Community.chargingStationLeftY
+                              + FieldConstants.Community.chargingStationRightY)
+                          / 2.0
+                  ? (FieldConstants.Community.leftY + FieldConstants.Community.chargingStationLeftY)
+                      / 2.0
+                  : (FieldConstants.Community.rightY
+                          + FieldConstants.Community.chargingStationRightY)
+                      / 2.0;
+          if (currentPose.getX() > FieldConstants.Community.chargingStationInnerX) {
+            double t =
+                (currentPose.getX() - FieldConstants.Community.chargingStationInnerX)
+                    / (FieldConstants.Community.chargingStationOuterX
+                        - FieldConstants.Community.chargingStationInnerX);
+            t = 1.0 - MathUtil.clamp(t, 0.0, 1.0);
+            double intermediateX =
+                MathUtil.interpolate(
+                    FieldConstants.Community.chargingStationInnerX, targetPose.getX(), t);
+            return new Pose2d(intermediateX, intermediateY, targetPose.getRotation());
+          } else if (currentPose.getX() > FieldConstants.Community.chargingStationInnerX - 0.8) {
+            double t =
+                (currentPose.getX() - (FieldConstants.Community.chargingStationInnerX - 0.8))
+                    / (FieldConstants.Community.chargingStationInnerX
+                        - (FieldConstants.Community.chargingStationInnerX - 0.8));
+            t = 1.0 - MathUtil.clamp(t, 0.0, 1.0);
+            return new Pose2d(
+                targetPose.getX(),
+                MathUtil.interpolate(intermediateY, targetPose.getY(), t),
+                targetPose.getRotation());
+          } else {
+            return targetPose;
+          }
+        };
     Supplier<ArmPose> armTargetSupplier =
         () ->
             getArmTarget(
@@ -157,7 +192,7 @@ public class AutoScore extends SequentialCommandGroup {
     // Combine all commands
     addCommands(
         Commands.either(
-                Commands.waitUntil(() -> arm.isTrajectoryFinished() && driveToPose.atGoal()),
+                Commands.waitUntil(() -> arm.isTrajectoryFinished() && !driveToPose.isRunning()),
                 Commands.waitUntil(() -> ejectButton.get()),
                 () -> autoEject.get() && !fullManual.get())
             .deadlineWith(driveCommand, armCommand)

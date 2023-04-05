@@ -7,6 +7,7 @@
 
 package org.littletonrobotics.frc2023.commands;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -20,6 +21,7 @@ import org.littletonrobotics.frc2023.Constants;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
 import org.littletonrobotics.frc2023.util.GeomUtil;
 import org.littletonrobotics.frc2023.util.LoggedTunableNumber;
+import org.littletonrobotics.junction.Logger;
 
 public class DriveToPose extends CommandBase {
   private final Drive drive;
@@ -34,6 +36,7 @@ public class DriveToPose extends CommandBase {
           0.0, 0.0, 0.0, new TrapezoidProfile.Constraints(0.0, 0.0), Constants.loopPeriodSecs);
   private double driveErrorAbs;
   private double thetaErrorAbs;
+  private Translation2d lastSetpointTranslation;
 
   private static final LoggedTunableNumber driveKp = new LoggedTunableNumber("DriveToPose/DriveKp");
   private static final LoggedTunableNumber driveKd = new LoggedTunableNumber("DriveToPose/DriveKd");
@@ -51,6 +54,10 @@ public class DriveToPose extends CommandBase {
       new LoggedTunableNumber("DriveToPose/DriveTolerance");
   private static final LoggedTunableNumber thetaTolerance =
       new LoggedTunableNumber("DriveToPose/ThetaTolerance");
+  private static final LoggedTunableNumber ffMinRadius =
+      new LoggedTunableNumber("DriveToPose/FFMinRadius");
+  private static final LoggedTunableNumber ffMaxRadius =
+      new LoggedTunableNumber("DriveToPose/FFMinRadius");
 
   static {
     switch (Constants.getRobot()) {
@@ -62,11 +69,13 @@ public class DriveToPose extends CommandBase {
         thetaKp.initDefault(5.0);
         thetaKd.initDefault(0.0);
         driveMaxVelocity.initDefault(Units.inchesToMeters(150.0));
-        driveMaxAcceleration.initDefault(Units.inchesToMeters(450.0));
+        driveMaxAcceleration.initDefault(Units.inchesToMeters(120.0));
         thetaMaxVelocity.initDefault(Units.degreesToRadians(360.0));
         thetaMaxAcceleration.initDefault(Units.degreesToRadians(720.0));
         driveTolerance.initDefault(0.01);
         thetaTolerance.initDefault(Units.degreesToRadians(1.0));
+        ffMinRadius.initDefault(0.2);
+        ffMaxRadius.initDefault(0.8);
       default:
         break;
     }
@@ -90,8 +99,9 @@ public class DriveToPose extends CommandBase {
     // Reset all controllers
     var currentPose = drive.getPose();
     driveController.reset(
-        new TrapezoidProfile.State(
-            currentPose.getTranslation().getDistance(poseSupplier.get().getTranslation()),
+        currentPose.getTranslation().getDistance(poseSupplier.get().getTranslation()),
+        Math.min(
+            0.0,
             -new Translation2d(drive.getFieldVelocity().dx, drive.getFieldVelocity().dy)
                 .rotateBy(
                     poseSupplier
@@ -101,7 +111,8 @@ public class DriveToPose extends CommandBase {
                         .getAngle()
                         .unaryMinus())
                 .getX()));
-    thetaController.reset(currentPose.getRotation().getRadians());
+    thetaController.reset(currentPose.getRotation().getRadians(), drive.getYawVelocity());
+    lastSetpointTranslation = drive.getPose().getTranslation();
   }
 
   @Override
@@ -132,14 +143,32 @@ public class DriveToPose extends CommandBase {
     // Calculate drive speed
     double currentDistance =
         currentPose.getTranslation().getDistance(poseSupplier.get().getTranslation());
+    double ffScaler =
+        MathUtil.clamp(
+            (currentDistance - ffMinRadius.get()) / (ffMaxRadius.get() - ffMinRadius.get()),
+            0.0,
+            1.0);
     driveErrorAbs = currentDistance;
-    double driveVelocityScalar = driveController.calculate(driveErrorAbs, 0.0);
+    driveController.reset(
+        lastSetpointTranslation.getDistance(targetPose.getTranslation()),
+        driveController.getSetpoint().velocity);
+    double driveVelocityScalar =
+        driveController.getSetpoint().velocity * ffScaler
+            + driveController.calculate(driveErrorAbs, 0.0);
     if (driveController.atGoal()) driveVelocityScalar = 0.0;
+    lastSetpointTranslation =
+        new Pose2d(
+                targetPose.getTranslation(),
+                currentPose.getTranslation().minus(targetPose.getTranslation()).getAngle())
+            .transformBy(
+                GeomUtil.translationToTransform(driveController.getSetpoint().position, 0.0))
+            .getTranslation();
 
     // Calculate theta speed
     double thetaVelocity =
-        thetaController.calculate(
-            currentPose.getRotation().getRadians(), targetPose.getRotation().getRadians());
+        thetaController.getSetpoint().velocity * ffScaler
+            + thetaController.calculate(
+                currentPose.getRotation().getRadians(), targetPose.getRotation().getRadians());
     thetaErrorAbs =
         Math.abs(currentPose.getRotation().minus(targetPose.getRotation()).getRadians());
     if (thetaController.atGoal()) thetaVelocity = 0.0;
@@ -154,12 +183,29 @@ public class DriveToPose extends CommandBase {
     drive.runVelocity(
         ChassisSpeeds.fromFieldRelativeSpeeds(
             driveVelocity.getX(), driveVelocity.getY(), thetaVelocity, currentPose.getRotation()));
+
+    // Log data
+    Logger.getInstance().recordOutput("DriveToPose/DistanceMeasured", currentDistance);
+    Logger.getInstance()
+        .recordOutput("DriveToPose/DistanceSetpoint", driveController.getSetpoint().position);
+    Logger.getInstance()
+        .recordOutput("DriveToPose/ThetaMeasured", currentPose.getRotation().getRadians());
+    Logger.getInstance()
+        .recordOutput("DriveToPose/ThetaSetpoint", thetaController.getSetpoint().position);
+    Logger.getInstance()
+        .recordOutput(
+            "Odometry/DriveToPoseSetpoint",
+            new Pose2d(
+                lastSetpointTranslation, new Rotation2d(thetaController.getSetpoint().position)));
+    Logger.getInstance().recordOutput("Odometry/DriveToPoseGoal", targetPose);
   }
 
   @Override
   public void end(boolean interrupted) {
     running = false;
     drive.stop();
+    Logger.getInstance().recordOutput("Odometry/DriveToPoseSetpoint", new double[] {});
+    Logger.getInstance().recordOutput("Odometry/DriveToPoseGoal", new double[] {});
   }
 
   /** Checks if the robot is stopped at the final pose. */
