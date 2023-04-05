@@ -309,7 +309,11 @@ public class AutoCommands {
                                 ? ArmPose.Preset.FLOOR_CONE
                                 : ArmPose.Preset.CUBE_HANDOFF)))
             .deadlineWith(
-                gripper.intakeCommand(),
+                Commands.waitUntil(
+                        () ->
+                            AllianceFlipUtil.apply(drive.getPose().getX())
+                                > FieldConstants.Community.chargingStationOuterX)
+                    .andThen(gripper.intakeCommand()),
                 (objective.isConeNode() ? none() : cubeIntake.runCommand())),
         new Pose2d(
             waypoints.get(waypoints.size() - 1).getTranslation(),
