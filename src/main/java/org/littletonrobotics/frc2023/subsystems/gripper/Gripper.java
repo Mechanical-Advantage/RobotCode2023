@@ -35,7 +35,7 @@ public class Gripper extends SubsystemBase {
   private static final LoggedTunableNumber intakeVelocityWaitStart =
       new LoggedTunableNumber("Gripper/IntakeVelocityWaitStart", 0.3);
   private static final LoggedTunableNumber intakeVelocityWaitStop =
-      new LoggedTunableNumber("Gripper/IntakeVelocityWaitStop", 0.5);
+      new LoggedTunableNumber("Gripper/IntakeVelocityWaitStop", 0.6);
   private static final LoggedTunableNumber intakeStopVelocity =
       new LoggedTunableNumber("Gripper/IntakeStopVelocity", 0.4);
   private static final LoggedTunableNumber ejectVoltsVeryFast =
