@@ -524,7 +524,7 @@ public class RobotContainer {
     driver
         .leftTrigger()
         .whileTrue(
-            new DriveToSubstation(drive, () -> operator.getHID().getXButton())
+            new DriveToSubstation(drive, () -> !operator.a().getAsBoolean())
                 .deadlineWith(
                     Commands.startEnd(
                         () -> Leds.getInstance().autoSubstation = true,
