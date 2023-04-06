@@ -74,6 +74,8 @@ public class AutoCommands {
   public static final double slowScoreMaxVelocity = Units.inchesToMeters(40.0);
   public static final Transform2d secondCubeScoreTransform =
       new Transform2d(new Translation2d(0.1, 0.0), new Rotation2d());
+  public static final Transform2d secondCubeIntakeTransform =
+      new Transform2d(new Translation2d(0.0, -0.15), new Rotation2d());
 
   // Waypoints
   public final Pose2d[] startingLocations = new Pose2d[9];
@@ -460,7 +462,9 @@ public class AutoCommands {
     var score1Sequence =
         driveAndScore(
             objective1, true, false, false, intake0Sequence.pose(), true, secondCubeScoreTransform);
-    var intake2Sequence = driveAndIntake(objective2, true, 2, score1Sequence.pose(), false);
+    var intake2Sequence =
+        driveAndIntake(
+            objective2, true, 2, score1Sequence.pose(), false, secondCubeIntakeTransform);
     var score2Sequence =
         driveAndScore(objective2, true, false, false, intake2Sequence.pose(), true);
     return sequence(
@@ -496,7 +500,9 @@ public class AutoCommands {
     var score1Sequence =
         driveAndScore(
             objective1, true, false, false, intake0Sequence.pose(), true, secondCubeScoreTransform);
-    var intake2Sequence = driveAndIntake(objective2, true, 2, score1Sequence.pose(), false);
+    var intake2Sequence =
+        driveAndIntake(
+            objective2, true, 2, score1Sequence.pose(), false, secondCubeIntakeTransform);
     var score2Sequence =
         driveAndScore(
             objective2, true, false, level != NodeLevel.HYBRID, intake2Sequence.pose(), true);
@@ -608,7 +614,13 @@ public class AutoCommands {
 
     // Third grab sequences (field side only)
     var intake2Sequence =
-        driveAndIntake(objective2, fieldSide, fieldSide ? 2 : 1, score1Sequence.pose(), false);
+        driveAndIntake(
+            objective2,
+            fieldSide,
+            fieldSide ? 2 : 1,
+            score1Sequence.pose(),
+            false,
+            secondCubeIntakeTransform);
     var returnWaypoints =
         List.of(
             Waypoint.fromHolonomicPose(intake2Sequence.pose()),
