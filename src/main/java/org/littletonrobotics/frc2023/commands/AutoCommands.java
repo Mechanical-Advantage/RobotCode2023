@@ -72,6 +72,8 @@ public class AutoCommands {
   public static final double chargingStationMaxVelocity = Units.inchesToMeters(40.0);
   public static final double slowScoreConstraintRadius = 0.75;
   public static final double slowScoreMaxVelocity = Units.inchesToMeters(40.0);
+  public static final Transform2d secondCubeScoreTransform =
+      new Transform2d(new Translation2d(0.1, 0.0), new Rotation2d());
 
   // Waypoints
   public final Pose2d[] startingLocations = new Pose2d[9];
@@ -435,7 +437,7 @@ public class AutoCommands {
     Pose2d position1 =
         new Pose2d(
             (Community.chargingStationOuterX + Community.chargingStationInnerX) / 2.0
-                + (enterFront ? 0.35 : -0.35),
+                + (enterFront ? 0.4 : -0.4),
             position0.getY(),
             position0.getRotation());
     return path(
@@ -457,13 +459,7 @@ public class AutoCommands {
     var intake0Sequence = driveAndIntake(objective1, true, 3, score0Sequence.pose(), true);
     var score1Sequence =
         driveAndScore(
-            objective1,
-            true,
-            false,
-            false,
-            intake0Sequence.pose(),
-            true,
-            new Transform2d(new Translation2d(0.1, 0.0), new Rotation2d()));
+            objective1, true, false, false, intake0Sequence.pose(), true, secondCubeScoreTransform);
     var intake2Sequence = driveAndIntake(objective2, true, 2, score1Sequence.pose(), false);
     var score2Sequence =
         driveAndScore(objective2, true, false, false, intake2Sequence.pose(), true);
@@ -498,7 +494,8 @@ public class AutoCommands {
     var score0Sequence = driveAndScore(objective0, true, true, false, startingPose, true);
     var intake0Sequence = driveAndIntake(objective1, true, 3, score0Sequence.pose(), true);
     var score1Sequence =
-        driveAndScore(objective1, true, false, false, intake0Sequence.pose(), true);
+        driveAndScore(
+            objective1, true, false, false, intake0Sequence.pose(), true, secondCubeScoreTransform);
     var intake2Sequence = driveAndIntake(objective2, true, 2, score1Sequence.pose(), false);
     var score2Sequence =
         driveAndScore(
@@ -600,7 +597,14 @@ public class AutoCommands {
             false,
             fieldSide ? new Transform2d() : cubeWallSideOffset);
     var score1Sequence =
-        driveAndScore(objective1, fieldSide, false, false, intake1Sequence.pose(), false);
+        driveAndScore(
+            objective1,
+            fieldSide,
+            false,
+            false,
+            intake1Sequence.pose(),
+            false,
+            secondCubeScoreTransform);
 
     // Third grab sequences (field side only)
     var intake2Sequence =
@@ -865,12 +869,16 @@ public class AutoCommands {
                 driveAndBalance(intakePoseWall, false),
                 () -> fieldSideSupplier.get())
             .alongWith(
-                arm.runPathCommand(
-                    () ->
-                        scoreFinalSupplier.get()
-                            ? ArmPose.Preset.THROW.getPose()
-                            : ArmPose.Preset.HOMED.getPose())),
-        either(gripper.ejectCommand(EjectSpeed.VERY_FAST), none(), () -> scoreFinalSupplier.get()));
+                either(
+                    arm.runPathCommand(() -> ArmPose.Preset.THROW.getPose())
+                        .andThen(
+                            waitUntil(
+                                () ->
+                                    AllianceFlipUtil.apply(drive.getPose().getX())
+                                        < FieldConstants.Community.chargingStationOuterX - 0.5),
+                            gripper.ejectCommand(EjectSpeed.VERY_FAST)),
+                    armToHome(),
+                    () -> scoreFinalSupplier.get())));
   }
 
   /** Scores one game piece, gets mobility over the charge station, and balances */
