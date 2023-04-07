@@ -126,7 +126,7 @@ public class AutoScore extends SequentialCommandGroup {
                   : (FieldConstants.Community.rightY
                           + FieldConstants.Community.chargingStationRightY)
                       / 2.0;
-          if (currentPose.getX() > FieldConstants.Community.chargingStationInnerX) {
+          if (currentPose.getX() > FieldConstants.Community.chargingStationInnerX - 0.3) {
             double t =
                 (currentPose.getX() - FieldConstants.Community.chargingStationInnerX)
                     / (FieldConstants.Community.chargingStationOuterX
@@ -140,7 +140,7 @@ public class AutoScore extends SequentialCommandGroup {
           } else if (currentPose.getX() > FieldConstants.Community.chargingStationInnerX - 0.8) {
             double t =
                 (currentPose.getX() - (FieldConstants.Community.chargingStationInnerX - 0.8))
-                    / (FieldConstants.Community.chargingStationInnerX
+                    / ((FieldConstants.Community.chargingStationInnerX - 0.3)
                         - (FieldConstants.Community.chargingStationInnerX - 0.8));
             t = 1.0 - MathUtil.clamp(t, 0.0, 1.0);
             return AllianceFlipUtil.apply(
@@ -186,8 +186,9 @@ public class AutoScore extends SequentialCommandGroup {
                             () ->
                                 AllianceFlipUtil.apply(drive.getPose().getX())
                                         < FieldConstants.Community.chargingStationInnerX - 0.2
-                                    && driveToPose.withinTolerance(
-                                        extendArmDriveTolerance, extendArmThetaTolerance)
+                                    && (driveToPose.withinTolerance(
+                                            extendArmDriveTolerance, extendArmThetaTolerance)
+                                        || !driveToPose.isRunning())
                                     && Math.abs(drive.getPitch().getRadians())
                                         < extendArmTippingTolerancePosition.getRadians()
                                     && Math.abs(drive.getRoll().getRadians())

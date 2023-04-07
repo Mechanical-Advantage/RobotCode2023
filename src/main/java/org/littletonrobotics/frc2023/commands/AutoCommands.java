@@ -73,7 +73,7 @@ public class AutoCommands {
   public static final double slowScoreConstraintRadius = 0.75;
   public static final double slowScoreMaxVelocity = Units.inchesToMeters(40.0);
   public static final Transform2d secondCubeScoreTransform =
-      new Transform2d(new Translation2d(0.1, 0.0), new Rotation2d());
+      new Transform2d(new Translation2d(0.2, 0.0), new Rotation2d());
   public static final Transform2d secondCubeIntakeTransform =
       new Transform2d(new Translation2d(0.0, -0.15), new Rotation2d());
 
