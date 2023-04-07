@@ -63,7 +63,7 @@ public class AutoCommands {
   // Constants
   public static final boolean reachScoring = false;
   public static final double startX = Grids.outerX + 0.38;
-  public static final double cubeIntakeDistance = 0.5;
+  public static final double cubeIntakeDistance = 0.45;
   public static final Transform2d cubeWallSideOffset =
       new Transform2d(new Translation2d(0.25, -0.15), new Rotation2d());
   public static final double coneSweeperDistance = 0.1;
