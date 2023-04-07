@@ -17,6 +17,8 @@ import org.littletonrobotics.frc2023.subsystems.gripper.Gripper;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.Objective;
 
 public class IntakeSubstation extends SequentialCommandGroup {
+  private boolean gripperIntaking = false;
+
   /** Holds the arm at the position for the a substation and runs the gripper. */
   public IntakeSubstation(
       boolean single, Arm arm, Drive drive, Gripper gripper, Objective objective) {
@@ -30,7 +32,13 @@ public class IntakeSubstation extends SequentialCommandGroup {
             Rotation2d.fromDegrees(single ? 90.0 : 0.0));
     addCommands(
         armCommand.alongWith(
-            gripper.intakeCommand(),
+            Commands.runOnce(() -> gripperIntaking = true),
+            gripper.intakeCommand().finallyDo((boolean interrupted) -> gripperIntaking = false),
             Commands.run(() -> objective.lastIntakeFront = !armCommand.isFlipped())));
+  }
+
+  /** Returns whether the game piece is currently grabbed. */
+  public boolean isGrabbed() {
+    return isScheduled() && !gripperIntaking;
   }
 }
