@@ -51,7 +51,7 @@ public class Arm extends SubsystemBase {
   public static final double shiftCenterMarginMeters = 0.05;
   public static final double wristGroundMarginMeters = 0.05;
   public static final double[] cubeIntakeAvoidanceRect = new double[] {0.1, 0.0, 0.75, 0.65};
-  public static final double[] passthroughConstraintRect = new double[] {-0.2, 0.0, 0.4, 5.0};
+  public static final double[] passthroughConstraintRect = new double[] {-0.2, 0.0, 0.35, 5.0};
   public static final double passthroughConstraintWristRange = Units.degreesToRadians(65.0);
   public static final double nodeConstraintMinY =
       0.8; // If target or start is above this y, enable node constraints
