@@ -105,6 +105,17 @@ public class AutoScore extends SequentialCommandGroup {
                   arm,
                   reachScoreEnable.get());
           Pose2d currentPose = AllianceFlipUtil.apply(drive.getPose());
+          double shiftT =
+              MathUtil.clamp(
+                  (Math.abs(currentPose.getY() - targetPose.getY()) - 0.5) / (2.0 - 0.5), 0.0, 1.0);
+          Pose2d shiftedTargetPose =
+              new Pose2d(
+                  MathUtil.clamp(
+                      targetPose.getX() + shiftT * 1.0,
+                      0.0,
+                      FieldConstants.Community.chargingStationInnerX - 0.8),
+                  targetPose.getY(),
+                  targetPose.getRotation());
           double intermediateY =
               currentPose.getY()
                       > (FieldConstants.Community.chargingStationLeftY
@@ -123,9 +134,9 @@ public class AutoScore extends SequentialCommandGroup {
             t = 1.0 - MathUtil.clamp(t, 0.0, 1.0);
             double intermediateX =
                 MathUtil.interpolate(
-                    FieldConstants.Community.chargingStationInnerX, targetPose.getX(), t);
+                    FieldConstants.Community.chargingStationInnerX, shiftedTargetPose.getX(), t);
             return AllianceFlipUtil.apply(
-                new Pose2d(intermediateX, intermediateY, targetPose.getRotation()));
+                new Pose2d(intermediateX, intermediateY, shiftedTargetPose.getRotation()));
           } else if (currentPose.getX() > FieldConstants.Community.chargingStationInnerX - 0.8) {
             double t =
                 (currentPose.getX() - (FieldConstants.Community.chargingStationInnerX - 0.8))
@@ -134,11 +145,11 @@ public class AutoScore extends SequentialCommandGroup {
             t = 1.0 - MathUtil.clamp(t, 0.0, 1.0);
             return AllianceFlipUtil.apply(
                 new Pose2d(
-                    targetPose.getX(),
-                    MathUtil.interpolate(intermediateY, targetPose.getY(), t),
-                    targetPose.getRotation()));
+                    shiftedTargetPose.getX(),
+                    MathUtil.interpolate(intermediateY, shiftedTargetPose.getY(), t),
+                    shiftedTargetPose.getRotation()));
           } else {
-            return AllianceFlipUtil.apply(targetPose);
+            return AllianceFlipUtil.apply(shiftedTargetPose);
           }
         };
     Supplier<ArmPose> armTargetSupplier =
