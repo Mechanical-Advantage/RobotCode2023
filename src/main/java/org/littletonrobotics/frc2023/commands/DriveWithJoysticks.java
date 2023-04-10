@@ -28,7 +28,7 @@ public class DriveWithJoysticks extends CommandBase {
   public static final LoggedTunableNumber minExtensionMaxLinearAcceleration =
       new LoggedTunableNumber("DriveWithJoysticks/MinExtensionMaxLinearAcceleration", 10.0);
   public static final LoggedTunableNumber fullExtensionMaxLinearAcceleration =
-      new LoggedTunableNumber("DriveWithJoysticks/FullExtensionMaxLinearAcceleration", 3.0);
+      new LoggedTunableNumber("DriveWithJoysticks/FullExtensionMaxLinearAcceleration", 4.5);
   public static final LoggedTunableNumber cubeIntakeMaxLinearAccelerationFactor =
       new LoggedTunableNumber("DriveWithJoysticks/CubeIntakeMaxLinearAccelerationFactor", 0.6);
   public static final LoggedTunableNumber maxAngularVelocityFullExtensionPercent =

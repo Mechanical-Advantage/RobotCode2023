@@ -108,9 +108,9 @@ public record ArmPose(Translation2d endEffectorPosition, Rotation2d globalWristA
             Rotation2d.fromDegrees(30.0))),
     DOUBLE_SUBTATION(
         new ArmPose(
-            new Translation2d(0.49, FieldConstants.LoadingZone.doubleSubstationShelfZ + 0.165),
+            new Translation2d(0.49, FieldConstants.LoadingZone.doubleSubstationShelfZ + 0.18),
             new Rotation2d())),
-    CUBE_HANDOFF(new ArmPose(new Translation2d(0.42, 0.58), Rotation2d.fromDegrees(-85.0)), false),
+    CUBE_HANDOFF(new ArmPose(new Translation2d(0.44, 0.62), Rotation2d.fromDegrees(-80.0)), false),
     FLOOR_CONE(new ArmPose(new Translation2d(-0.55, 0.25), Rotation2d.fromDegrees(-165.0)), false),
     EJECT(new ArmPose(new Translation2d(0.25, 0.7), Rotation2d.fromDegrees(-10.0))),
     THROW(new ArmPose(new Translation2d(0.45, 0.85), Rotation2d.fromDegrees(20.0)));

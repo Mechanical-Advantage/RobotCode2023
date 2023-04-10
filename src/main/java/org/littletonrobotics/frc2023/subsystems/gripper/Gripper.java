@@ -29,13 +29,13 @@ public class Gripper extends SubsystemBase {
   private final GripperIOInputsAutoLogged inputs = new GripperIOInputsAutoLogged();
 
   private static final LoggedTunableNumber holdVolts =
-      new LoggedTunableNumber("Gripper/HoldVolts", 1.2);
+      new LoggedTunableNumber("Gripper/HoldVolts", 1.35);
   private static final LoggedTunableNumber intakeVolts =
       new LoggedTunableNumber("Gripper/IntakeVolts", 12.0);
   private static final LoggedTunableNumber intakeVelocityWaitStart =
       new LoggedTunableNumber("Gripper/IntakeVelocityWaitStart", 0.3);
   private static final LoggedTunableNumber intakeVelocityWaitStop =
-      new LoggedTunableNumber("Gripper/IntakeVelocityWaitStop", 0.5);
+      new LoggedTunableNumber("Gripper/IntakeVelocityWaitStop", 0.6);
   private static final LoggedTunableNumber intakeStopVelocity =
       new LoggedTunableNumber("Gripper/IntakeStopVelocity", 0.4);
   private static final LoggedTunableNumber ejectVoltsVeryFast =
