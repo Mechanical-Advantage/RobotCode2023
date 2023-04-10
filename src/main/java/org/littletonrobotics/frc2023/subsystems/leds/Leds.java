@@ -55,7 +55,7 @@ public class Leds extends VirtualSubsystem {
   private final AddressableLEDBuffer buffer;
 
   // Constants
-  private static final boolean prideLeds = false;
+  private static final boolean prideLeds = true;
   private static final int minLoopCycleCount = 10;
   private static final int length = 43;
   private static final int staticLength = 14;
