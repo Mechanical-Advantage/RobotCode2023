@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj.AddressableLED;
 import edu.wpi.first.wpilibj.AddressableLEDBuffer;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.util.Color;
 import java.util.List;
@@ -53,6 +54,7 @@ public class Leds extends VirtualSubsystem {
   // LED IO
   private final AddressableLED leds;
   private final AddressableLEDBuffer buffer;
+  private final Notifier loadingNotifier;
 
   // Constants
   private static final boolean prideLeds = true;
@@ -82,9 +84,23 @@ public class Leds extends VirtualSubsystem {
     leds.setLength(length);
     leds.setData(buffer);
     leds.start();
+    loadingNotifier =
+        new Notifier(
+            () -> {
+              synchronized (this) {
+                breath(
+                    Section.STATIC_LOW,
+                    Color.kWhite,
+                    Color.kBlack,
+                    0.25,
+                    System.currentTimeMillis() / 1000.0);
+                leds.setData(buffer);
+              }
+            });
+    loadingNotifier.startPeriodic(0.02);
   }
 
-  public void periodic() {
+  public synchronized void periodic() {
     // Update alliance color
     if (DriverStation.isFMSAttached()) {
       alliance = DriverStation.getAlliance();
@@ -103,6 +119,9 @@ public class Leds extends VirtualSubsystem {
     if (loopCycleCount < minLoopCycleCount) {
       return;
     }
+
+    // Stop loading notifier if running
+    loadingNotifier.stop();
 
     // Select LED mode
     solid(Section.FULL, Color.kBlack); // Default to off
@@ -246,7 +265,11 @@ public class Leds extends VirtualSubsystem {
   }
 
   private void breath(Section section, Color c1, Color c2, double duration) {
-    double x = ((Timer.getFPGATimestamp() % breathDuration) / breathDuration) * 2.0 * Math.PI;
+    breath(section, c1, c2, duration, Timer.getFPGATimestamp());
+  }
+
+  private void breath(Section section, Color c1, Color c2, double duration, double timestamp) {
+    double x = ((timestamp % breathDuration) / breathDuration) * 2.0 * Math.PI;
     double ratio = (Math.sin(x) + 1.0) / 2.0;
     double red = (c1.red * (1 - ratio)) + (c2.red * ratio);
     double green = (c1.green * (1 - ratio)) + (c2.green * ratio);
