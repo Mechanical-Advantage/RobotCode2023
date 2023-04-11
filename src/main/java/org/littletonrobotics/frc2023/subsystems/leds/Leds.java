@@ -120,17 +120,17 @@ public class Leds extends VirtualSubsystem {
             List.of(
                 Color.kBlack,
                 Color.kRed,
-                Color.kOrange,
+                Color.kOrangeRed,
                 Color.kYellow,
                 Color.kGreen,
                 Color.kBlue,
                 Color.kPurple,
                 Color.kBlack,
-                Color.kSkyBlue,
-                Color.kLightCoral,
+                new Color(0.15, 0.3, 1.0),
+                Color.kDeepPink,
                 Color.kWhite,
-                Color.kLightCoral,
-                Color.kSkyBlue),
+                Color.kDeepPink,
+                new Color(0.15, 0.3, 1.0)),
             3,
             5.0);
 
