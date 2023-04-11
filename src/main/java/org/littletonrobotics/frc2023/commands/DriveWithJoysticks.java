@@ -17,7 +17,9 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import java.util.function.Supplier;
 import org.littletonrobotics.frc2023.Constants;
+import org.littletonrobotics.frc2023.FieldConstants;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
+import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
 import org.littletonrobotics.frc2023.util.GeomUtil;
 import org.littletonrobotics.frc2023.util.LoggedTunableNumber;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
@@ -179,7 +181,18 @@ public class DriveWithJoysticks extends CommandBase {
     lastSpeeds = speeds;
 
     // Send to drive
-    drive.runVelocity(speeds);
+    var driveTranslation = AllianceFlipUtil.apply(drive.getPose().getTranslation());
+    if (Math.abs(speeds.vxMetersPerSecond) < 1e-3
+        && Math.abs(speeds.vyMetersPerSecond) < 1e-3
+        && Math.abs(speeds.omegaRadiansPerSecond) < 1e-3
+        && driveTranslation.getX() > FieldConstants.Community.chargingStationInnerX
+        && driveTranslation.getX() < FieldConstants.Community.chargingStationOuterX
+        && driveTranslation.getY() > FieldConstants.Community.chargingStationRightY
+        && driveTranslation.getY() < FieldConstants.Community.chargingStationLeftY) {
+      drive.stopWithX();
+    } else {
+      drive.runVelocity(speeds);
+    }
   }
 
   @Override
