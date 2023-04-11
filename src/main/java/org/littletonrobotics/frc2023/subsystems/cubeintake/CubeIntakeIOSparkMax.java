@@ -37,6 +37,8 @@ public class CubeIntakeIOSparkMax implements CubeIntakeIO {
   private final Rotation2d armAbsoluteEncoderOffset;
 
   public CubeIntakeIOSparkMax() {
+    System.out.println("[Init] Creating CubeIntakeIOSparkMax");
+
     switch (Constants.getRobot()) {
       case ROBOT_2023C:
         armSparkMax = new CANSparkMax(6, MotorType.kBrushless);

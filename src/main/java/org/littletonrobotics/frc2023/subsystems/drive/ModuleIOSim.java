@@ -21,6 +21,10 @@ public class ModuleIOSim implements ModuleIO {
   private double driveAppliedVolts = 0.0;
   private double turnAppliedVolts = 0.0;
 
+  public ModuleIOSim() {
+    System.out.println("[Init] Creating ModuleIOSim");
+  }
+
   public void updateInputs(ModuleIOInputs inputs) {
     driveSim.update(Constants.loopPeriodSecs);
     turnSim.update(Constants.loopPeriodSecs);

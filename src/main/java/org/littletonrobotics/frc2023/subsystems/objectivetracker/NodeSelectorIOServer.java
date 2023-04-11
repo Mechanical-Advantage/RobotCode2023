@@ -27,6 +27,8 @@ public class NodeSelectorIOServer implements NodeSelectorIO {
   private final BooleanPublisher isAutoPublisher;
 
   public NodeSelectorIOServer() {
+    System.out.println("[Init] Creating NodeSelectorIOServer");
+
     // Create publisher and subscriber
     var table = NetworkTableInstance.getDefault().getTable("nodeselector");
     nodePublisher = table.getIntegerTopic("node_robot_to_dashboard").publish();

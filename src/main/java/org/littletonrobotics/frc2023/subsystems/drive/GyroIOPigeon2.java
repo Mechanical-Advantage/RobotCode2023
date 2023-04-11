@@ -20,6 +20,8 @@ public class GyroIOPigeon2 implements GyroIO {
   private final double[] xyzDps = new double[3];
 
   public GyroIOPigeon2() {
+    System.out.println("[Init] Creating GyroIOPigeon2");
+
     switch (Constants.getRobot()) {
       case ROBOT_2023C:
       case ROBOT_2023P:

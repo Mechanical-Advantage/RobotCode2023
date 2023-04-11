@@ -77,6 +77,7 @@ public class Module {
   }
 
   public Module(ModuleIO io, int index) {
+    System.out.println("[Init] Creating Module " + Integer.toString(index));
     this.io = io;
     this.index = index;
 

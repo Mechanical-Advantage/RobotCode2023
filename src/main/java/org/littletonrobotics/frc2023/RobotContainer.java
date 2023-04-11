@@ -220,10 +220,13 @@ public class RobotContainer {
     aprilTagVision.setDataInterface(drive::addVisionData);
 
     // Set up auto routines
+    System.out.println("[Init] Instantiating auto routines");
     AutoCommands autoCommands =
         new AutoCommands(drive, arm, gripper, cubeIntake, autoSelector::getResponses);
+    System.out.println("[Init] Instantiating auto routines (Field: Score Three Combo)");
     autoSelector.addRoutine(
         "Field: Score Three Combo", List.of(), autoCommands.fieldScoreThreeCombo());
+    System.out.println("[Init] Instantiating auto routines (Field: Score Link)");
     autoSelector.addRoutine(
         "Field: Score Link",
         List.of(
@@ -234,6 +237,8 @@ public class RobotContainer {
                     AutoQuestionResponse.MID,
                     AutoQuestionResponse.HYBRID))),
         autoCommands.fieldScoreLink());
+    System.out.println(
+        "[Init] Instantiating auto routines (Field: Score Two, Grab, And Maybe Balance)");
     autoSelector.addRoutine(
         "Field: Score Two, Grab, And Maybe Balance",
         List.of(
@@ -250,6 +255,7 @@ public class RobotContainer {
                     AutoQuestionResponse.BALANCE,
                     AutoQuestionResponse.BALANCE_THROW))),
         autoCommands.fieldScoreTwoGrabMaybeBalance());
+    System.out.println("[Init] Instantiating auto routines (Wall: Score Two And Grab)");
     autoSelector.addRoutine(
         "Wall: Score Two And Grab",
         List.of(
@@ -260,6 +266,7 @@ public class RobotContainer {
                     AutoQuestionResponse.MID,
                     AutoQuestionResponse.HYBRID))),
         autoCommands.wallScoreTwoAndGrab());
+    System.out.println("[Init] Instantiating auto routines (Side: Score Two And Maybe Balance)");
     autoSelector.addRoutine(
         "Side: Score Two And Maybe Balance",
         List.of(
@@ -275,6 +282,7 @@ public class RobotContainer {
             new AutoQuestion(
                 "Balance?", List.of(AutoQuestionResponse.YES, AutoQuestionResponse.NO))),
         autoCommands.sideScoreTwoMaybeBalance());
+    System.out.println("[Init] Instantiating auto routines (Side: Score One And Maybe Balance)");
     autoSelector.addRoutine(
         "Side: Score One And Maybe Balance",
         List.of(
@@ -296,6 +304,8 @@ public class RobotContainer {
             new AutoQuestion(
                 "Balance?", List.of(AutoQuestionResponse.YES, AutoQuestionResponse.NO))),
         autoCommands.sideScoreOneAndMaybeBalance());
+    System.out.println(
+        "[Init] Instantiating auto routines (Center: Score One, Grab, Balance, And Maybe Score)");
     autoSelector.addRoutine(
         "Center: Score One, Grab, Balance, And Maybe Score",
         List.of(
@@ -318,6 +328,8 @@ public class RobotContainer {
                 "Score cube while balanced?",
                 List.of(AutoQuestionResponse.YES, AutoQuestionResponse.NO))),
         autoCommands.centerScoreOneGrabAndBalance());
+    System.out.println(
+        "[Init] Instantiating auto routines (Center: Score One, Mobility, And Balance)");
     autoSelector.addRoutine(
         "Center: Score One, Mobility, And Balance",
         List.of(
@@ -334,6 +346,7 @@ public class RobotContainer {
                     AutoQuestionResponse.CENTER,
                     AutoQuestionResponse.WALL_SIDE))),
         autoCommands.centerScoreOneMobilityAndBalance());
+    System.out.println("[Init] Instantiating auto routines (Center: Score One And Balance)");
     autoSelector.addRoutine(
         "Center: Score One And Balance",
         List.of(
@@ -350,15 +363,18 @@ public class RobotContainer {
                     AutoQuestionResponse.CENTER,
                     AutoQuestionResponse.WALL_SIDE))),
         autoCommands.centerScoreOneAndBalance());
+    System.out.println("[Init] Instantiating auto routines (Center: Balance)");
     autoSelector.addRoutine(
         "Center: Balance",
         List.of(),
         Commands.runOnce(() -> drive.setPose(autoCommands.startingLocations[4]))
             .andThen(autoCommands.driveAndBalance(autoCommands.startingLocations[4], false)));
+    System.out.println("[Init] Instantiating auto routines (Reach for Inspection)");
     autoSelector.addRoutine(
         "Reach for Inspection",
         List.of(),
         arm.runPathCommand(ArmPose.Preset.SCORE_HIGH_UPRIGHT_CONE));
+    System.out.println("[Init] Instantiating auto routines (Drive Characterization)");
     autoSelector.addRoutine(
         "Drive Characterization",
         List.of(),
@@ -436,6 +452,7 @@ public class RobotContainer {
                     .withTimeout(1.0)));
 
     // Bind driver and operator controls
+    System.out.println("[Init] Binding controls");
     bindControls();
   }
 

@@ -26,7 +26,9 @@ public class ArmIOSim implements ArmIO {
   private double elbowAppliedVolts = 0.0;
   private double wristAppliedVolts = 0.0;
 
-  public ArmIOSim() {}
+  public ArmIOSim() {
+    System.out.println("[Init] Creating ArmIOSim");
+  }
 
   public void setConfig(ArmConfig config) {
     this.config = config;

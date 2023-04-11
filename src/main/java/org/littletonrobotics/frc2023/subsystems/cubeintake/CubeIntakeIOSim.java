@@ -19,6 +19,7 @@ public class CubeIntakeIOSim implements CubeIntakeIO {
   private double armAppliedVolts = 0.0;
 
   public CubeIntakeIOSim() {
+    System.out.println("[Init] Creating CubeIntakeIOSim");
     armSim.setState(VecBuilder.fill(Math.PI / 2.0, 0.0));
   }
 

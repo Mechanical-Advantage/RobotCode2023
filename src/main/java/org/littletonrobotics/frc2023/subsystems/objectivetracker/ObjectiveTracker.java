@@ -69,6 +69,7 @@ public class ObjectiveTracker extends VirtualSubsystem {
   }
 
   public ObjectiveTracker(NodeSelectorIO selectorIO) {
+    System.out.println("[Init] Creating ObjectiveTracker");
     this.selectorIO = selectorIO;
   }
 

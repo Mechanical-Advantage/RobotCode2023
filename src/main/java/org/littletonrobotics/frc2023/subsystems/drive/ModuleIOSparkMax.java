@@ -38,6 +38,8 @@ public class ModuleIOSparkMax implements ModuleIO {
   private final Rotation2d absoluteEncoderOffset;
 
   public ModuleIOSparkMax(int index) {
+    System.out.println("[Init] Creating ModuleIOSparkMax " + Integer.toString(index));
+
     switch (Constants.getRobot()) {
       case ROBOT_2023C:
         switch (index) {

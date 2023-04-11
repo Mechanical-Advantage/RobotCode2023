@@ -25,6 +25,8 @@ public class GripperIOSparkMax implements GripperIO {
   private final RelativeEncoder encoder;
 
   public GripperIOSparkMax() {
+    System.out.println("[Init] Creating GripperIOSparkMax");
+
     switch (Constants.getRobot()) {
       case ROBOT_2023C:
         invert = true;

@@ -95,6 +95,7 @@ public class AprilTagVision extends VirtualSubsystem {
   }
 
   public AprilTagVision(AprilTagVisionIO... io) {
+    System.out.println("[Init] Creating AprilTagVision");
     this.io = io;
     inputs = new AprilTagVisionIOInputs[io.length];
     for (int i = 0; i < io.length; i++) {

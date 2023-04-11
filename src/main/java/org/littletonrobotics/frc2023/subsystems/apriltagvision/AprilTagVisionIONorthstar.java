@@ -34,6 +34,7 @@ public class AprilTagVisionIONorthstar implements AprilTagVisionIO {
   private final Timer disconnectedTimer = new Timer();
 
   public AprilTagVisionIONorthstar(String identifier) {
+    System.out.println("[Init] Creating AprilTagVisionIONorthstar (" + identifier + ")");
     var northstarTable = NetworkTableInstance.getDefault().getTable(identifier);
 
     var configTable = northstarTable.getSubTable("config");

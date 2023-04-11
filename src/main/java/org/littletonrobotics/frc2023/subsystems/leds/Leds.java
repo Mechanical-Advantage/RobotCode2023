@@ -76,6 +76,7 @@ public class Leds extends VirtualSubsystem {
   private static final double autoFadeMaxTime = 5.0; // Return to normal
 
   private Leds() {
+    System.out.println("[Init] Creating LEDs");
     leds = new AddressableLED(0);
     buffer = new AddressableLEDBuffer(length);
     leds.setLength(length);

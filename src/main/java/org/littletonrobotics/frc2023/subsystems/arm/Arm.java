@@ -178,6 +178,7 @@ public class Arm extends SubsystemBase {
     io.setBrakeMode(true, true, true);
 
     // Get config from JSON
+    System.out.println("[Init] Creating Arm (loading config)");
     File configFile = new File(Filesystem.getDeployDirectory(), configFilename);
     try {
       configJson = Files.readString(configFile.toPath());
@@ -192,6 +193,12 @@ public class Arm extends SubsystemBase {
     ArmPose.wristLength = config.wrist().length();
     ArmPose.Preset.updateHomedPreset(config);
 
+    // Load cached trajectories
+    System.out.println("[Init] Creating Arm (loading trajectories)");
+    for (var trajectory : ArmTrajectoryCache.loadTrajectories()) {
+      allTrajectories.put(trajectory.getParameters().hashCode(), trajectory);
+    }
+
     // Create visualizers
     visualizerMeasured = new ArmVisualizer(config, "ArmMeasured", null);
     visualizerSetpoint = new ArmVisualizer(config, "ArmSetpoint", new Color8Bit(Color.kOrange));
@@ -200,11 +207,6 @@ public class Arm extends SubsystemBase {
         "ArmIntakeAvoidance",
         new double[][] {cubeIntakeAvoidanceRect},
         new Color8Bit(Color.kGreen));
-
-    // Load cached trajectories
-    for (var trajectory : ArmTrajectoryCache.loadTrajectories()) {
-      allTrajectories.put(trajectory.getParameters().hashCode(), trajectory);
-    }
   }
 
   public void setOverrides(

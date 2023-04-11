@@ -87,6 +87,7 @@ public class CubeIntake extends SubsystemBase {
 
   /** Creates a new CubeIntake. */
   public CubeIntake(CubeIntakeIO io) {
+    System.out.println("[Init] Creating CubeIntake");
     this.io = io;
     io.setBrakeMode(true, false);
 

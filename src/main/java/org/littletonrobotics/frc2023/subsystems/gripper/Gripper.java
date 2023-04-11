@@ -63,6 +63,7 @@ public class Gripper extends SubsystemBase {
   private Supplier<Boolean> forceEnableSupplier = () -> false;
 
   public Gripper(GripperIO io) {
+    System.out.println("[Init] Creating Gripper");
     this.io = io;
     io.setBrakeMode(false);
     tooHotTimer.start();

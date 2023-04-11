@@ -50,6 +50,8 @@ public class ArmIOSparkMax implements ArmIO {
   private final Rotation2d wristAbsoluteEncoderOffset;
 
   public ArmIOSparkMax() {
+    System.out.println("[Init] Creating ArmIOSparkMax");
+
     // Shoulder config
     shoulderSparkMax = new CANSparkMax(4, MotorType.kBrushless);
     shoulderSparkMaxFollower = new CANSparkMax(5, MotorType.kBrushless);
