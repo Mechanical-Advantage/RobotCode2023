@@ -118,9 +118,6 @@ public class RobotContainer {
     // Check if flash should be burned
     SparkMaxBurnManager.update();
 
-    // Instantiate LEDs
-    Leds.getInstance();
-
     // Instantiate active subsystems
     if (Constants.getMode() != Mode.REPLAY) {
       switch (Constants.getRobot()) {

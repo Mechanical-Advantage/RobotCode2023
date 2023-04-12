@@ -78,6 +78,7 @@ public class Robot extends LoggedRobot {
   @Override
   public void robotInit() {
     Logger logger = Logger.getInstance();
+    Leds.getInstance();
 
     // Record metadata
     logger.recordMetadata("Robot", Constants.getRobot().toString());
