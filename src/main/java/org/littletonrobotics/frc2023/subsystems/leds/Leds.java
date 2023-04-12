@@ -50,6 +50,7 @@ public class Leds extends VirtualSubsystem {
   public double autoFinishedTime = 0.0;
   private boolean lastEnabledAuto = false;
   private double lastEnabledTime = 0.0;
+  public boolean lowBatteryAlert = false;
 
   // LED IO
   private final AddressableLED leds;
@@ -131,6 +132,10 @@ public class Leds extends VirtualSubsystem {
       if (lastEnabledAuto && Timer.getFPGATimestamp() - lastEnabledTime < autoFadeMaxTime) {
         // Auto fade
         solid(1.0 - ((Timer.getFPGATimestamp() - lastEnabledTime) / autoFadeTime), Color.kGreen);
+
+      } else if (lowBatteryAlert) {
+        // Low battery
+        solid(Section.FULL, Color.kOrangeRed);
 
       } else if (prideLeds) {
         // Pride stripes
