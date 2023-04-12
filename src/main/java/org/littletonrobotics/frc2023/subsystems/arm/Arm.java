@@ -438,8 +438,12 @@ public class Arm extends SubsystemBase {
       elbowFeedback.reset();
 
     } else if (emergencyLiftDirection != LiftDirection.NONE) {
-      shoulderAngleSetpoint = emergencyLiftDirection == LiftDirection.FRONT ? 0.0 : Math.PI;
-      shoulderVoltageFeedback = shoulderFeedback.calculate(shoulderAngle, shoulderAngleSetpoint);
+      boolean runShoulder =
+          emergencyLiftDirection == LiftDirection.FRONT
+              ? shoulderAngle > Units.degreesToRadians(10.0)
+              : shoulderAngle < Units.degreesToRadians(170.0);
+      shoulderVoltageFeedback =
+          (runShoulder ? 6.0 : 0.0) * (emergencyLiftDirection == LiftDirection.FRONT ? -1.0 : 1.0);
       elbowAngleSetpoint = Math.PI;
       elbowVoltageFeedback = elbowFeedback.calculate(elbowAngle, elbowAngleSetpoint);
       io.setShoulderVoltage(shoulderVoltageFeedback);
