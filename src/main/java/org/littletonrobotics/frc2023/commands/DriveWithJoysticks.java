@@ -25,6 +25,8 @@ import org.littletonrobotics.frc2023.util.LoggedTunableNumber;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 public class DriveWithJoysticks extends CommandBase {
+  public static final double matchEndThreshold =
+      0.25; // FMS reports "0" ~250ms before the end of the match anyway
   public static final LoggedTunableNumber deadband =
       new LoggedTunableNumber("DriveWithJoysticks/Deadband", 0.1);
   public static final LoggedTunableNumber minExtensionMaxLinearAcceleration =
@@ -98,6 +100,12 @@ public class DriveWithJoysticks extends CommandBase {
 
   @Override
   public void execute() {
+    // Go to X right before the end of the match
+    if (DriverStation.getMatchTime() >= 0.0 && DriverStation.getMatchTime() < matchEndThreshold) {
+      drive.stopWithX();
+      return;
+    }
+
     // Get values from double suppliers
     double leftX = leftXSupplier.get();
     double leftY = leftYSupplier.get();

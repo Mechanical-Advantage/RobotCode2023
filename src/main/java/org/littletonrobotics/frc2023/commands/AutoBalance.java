@@ -9,6 +9,7 @@ package org.littletonrobotics.frc2023.commands;
 
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
 import org.littletonrobotics.frc2023.util.LoggedTunableNumber;
@@ -75,6 +76,8 @@ public class AutoBalance extends CommandBase {
 
   @Override
   public boolean isFinished() {
-    return Math.abs(angleDegrees) < positionThresholdDegrees.get();
+    return Math.abs(angleDegrees) < positionThresholdDegrees.get()
+        || (DriverStation.getMatchTime() >= 0.0
+            && DriverStation.getMatchTime() < DriveWithJoysticks.matchEndThreshold);
   }
 }
