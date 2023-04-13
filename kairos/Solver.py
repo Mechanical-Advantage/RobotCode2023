@@ -29,6 +29,8 @@ class Solver:
         n = config["solver"]["interiorPoints"]
         max_voltage_shoulder = config["solver"]["maxVoltageShoulder"]
         max_voltage_elbow = config["solver"]["maxVoltageElbow"]
+        max_acceleration_shoulder = config["solver"]["maxAccelerationShoulder"]
+        max_acceleration_elbow = config["solver"]["maxAccelerationElbow"]
         max_acceleration_min_extension = config["solver"]["maxAccelerationMinExtension"]
         max_acceleration_max_extension = config["solver"]["maxAccelerationMaxExtension"]
         max_jerk = config["solver"]["maxJerk"]
@@ -64,7 +66,7 @@ class Solver:
         self._total_time = opti.variable()
         dt = self._total_time / (n + 1)
         opti.subject_to(self._total_time > 0)
-        opti.subject_to(self._total_time < 10)
+        opti.subject_to(self._total_time < 15)
         opti.minimize(self._total_time)
 
         # Create theta points
@@ -133,6 +135,18 @@ class Solver:
             )
             opti.subject_to(
                 opti.bounded(-max_voltage_elbow, voltage[1], max_voltage_elbow)
+            )
+            opti.subject_to(
+                opti.bounded(
+                    -max_acceleration_shoulder,
+                    acceleration[0],
+                    max_acceleration_shoulder,
+                )
+            )
+            opti.subject_to(
+                opti.bounded(
+                    -max_acceleration_elbow, acceleration[1], max_acceleration_elbow
+                )
             )
             opti.subject_to(opti.bounded(-max_jerk, jerk[0], max_jerk))
             opti.subject_to(opti.bounded(-max_jerk, jerk[1], max_jerk))
