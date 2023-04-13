@@ -17,20 +17,20 @@
     }
   },
   "elbow": {
-    "mass": 3.252,
+    "mass": 1,
     "length": 0.80645,
-    "moi": 0.548,
-    "cgRadius": 0.299,
+    "moi": 0.362,
+    "cgRadius": 0.243,
     "minAngle": 0.2617994,
     "maxAngle": 6.0213859072,
     "motor": {
       "type": "neo",
       "count": 1,
-      "reduction": 227.5555555555
+      "reduction": 78.22222222
     }
   },
   "wrist": {
-    "mass": 2.958,
+    "mass": 1,
     "length": 0.261,
     "moi": 0.047,
     "cgRadius": 0.069,
@@ -49,7 +49,7 @@
     "maxAccelerationShoulder": 1000,
     "maxAccelerationElbow": 1000,
     "maxAccelerationMinExtension": 16,
-    "maxAccelerationMaxExtension": 5,
+    "maxAccelerationMaxExtension": 12,
     "maxJerk": 30
   },
   "constraints": {

@@ -69,9 +69,10 @@ public class ArmIOSparkMax implements ArmIO {
     elbowAbsoluteEncoder = new DutyCycleEncoder(3);
     elbowAbsoluteEncoder.setDutyCycleRange(1.0 / 1025.0, 1024.0 / 1025.0);
     elbowRelativeEncoder = new Encoder(5, 4, false);
-    isElbowMotorInverted = false;
+    isElbowMotorInverted = true;
     isElbowExternalEncoderInverted = false;
-    elbowAbsoluteEncoderOffset = new Rotation2d(-0.08790593).plus(Rotation2d.fromDegrees(180.0));
+    elbowAbsoluteEncoderOffset =
+        new Rotation2d(2.0824291260731225).plus(Rotation2d.fromDegrees(180.0));
     elbowRelativeEncoder.setDistancePerPulse((2 * Math.PI) / 2048);
 
     // Wrist config
@@ -114,7 +115,7 @@ public class ArmIOSparkMax implements ArmIO {
 
       shoulderSparkMax.setSmartCurrentLimit(40);
       shoulderSparkMaxFollower.setSmartCurrentLimit(40);
-      elbowSparkMax.setSmartCurrentLimit(40);
+      elbowSparkMax.setSmartCurrentLimit(50);
       wristSparkMax.setSmartCurrentLimit(40);
 
       shoulderSparkMax.enableVoltageCompensation(12.0);
