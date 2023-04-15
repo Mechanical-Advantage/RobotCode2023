@@ -10,6 +10,7 @@ package org.littletonrobotics.frc2023.subsystems.gripper;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -90,7 +91,7 @@ public class Gripper extends SubsystemBase {
     }
 
     // Update gripper stopped LEDs
-    if (DriverStation.isDisabled()) {
+    if (DriverStation.isDisabled() || !RobotController.isSysActive()) {
       dsEnabledTimer.reset();
     }
     Leds.getInstance().gripperStopped =
