@@ -72,7 +72,7 @@ public class ArmIOSparkMax implements ArmIO {
     isElbowMotorInverted = true;
     isElbowExternalEncoderInverted = false;
     elbowAbsoluteEncoderOffset =
-        new Rotation2d(2.0824291260731225).plus(Rotation2d.fromDegrees(180.0));
+        new Rotation2d(2.065065749564745).plus(Rotation2d.fromDegrees(180.0));
     elbowRelativeEncoder.setDistancePerPulse((2 * Math.PI) / 2048);
 
     // Wrist config

@@ -21,8 +21,8 @@
     "length": 0.80645,
     "moi": 0.362,
     "cgRadius": 0.243,
-    "minAngle": 0.2617994,
-    "maxAngle": 6.0213859072,
+    "minAngle": 0.872664626,
+    "maxAngle": 5.4105206812,
     "motor": {
       "type": "neo",
       "count": 1,
@@ -49,7 +49,7 @@
     "maxAccelerationShoulder": 1000,
     "maxAccelerationElbow": 1000,
     "maxAccelerationMinExtension": 16,
-    "maxAccelerationMaxExtension": 12,
+    "maxAccelerationMaxExtension": 9,
     "maxJerk": 30
   },
   "constraints": {
