@@ -23,13 +23,12 @@ public class IntakeCubeHandoff extends SequentialCommandGroup {
         intake
             .runCommand()
             .deadlineWith(
-                arm.runPathCommand(ArmPose.Preset.CUBE_HANDOFF),
-                gripper.intakeCommand(),
-                Commands.waitSeconds(0.5)
+                arm.runPathCommand(ArmPose.Preset.CUBE_HANDOFF)
                     .andThen(
                         Commands.startEnd(
                             () -> Leds.getInstance().intakeReady = true,
-                            () -> Leds.getInstance().intakeReady = false)))
+                            () -> Leds.getInstance().intakeReady = false)),
+                gripper.intakeCommand())
             .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
   }
 }

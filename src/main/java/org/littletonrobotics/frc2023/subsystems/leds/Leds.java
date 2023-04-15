@@ -45,12 +45,14 @@ public class Leds extends VirtualSubsystem {
   public boolean sameBattery = false;
   public boolean armCoast = false;
   public boolean armEstopped = false;
-  private Alliance alliance = Alliance.Invalid;
   public boolean autoFinished = false;
   public double autoFinishedTime = 0.0;
+  public boolean lowBatteryAlert = false;
+
+  private Alliance alliance = Alliance.Invalid;
   private boolean lastEnabledAuto = false;
   private double lastEnabledTime = 0.0;
-  public boolean lowBatteryAlert = false;
+  private boolean estopped = false;
 
   // LED IO
   private final AddressableLED leds;
@@ -115,6 +117,11 @@ public class Leds extends VirtualSubsystem {
       lastEnabledTime = Timer.getFPGATimestamp();
     }
 
+    // Update estop state
+    if (DriverStation.isEStopped()) {
+      estopped = true;
+    }
+
     // Exit during initial cycles
     loopCycleCount += 1;
     if (loopCycleCount < minLoopCycleCount) {
@@ -126,7 +133,7 @@ public class Leds extends VirtualSubsystem {
 
     // Select LED mode
     solid(Section.FULL, Color.kBlack); // Default to off
-    if (DriverStation.isEStopped()) {
+    if (estopped) {
       solid(Section.FULL, Color.kRed);
     } else if (DriverStation.isDisabled()) {
       if (lastEnabledAuto && Timer.getFPGATimestamp() - lastEnabledTime < autoFadeMaxTime) {
@@ -157,6 +164,18 @@ public class Leds extends VirtualSubsystem {
                 new Color(0.15, 0.3, 1.0)),
             3,
             5.0);
+        switch (alliance) {
+          case Red:
+            solid(Section.STATIC_LOW, Color.kRed);
+            buffer.setLED(staticSectionLength, Color.kBlack);
+            break;
+          case Blue:
+            solid(Section.STATIC_LOW, Color.kBlue);
+            buffer.setLED(staticSectionLength, Color.kBlack);
+            break;
+          default:
+            break;
+        }
 
       } else {
         // Default pattern
