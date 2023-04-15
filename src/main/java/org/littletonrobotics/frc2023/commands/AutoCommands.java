@@ -64,31 +64,45 @@ public class AutoCommands {
   public static final boolean reachScoring = false;
   public static final double startX = Grids.outerX + 0.38;
   public static final double cubeIntakeDistance = 0.45;
-  public static final Transform2d cubeWallSideOffset =
-      new Transform2d(new Translation2d(0.25, -0.15), new Rotation2d());
   public static final double coneSweeperDistance = 0.1;
   public static final double coneSweeperBackoffDistance = 0.5;
-  public static final double cableBumpMaxVelocity = Units.inchesToMeters(50.0);
   public static final double chargingStationMaxVelocity = Units.inchesToMeters(40.0);
-  public static final double slowScoreConstraintRadius = 0.75;
-  public static final double slowScoreMaxVelocity = Units.inchesToMeters(40.0);
-  public static final Transform2d secondCubeScoreTransform =
+  public static final double slowScoreConstraintRadius = 0.5;
+  public static final double slowScoreMaxVelocity = Units.inchesToMeters(45.0);
+  public static final Transform2d fieldCubeScoreTransform =
+      new Transform2d(new Translation2d(0.15, 0.0), new Rotation2d());
+  public static final Transform2d fieldSecondCubeIntakeTransform =
+      new Transform2d(new Translation2d(0.15, -0.3), new Rotation2d());
+  public static final Transform2d wallCubeScoreTransform =
+      new Transform2d(new Translation2d(0.15, 0.0), new Rotation2d());
+  public static final Transform2d wallFirstCubeIntakeTransform =
       new Transform2d(new Translation2d(0.2, 0.0), new Rotation2d());
-  public static final Transform2d secondCubeIntakeTransform =
-      new Transform2d(new Translation2d(0.0, -0.15), new Rotation2d());
+  public static final Transform2d wallSecondCubeIntakeTransform =
+      new Transform2d(new Translation2d(0.7, -0.2), new Rotation2d());
 
   // Waypoints
   public final Pose2d[] startingLocations = new Pose2d[9];
-  private final Translation2d transitWallSideNear;
-  private final Translation2d transitWallSideFar;
+  private final Rotation2d cableBumpRotationOut = Rotation2d.fromDegrees(30.0);
+  private final Rotation2d cableBumpRotationIn = Rotation2d.fromDegrees(-30.0);
+  private final Translation2d transitWallSideNearOut;
+  private final Translation2d transitWallSideNearIn;
+  private final Translation2d transitWallSideCenterOut;
+  private final Translation2d transitWallSideCenterIn;
+  private final Translation2d transitWallSideFarOut;
+  private final Translation2d transitWallSideFarIn;
   private final Waypoint transitWallSideNearOutWaypoint;
   private final Waypoint transitWallSideNearInWaypoint;
+  private final Waypoint transitWallSideCenterOutWaypoint;
+  private final Waypoint transitWallSideCenterInWaypoint;
   private final Waypoint transitWallSideFarOutWaypoint;
   private final Waypoint transitWallSideFarInWaypoint;
   private final Translation2d transitFieldSideNear;
+  private final Translation2d transitFieldSideCenter;
   private final Translation2d transitFieldSideFar;
   private final Waypoint transitFieldSideNearOutWaypoint;
   private final Waypoint transitFieldSideNearInWaypoint;
+  private final Waypoint transitFieldSideCenterOutWaypoint;
+  private final Waypoint transitFieldSideCenterInWaypoint;
   private final Waypoint transitFieldSideFarOutWaypoint;
   private final Waypoint transitFieldSideFarInWaypoint;
   private final Translation2d chargingStationTransitNear;
@@ -116,27 +130,49 @@ public class AutoCommands {
       startingLocations[i] =
           new Pose2d(new Translation2d(startX, Grids.nodeY[i]), new Rotation2d());
     }
-    transitWallSideNear =
+    transitWallSideNearOut =
         new Translation2d(
             Community.chargingStationInnerX + 0.5,
-            (Community.chargingStationRightY + Community.rightY) / 2.0);
-    transitWallSideFar =
+            (Community.chargingStationRightY + Community.rightY) / 2.0 - 0.15);
+    transitWallSideNearIn =
+        new Translation2d(
+            Community.chargingStationInnerX + 0.5,
+            (Community.chargingStationRightY + Community.rightY) / 2.0 + 0.15);
+    transitWallSideCenterOut =
+        new Translation2d(
+            (Community.chargingStationInnerX + Community.chargingStationOuterX) / 2.0,
+            (Community.chargingStationRightY + Community.rightY) / 2.0 - 0.15);
+    transitWallSideCenterIn =
+        new Translation2d(
+            (Community.chargingStationInnerX + Community.chargingStationOuterX) / 2.0,
+            (Community.chargingStationRightY + Community.rightY) / 2.0 + 0.15);
+    transitWallSideFarOut =
         new Translation2d(
             Community.chargingStationOuterX - 0.5,
-            (Community.chargingStationRightY + Community.rightY) / 2.0);
-    transitWallSideNearInWaypoint =
-        Waypoint.fromDifferentialPose(
-            new Pose2d(transitWallSideNear, Rotation2d.fromDegrees(180.0)));
+            (Community.chargingStationRightY + Community.rightY) / 2.0 - 0.15);
+    transitWallSideFarIn =
+        new Translation2d(
+            Community.chargingStationOuterX - 0.5,
+            (Community.chargingStationRightY + Community.rightY) / 2.0 + 0.15);
     transitWallSideNearOutWaypoint =
-        Waypoint.fromDifferentialPose(new Pose2d(transitWallSideNear, new Rotation2d()));
-    transitWallSideFarInWaypoint =
-        Waypoint.fromDifferentialPose(
-            new Pose2d(transitWallSideFar, Rotation2d.fromDegrees(180.0)));
+        new Waypoint(transitWallSideNearOut, new Rotation2d(), cableBumpRotationOut);
+    transitWallSideNearInWaypoint =
+        new Waypoint(transitWallSideNearIn, Rotation2d.fromDegrees(180.0), cableBumpRotationIn);
+    transitWallSideCenterOutWaypoint =
+        new Waypoint(transitWallSideCenterOut, new Rotation2d(), cableBumpRotationOut);
+    transitWallSideCenterInWaypoint =
+        new Waypoint(transitWallSideCenterIn, Rotation2d.fromDegrees(180.0), cableBumpRotationIn);
     transitWallSideFarOutWaypoint =
-        Waypoint.fromDifferentialPose(new Pose2d(transitWallSideFar, new Rotation2d()));
+        new Waypoint(transitWallSideFarOut, new Rotation2d(), cableBumpRotationOut);
+    transitWallSideFarInWaypoint =
+        new Waypoint(transitWallSideFarIn, Rotation2d.fromDegrees(180.0), cableBumpRotationIn);
     transitFieldSideNear =
         new Translation2d(
             Community.chargingStationInnerX,
+            (Community.chargingStationLeftY + Community.leftY) / 2.0);
+    transitFieldSideCenter =
+        new Translation2d(
+            (Community.chargingStationInnerX + Community.chargingStationOuterX) / 2.0,
             (Community.chargingStationLeftY + Community.leftY) / 2.0);
     transitFieldSideFar =
         new Translation2d(
@@ -147,6 +183,11 @@ public class AutoCommands {
             new Pose2d(transitFieldSideNear, Rotation2d.fromDegrees(180.0)));
     transitFieldSideNearOutWaypoint =
         Waypoint.fromDifferentialPose(new Pose2d(transitFieldSideNear, new Rotation2d()));
+    transitFieldSideCenterInWaypoint =
+        Waypoint.fromDifferentialPose(
+            new Pose2d(transitFieldSideCenter, Rotation2d.fromDegrees(180.0)));
+    transitFieldSideCenterOutWaypoint =
+        Waypoint.fromDifferentialPose(new Pose2d(transitFieldSideCenter, new Rotation2d()));
     transitFieldSideFarInWaypoint =
         Waypoint.fromDifferentialPose(
             new Pose2d(transitFieldSideFar, Rotation2d.fromDegrees(180.0)));
@@ -162,12 +203,6 @@ public class AutoCommands {
             (Community.chargingStationLeftY + Community.chargingStationRightY) / 2.0);
     trajectoryConstraints =
         List.of(
-            // Cable bump
-            new RectangularRegionConstraint(
-                new Translation2d(Community.chargingStationInnerX, Community.rightY),
-                new Translation2d(Community.chargingStationOuterX, Community.chargingStationRightY),
-                new MaxVelocityConstraint(cableBumpMaxVelocity)),
-
             // Charging station
             new RectangularRegionConstraint(
                 new Translation2d(
@@ -244,17 +279,12 @@ public class AutoCommands {
     waypoints.add(Waypoint.fromHolonomicPose(startingPose));
     Waypoint transitWaypointNear =
         fieldSide ? transitFieldSideNearOutWaypoint : transitWallSideNearOutWaypoint;
+    Waypoint transitWaypointCenter =
+        fieldSide ? transitFieldSideCenterOutWaypoint : transitWallSideCenterOutWaypoint;
     Waypoint transitWaypointFar =
         fieldSide ? transitFieldSideFarOutWaypoint : transitWallSideFarOutWaypoint;
     if (singleTransit) {
-      waypoints.add(
-          Waypoint.fromDifferentialPose(
-              new Pose2d(
-                  (transitWaypointNear.getTranslation().getX()
-                          + transitWaypointFar.getTranslation().getX())
-                      / 2.0,
-                  transitWaypointNear.getTranslation().getY(),
-                  new Rotation2d())));
+      waypoints.add(transitWaypointCenter);
     } else {
       waypoints.add(transitWaypointNear);
       waypoints.add(transitWaypointFar);
@@ -356,37 +386,33 @@ public class AutoCommands {
     waypoints.add(Waypoint.fromHolonomicPose(startingPose));
     Waypoint transitWaypointFar =
         fieldSide ? transitFieldSideFarInWaypoint : transitWallSideFarInWaypoint;
+    Waypoint transitWaypointCenter =
+        fieldSide ? transitFieldSideCenterInWaypoint : transitWallSideCenterInWaypoint;
     Waypoint transitWaypointNear =
         fieldSide ? transitFieldSideNearInWaypoint : transitWallSideNearInWaypoint;
     boolean includeTransit = startingPose.getX() > transitWaypointFar.getTranslation().getX();
     if (includeTransit) {
       if (singleTransit) {
-        waypoints.add(
-            Waypoint.fromDifferentialPose(
-                new Pose2d(
-                    (transitWaypointNear.getTranslation().getX()
-                            + transitWaypointFar.getTranslation().getX())
-                        / 2.0,
-                    transitWaypointNear.getTranslation().getY(),
-                    Rotation2d.fromDegrees(180.0))));
+        waypoints.add(transitWaypointCenter);
       } else {
         waypoints.add(transitWaypointFar);
         waypoints.add(transitWaypointNear);
       }
     }
-    Pose2d scoringPose =
+    Pose2d scoringPoseUntransformed =
         AutoScore.getDriveTarget(
-                new Pose2d(
-                    includeTransit
-                        ? transitWaypointNear.getTranslation()
-                        : startingPose.getTranslation(),
-                    startingPose.getRotation()),
-                objective,
-                arm,
-                reachScoring)
-            .transformBy(scoreOffset);
+            new Pose2d(
+                includeTransit
+                    ? transitWaypointNear.getTranslation()
+                    : startingPose.getTranslation(),
+                startingPose.getRotation()),
+            objective,
+            arm,
+            reachScoring);
+    Pose2d scoringPose = scoringPoseUntransformed.transformBy(scoreOffset);
     waypoints.add(Waypoint.fromHolonomicPose(scoringPose));
-    ArmPose scoringArmPose = AutoScore.getArmTarget(scoringPose, objective, arm, reachScoring);
+    ArmPose scoringArmPose =
+        AutoScore.getArmTarget(scoringPoseUntransformed, objective, arm, reachScoring);
 
     // Create command
     return new CommandWithPose(
@@ -461,10 +487,10 @@ public class AutoCommands {
     var intake0Sequence = driveAndIntake(objective1, true, 3, score0Sequence.pose(), true);
     var score1Sequence =
         driveAndScore(
-            objective1, true, false, false, intake0Sequence.pose(), true, secondCubeScoreTransform);
+            objective1, true, false, false, intake0Sequence.pose(), true, fieldCubeScoreTransform);
     var intake2Sequence =
         driveAndIntake(
-            objective2, true, 2, score1Sequence.pose(), false, secondCubeIntakeTransform);
+            objective2, true, 2, score1Sequence.pose(), false, fieldSecondCubeIntakeTransform);
     var score2Sequence =
         driveAndScore(objective2, true, false, false, intake2Sequence.pose(), true);
     return sequence(
@@ -476,36 +502,25 @@ public class AutoCommands {
         score2Sequence.command());
   }
 
-  /** Scores three game pieces on field-side. */
-  public Command fieldScoreLink() {
-    return select(
-        Map.of(
-            AutoQuestionResponse.HYBRID,
-            fieldScoreLink(NodeLevel.HYBRID),
-            AutoQuestionResponse.MID,
-            fieldScoreLink(NodeLevel.MID),
-            AutoQuestionResponse.HIGH,
-            fieldScoreLink(NodeLevel.HIGH)),
-        () -> responses.get().get(0));
-  }
-
-  /** Scores three game pieces on field-side. */
-  public Command fieldScoreLink(NodeLevel level) {
-    var objective0 = new Objective(8, level, ConeOrientation.UPRIGHT, false);
-    var objective1 = new Objective(7, level, ConeOrientation.UPRIGHT, false);
-    var objective2 = new Objective(6, level, ConeOrientation.TIPPED, false);
-    Pose2d startingPose = startingLocations[8];
-    var score0Sequence = driveAndScore(objective0, true, true, false, startingPose, true);
-    var intake0Sequence = driveAndIntake(objective1, true, 3, score0Sequence.pose(), true);
+  /** Scores three game pieces on wall-side (high cone, high cube, mid cube). */
+  public Command wallScoreThreeCombo() {
+    var objective0 = new Objective(0, NodeLevel.HIGH, ConeOrientation.UPRIGHT, false);
+    var objective1 = new Objective(1, NodeLevel.HIGH, ConeOrientation.UPRIGHT, false);
+    var objective2 = new Objective(1, NodeLevel.MID, ConeOrientation.TIPPED, false);
+    Pose2d startingPose = startingLocations[0];
+    var score0Sequence = driveAndScore(objective0, false, true, false, startingPose, false);
+    var intake0Sequence =
+        driveAndIntake(
+            objective1, false, 0, score0Sequence.pose(), true, wallFirstCubeIntakeTransform);
     var score1Sequence =
         driveAndScore(
-            objective1, true, false, false, intake0Sequence.pose(), true, secondCubeScoreTransform);
+            objective1, false, false, true, intake0Sequence.pose(), false, wallCubeScoreTransform);
     var intake2Sequence =
         driveAndIntake(
-            objective2, true, 2, score1Sequence.pose(), false, secondCubeIntakeTransform);
+            objective2, false, 1, score1Sequence.pose(), false, wallSecondCubeIntakeTransform);
     var score2Sequence =
         driveAndScore(
-            objective2, true, false, level != NodeLevel.HYBRID, intake2Sequence.pose(), true);
+            objective2, false, false, true, intake2Sequence.pose(), false, wallCubeScoreTransform);
     return sequence(
         reset(startingPose),
         score0Sequence.command(),
@@ -515,7 +530,7 @@ public class AutoCommands {
         score2Sequence.command());
   }
 
-  /** Scores one cone and cube, then optionally balance.s */
+  /** Scores one cone and cube, then grabs and optionally balances. */
   public Command fieldScoreTwoGrabMaybeBalance() {
     Supplier<Boolean> balanceSupplier =
         () -> !responses.get().get(1).equals(AutoQuestionResponse.RETURN);
@@ -532,21 +547,6 @@ public class AutoCommands {
             AutoQuestionResponse.HIGH,
             sideScoreTwoMaybeGrabMaybeBalance(
                 true, true, NodeLevel.HIGH, balanceSupplier, scoreFinalSupplier)),
-        () -> responses.get().get(0));
-  }
-
-  /** Scores one cone and cube, then grabs a cube. */
-  public Command wallScoreTwoAndGrab() {
-    return select(
-        Map.of(
-            AutoQuestionResponse.HYBRID,
-            sideScoreTwoMaybeGrabMaybeBalance(
-                false, true, NodeLevel.HYBRID, () -> false, () -> false),
-            AutoQuestionResponse.MID,
-            sideScoreTwoMaybeGrabMaybeBalance(false, true, NodeLevel.MID, () -> false, () -> false),
-            AutoQuestionResponse.HIGH,
-            sideScoreTwoMaybeGrabMaybeBalance(
-                false, true, NodeLevel.HIGH, () -> false, () -> false)),
         () -> responses.get().get(0));
   }
 
@@ -601,16 +601,16 @@ public class AutoCommands {
             fieldSide ? 3 : 0,
             score0Sequence.pose(),
             false,
-            fieldSide ? new Transform2d() : cubeWallSideOffset);
+            fieldSide ? new Transform2d() : wallFirstCubeIntakeTransform);
     var score1Sequence =
         driveAndScore(
             objective1,
             fieldSide,
             false,
-            false,
+            !fieldSide,
             intake1Sequence.pose(),
             false,
-            secondCubeScoreTransform);
+            fieldSide ? fieldCubeScoreTransform : wallCubeScoreTransform);
 
     // Third grab sequences (field side only)
     var intake2Sequence =
@@ -620,7 +620,7 @@ public class AutoCommands {
             fieldSide ? 2 : 1,
             score1Sequence.pose(),
             false,
-            secondCubeIntakeTransform);
+            fieldSecondCubeIntakeTransform);
     var returnWaypoints =
         List.of(
             Waypoint.fromHolonomicPose(intake2Sequence.pose()),

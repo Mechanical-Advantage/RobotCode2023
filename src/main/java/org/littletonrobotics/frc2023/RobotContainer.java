@@ -223,17 +223,9 @@ public class RobotContainer {
     System.out.println("[Init] Instantiating auto routines (Field: Score Three Combo)");
     autoSelector.addRoutine(
         "Field: Score Three Combo", List.of(), autoCommands.fieldScoreThreeCombo());
-    System.out.println("[Init] Instantiating auto routines (Field: Score Link)");
+    System.out.println("[Init] Instantiating auto routines (Wall: Score Three Combo)");
     autoSelector.addRoutine(
-        "Field: Score Link",
-        List.of(
-            new AutoQuestion(
-                "Which level?",
-                List.of(
-                    AutoQuestionResponse.HIGH,
-                    AutoQuestionResponse.MID,
-                    AutoQuestionResponse.HYBRID))),
-        autoCommands.fieldScoreLink());
+        "Wall: Score Three Combo", List.of(), autoCommands.wallScoreThreeCombo());
     System.out.println(
         "[Init] Instantiating auto routines (Field: Score Two, Grab, And Maybe Balance)");
     autoSelector.addRoutine(
@@ -252,17 +244,6 @@ public class RobotContainer {
                     AutoQuestionResponse.BALANCE,
                     AutoQuestionResponse.BALANCE_THROW))),
         autoCommands.fieldScoreTwoGrabMaybeBalance());
-    System.out.println("[Init] Instantiating auto routines (Wall: Score Two And Grab)");
-    autoSelector.addRoutine(
-        "Wall: Score Two And Grab",
-        List.of(
-            new AutoQuestion(
-                "Which level?",
-                List.of(
-                    AutoQuestionResponse.HIGH,
-                    AutoQuestionResponse.MID,
-                    AutoQuestionResponse.HYBRID))),
-        autoCommands.wallScoreTwoAndGrab());
     System.out.println("[Init] Instantiating auto routines (Side: Score Two And Maybe Balance)");
     autoSelector.addRoutine(
         "Side: Score Two And Maybe Balance",
