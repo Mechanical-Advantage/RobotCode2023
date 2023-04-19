@@ -76,9 +76,9 @@ public class AutoCommands {
   public static final Transform2d wallCubeScoreTransform =
       new Transform2d(new Translation2d(0.15, 0.0), new Rotation2d());
   public static final Transform2d wallFirstCubeIntakeTransform =
-      new Transform2d(new Translation2d(0.4, 0.0), new Rotation2d());
+      new Transform2d(new Translation2d(0.5, 0.0), new Rotation2d());
   public static final Transform2d wallSecondCubeIntakeTransform =
-      new Transform2d(new Translation2d(0.85, -0.2), new Rotation2d());
+      new Transform2d(new Translation2d(0.95, -0.2), new Rotation2d());
 
   // Waypoints
   public final Pose2d[] startingLocations = new Pose2d[9];
