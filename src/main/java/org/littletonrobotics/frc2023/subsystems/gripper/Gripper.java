@@ -151,6 +151,11 @@ public class Gripper extends SubsystemBase {
 
   /** Command factory to run the gripper wheels back and eject a game piece. */
   public Command ejectCommand(EjectSpeed speed) {
+    return ejectCommand(speed, false);
+  }
+
+  /** Command factory to run the gripper wheels back and eject a game piece. */
+  public Command ejectCommand(EjectSpeed speed, boolean forever) {
     Supplier<Double> voltsSupplier;
     switch (speed) {
       case VERY_FAST:
@@ -171,11 +176,13 @@ public class Gripper extends SubsystemBase {
     }
     return run(() -> setVoltage(voltsSupplier.get()))
         .raceWith(
-            new SuppliedWaitCommand(
-                () ->
-                    speed == EjectSpeed.SLOW || speed == EjectSpeed.MEDIUM
-                        ? ejectSecsSlow.get()
-                        : ejectSecsFast.get()))
+            forever
+                ? Commands.run(() -> {})
+                : new SuppliedWaitCommand(
+                    () ->
+                        speed == EjectSpeed.SLOW || speed == EjectSpeed.MEDIUM
+                            ? ejectSecsSlow.get()
+                            : ejectSecsFast.get()))
         .finallyDo((interrupted) -> setVoltage(holdVolts.get()));
   }
 
