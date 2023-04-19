@@ -347,6 +347,7 @@ public class AutoCommands {
                         () ->
                             AllianceFlipUtil.apply(drive.getPose().getX())
                                 > FieldConstants.Community.chargingStationOuterX)
+                    .deadlineWith(gripper.ejectCommand(EjectSpeed.MEDIUM))
                     .andThen(gripper.intakeCommand()),
                 (objective.isConeNode() ? none() : cubeIntake.runCommand())),
         new Pose2d(

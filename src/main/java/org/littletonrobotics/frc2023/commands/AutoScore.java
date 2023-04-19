@@ -15,6 +15,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.ScheduleCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import java.util.function.Supplier;
 import org.littletonrobotics.frc2023.FieldConstants;
@@ -22,6 +23,7 @@ import org.littletonrobotics.frc2023.subsystems.arm.Arm;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmPose;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
 import org.littletonrobotics.frc2023.subsystems.gripper.Gripper;
+import org.littletonrobotics.frc2023.subsystems.gripper.Gripper.EjectSpeed;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.Objective;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
 import org.littletonrobotics.frc2023.util.GeomUtil;
@@ -208,11 +210,13 @@ public class AutoScore extends SequentialCommandGroup {
     // Combine all commands
     addCommands(
         Commands.either(
-                Commands.waitUntil(() -> arm.isTrajectoryFinished() && !driveToPose.isRunning()),
+                Commands.waitUntil(() -> arm.isTrajectoryFinished() && driveToPose.atGoal()),
                 Commands.waitUntil(() -> ejectButton.get()),
                 () -> autoEject.get() && !fullManual.get())
             .deadlineWith(driveCommand, armCommand)
-            .andThen(gripper.ejectCommand(objective))
+            .andThen(
+                gripper.ejectCommand(objective),
+                new ScheduleCommand(gripper.ejectCommand(EjectSpeed.MEDIUM).withTimeout(1.0)))
             .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
   }
 
