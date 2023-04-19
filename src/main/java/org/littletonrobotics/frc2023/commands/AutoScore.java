@@ -216,7 +216,11 @@ public class AutoScore extends SequentialCommandGroup {
             .deadlineWith(driveCommand, armCommand)
             .andThen(
                 gripper.ejectCommand(objective),
-                new ScheduleCommand(gripper.ejectCommand(EjectSpeed.FAST, true).withTimeout(5.0)))
+                new ScheduleCommand(
+                    gripper
+                        .ejectCommand(EjectSpeed.FAST, true)
+                        .withTimeout(1.0)) // Eject while retracting to remove trapped game pieces
+                )
             .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
   }
 
