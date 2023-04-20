@@ -118,17 +118,34 @@ public class AutoScore extends SequentialCommandGroup {
                       FieldConstants.Community.chargingStationInnerX - 0.8),
                   targetPose.getY(),
                   targetPose.getRotation());
-          double intermediateY =
+          boolean isFieldSide =
               currentPose.getY()
-                      > (FieldConstants.Community.chargingStationLeftY
-                              + FieldConstants.Community.chargingStationRightY)
-                          / 2.0
+                  > (FieldConstants.Community.chargingStationLeftY
+                          + FieldConstants.Community.chargingStationRightY)
+                      / 2.0;
+          double intermediateY =
+              isFieldSide
                   ? (FieldConstants.Community.leftY + FieldConstants.Community.chargingStationLeftY)
                       / 2.0
                   : (FieldConstants.Community.rightY
                           + FieldConstants.Community.chargingStationRightY)
                       / 2.0;
-          if (currentPose.getX() > FieldConstants.Community.chargingStationInnerX - 0.3) {
+          if (currentPose.getX() > FieldConstants.Community.chargingStationOuterX) {
+            double t = (Math.abs(currentPose.getY() - intermediateY) - 0.2) / (0.6 - 0.2);
+            t = 1.0 - MathUtil.clamp(t, 0.0, 1.0);
+            double intermediateX =
+                MathUtil.interpolate(
+                    FieldConstants.Community.chargingStationOuterX + 0.7,
+                    FieldConstants.Community.chargingStationInnerX,
+                    t);
+            return AllianceFlipUtil.apply(
+                new Pose2d(
+                    intermediateX,
+                    intermediateY,
+                    isFieldSide
+                        ? shiftedTargetPose.getRotation()
+                        : shiftedTargetPose.getRotation().plus(AutoCommands.cableBumpRotationIn)));
+          } else if (currentPose.getX() > FieldConstants.Community.chargingStationInnerX - 0.3) {
             double t =
                 (currentPose.getX() - FieldConstants.Community.chargingStationInnerX)
                     / (FieldConstants.Community.chargingStationOuterX
@@ -138,7 +155,12 @@ public class AutoScore extends SequentialCommandGroup {
                 MathUtil.interpolate(
                     FieldConstants.Community.chargingStationInnerX, shiftedTargetPose.getX(), t);
             return AllianceFlipUtil.apply(
-                new Pose2d(intermediateX, intermediateY, shiftedTargetPose.getRotation()));
+                new Pose2d(
+                    intermediateX,
+                    intermediateY,
+                    isFieldSide
+                        ? shiftedTargetPose.getRotation()
+                        : shiftedTargetPose.getRotation().plus(AutoCommands.cableBumpRotationIn)));
           } else if (currentPose.getX() > FieldConstants.Community.chargingStationInnerX - 0.8) {
             double t =
                 (currentPose.getX() - (FieldConstants.Community.chargingStationInnerX - 0.8))
