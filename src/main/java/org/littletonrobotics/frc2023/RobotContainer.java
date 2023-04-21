@@ -18,16 +18,12 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import org.littletonrobotics.frc2023.AutoSelector.AutoQuestion;
-import org.littletonrobotics.frc2023.AutoSelector.AutoQuestionResponse;
 import org.littletonrobotics.frc2023.Constants.Mode;
 import org.littletonrobotics.frc2023.commands.AutoCommands;
 import org.littletonrobotics.frc2023.commands.AutoScore;
 import org.littletonrobotics.frc2023.commands.DriveToSubstation;
 import org.littletonrobotics.frc2023.commands.DriveWithJoysticks;
 import org.littletonrobotics.frc2023.commands.EjectHeld;
-import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization;
-import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
 import org.littletonrobotics.frc2023.commands.HoldFlippableArmPreset;
 import org.littletonrobotics.frc2023.commands.IntakeConeFloor;
 import org.littletonrobotics.frc2023.commands.IntakeCubeHandoff;
@@ -281,7 +277,8 @@ public class RobotContainer {
     //             "Balance?", List.of(AutoQuestionResponse.YES, AutoQuestionResponse.NO))),
     //     autoCommands.sideScoreOneAndMaybeBalance());
     // System.out.println(
-    //     "[Init] Instantiating auto routines (Center: Score One, Grab, Balance, And Maybe Score)");
+    //     "[Init] Instantiating auto routines (Center: Score One, Grab, Balance, And Maybe
+    // Score)");
     // autoSelector.addRoutine(
     //     "Center: Score One, Grab, Balance, And Maybe Score",
     //     List.of(
