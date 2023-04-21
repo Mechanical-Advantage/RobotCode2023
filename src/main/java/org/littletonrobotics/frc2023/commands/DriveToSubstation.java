@@ -23,7 +23,7 @@ public class DriveToSubstation extends DriveToPose {
           Rotation2d.fromDegrees(90.0));
   public static final double doubleSubstationX =
       FieldConstants.LoadingZone.doubleSubstationX - 0.26;
-  public static final double doubleSubstationExtraX = 0.2;
+  public static final double doubleSubstationExtraX = 0.35;
 
   /** Automatically drives to the nearest substation. */
   public DriveToSubstation(Drive drive, Supplier<Boolean> useDouble) {
