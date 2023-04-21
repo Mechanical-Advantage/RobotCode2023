@@ -46,7 +46,7 @@ public class AutoScore extends SequentialCommandGroup {
   public static final double maxArmExtensionMid = 1.0;
   public static final double maxArmExtensionHigh = 1.35;
 
-  public static final double extendArmDriveTolerance = 1.8;
+  public static final double extendArmDriveTolerance = 1.2;
   public static final Rotation2d extendArmThetaTolerance = Rotation2d.fromDegrees(45.0);
   public static final Rotation2d extendArmTippingTolerancePosition = Rotation2d.fromDegrees(2.5);
   public static final Rotation2d extendArmTippingToleranceVelocity = Rotation2d.fromDegrees(5.0);
@@ -109,7 +109,7 @@ public class AutoScore extends SequentialCommandGroup {
           Pose2d currentPose = AllianceFlipUtil.apply(drive.getPose());
           double shiftT =
               MathUtil.clamp(
-                  (Math.abs(currentPose.getY() - targetPose.getY()) - 0.5) / (2.0 - 0.5), 0.0, 1.0);
+                  (Math.abs(currentPose.getY() - targetPose.getY()) - 0.2) / (0.8 - 0.2), 0.0, 1.0);
           Pose2d shiftedTargetPose =
               new Pose2d(
                   MathUtil.clamp(
