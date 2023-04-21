@@ -46,7 +46,7 @@
     "interiorPoints": 15,
     "maxVoltageShoulder": 10,
     "maxVoltageElbow": 11,
-    "maxAccelerationShoulder": 1000,
+    "maxAccelerationShoulder": 100,
     "maxAccelerationElbow": 1000,
     "maxAccelerationMinExtension": 16,
     "maxAccelerationMaxExtension": 9,
