@@ -224,142 +224,142 @@ public class RobotContainer {
     System.out.println("[Init] Instantiating auto routines (Wall: Score Three Combo)");
     autoSelector.addRoutine(
         "Wall: Score Three Combo", List.of(), autoCommands.wallScoreThreeCombo());
-    System.out.println(
-        "[Init] Instantiating auto routines (Field: Score Two, Grab, And Maybe Balance)");
-    autoSelector.addRoutine(
-        "Field: Score Two, Grab, And Maybe Balance",
-        List.of(
-            new AutoQuestion(
-                "Which level?",
-                List.of(
-                    AutoQuestionResponse.HIGH,
-                    AutoQuestionResponse.MID,
-                    AutoQuestionResponse.HYBRID)),
-            new AutoQuestion(
-                "End behavior?",
-                List.of(
-                    AutoQuestionResponse.RETURN,
-                    AutoQuestionResponse.BALANCE,
-                    AutoQuestionResponse.BALANCE_THROW))),
-        autoCommands.fieldScoreTwoGrabMaybeBalance());
-    System.out.println("[Init] Instantiating auto routines (Side: Score Two And Maybe Balance)");
-    autoSelector.addRoutine(
-        "Side: Score Two And Maybe Balance",
-        List.of(
-            new AutoQuestion(
-                "Which side?",
-                List.of(AutoQuestionResponse.FIELD_SIDE, AutoQuestionResponse.WALL_SIDE)),
-            new AutoQuestion(
-                "Which level?",
-                List.of(
-                    AutoQuestionResponse.HIGH,
-                    AutoQuestionResponse.MID,
-                    AutoQuestionResponse.HYBRID)),
-            new AutoQuestion(
-                "Balance?", List.of(AutoQuestionResponse.YES, AutoQuestionResponse.NO))),
-        autoCommands.sideScoreTwoMaybeBalance());
-    System.out.println("[Init] Instantiating auto routines (Side: Score One And Maybe Balance)");
-    autoSelector.addRoutine(
-        "Side: Score One And Maybe Balance",
-        List.of(
-            new AutoQuestion(
-                "Which side?",
-                List.of(AutoQuestionResponse.FIELD_SIDE, AutoQuestionResponse.WALL_SIDE)),
-            new AutoQuestion(
-                "Which level?",
-                List.of(
-                    AutoQuestionResponse.HIGH,
-                    AutoQuestionResponse.MID,
-                    AutoQuestionResponse.HYBRID)),
-            new AutoQuestion(
-                "Which node?",
-                List.of(
-                    AutoQuestionResponse.FIELD_SIDE,
-                    AutoQuestionResponse.CENTER,
-                    AutoQuestionResponse.WALL_SIDE)),
-            new AutoQuestion(
-                "Balance?", List.of(AutoQuestionResponse.YES, AutoQuestionResponse.NO))),
-        autoCommands.sideScoreOneAndMaybeBalance());
-    System.out.println(
-        "[Init] Instantiating auto routines (Center: Score One, Grab, Balance, And Maybe Score)");
-    autoSelector.addRoutine(
-        "Center: Score One, Grab, Balance, And Maybe Score",
-        List.of(
-            new AutoQuestion(
-                "Which level?",
-                List.of(
-                    AutoQuestionResponse.HIGH,
-                    AutoQuestionResponse.MID,
-                    AutoQuestionResponse.HYBRID)),
-            new AutoQuestion(
-                "Which node?",
-                List.of(
-                    AutoQuestionResponse.FIELD_SIDE,
-                    AutoQuestionResponse.CENTER,
-                    AutoQuestionResponse.WALL_SIDE)),
-            new AutoQuestion(
-                "Which side to intake from?",
-                List.of(AutoQuestionResponse.FIELD_SIDE, AutoQuestionResponse.WALL_SIDE)),
-            new AutoQuestion(
-                "Score cube while balanced?",
-                List.of(AutoQuestionResponse.YES, AutoQuestionResponse.NO))),
-        autoCommands.centerScoreOneGrabAndBalance());
-    System.out.println(
-        "[Init] Instantiating auto routines (Center: Score One, Mobility, And Balance)");
-    autoSelector.addRoutine(
-        "Center: Score One, Mobility, And Balance",
-        List.of(
-            new AutoQuestion(
-                "Which level?",
-                List.of(
-                    AutoQuestionResponse.HIGH,
-                    AutoQuestionResponse.MID,
-                    AutoQuestionResponse.HYBRID)),
-            new AutoQuestion(
-                "Which node?",
-                List.of(
-                    AutoQuestionResponse.FIELD_SIDE,
-                    AutoQuestionResponse.CENTER,
-                    AutoQuestionResponse.WALL_SIDE))),
-        autoCommands.centerScoreOneMobilityAndBalance());
-    System.out.println("[Init] Instantiating auto routines (Center: Score One And Balance)");
-    autoSelector.addRoutine(
-        "Center: Score One And Balance",
-        List.of(
-            new AutoQuestion(
-                "Which level?",
-                List.of(
-                    AutoQuestionResponse.HIGH,
-                    AutoQuestionResponse.MID,
-                    AutoQuestionResponse.HYBRID)),
-            new AutoQuestion(
-                "Which node?",
-                List.of(
-                    AutoQuestionResponse.FIELD_SIDE,
-                    AutoQuestionResponse.CENTER,
-                    AutoQuestionResponse.WALL_SIDE))),
-        autoCommands.centerScoreOneAndBalance());
-    System.out.println("[Init] Instantiating auto routines (Center: Balance)");
-    autoSelector.addRoutine(
-        "Center: Balance",
-        List.of(),
-        Commands.runOnce(() -> drive.setPose(autoCommands.startingLocations[4]))
-            .andThen(autoCommands.driveAndBalance(autoCommands.startingLocations[4], false)));
-    System.out.println("[Init] Instantiating auto routines (Reach for Inspection)");
-    autoSelector.addRoutine(
-        "Reach for Inspection",
-        List.of(),
-        arm.runPathCommand(ArmPose.Preset.SCORE_HIGH_UPRIGHT_CONE));
-    System.out.println("[Init] Instantiating auto routines (Drive Characterization)");
-    autoSelector.addRoutine(
-        "Drive Characterization",
-        List.of(),
-        new FeedForwardCharacterization(
-            drive,
-            true,
-            new FeedForwardCharacterizationData("drive"),
-            drive::runCharacterizationVolts,
-            drive::getCharacterizationVelocity));
+    // System.out.println(
+    //     "[Init] Instantiating auto routines (Field: Score Two, Grab, And Maybe Balance)");
+    // autoSelector.addRoutine(
+    //     "Field: Score Two, Grab, And Maybe Balance",
+    //     List.of(
+    //         new AutoQuestion(
+    //             "Which level?",
+    //             List.of(
+    //                 AutoQuestionResponse.HIGH,
+    //                 AutoQuestionResponse.MID,
+    //                 AutoQuestionResponse.HYBRID)),
+    //         new AutoQuestion(
+    //             "End behavior?",
+    //             List.of(
+    //                 AutoQuestionResponse.RETURN,
+    //                 AutoQuestionResponse.BALANCE,
+    //                 AutoQuestionResponse.BALANCE_THROW))),
+    //     autoCommands.fieldScoreTwoGrabMaybeBalance());
+    // System.out.println("[Init] Instantiating auto routines (Side: Score Two And Maybe Balance)");
+    // autoSelector.addRoutine(
+    //     "Side: Score Two And Maybe Balance",
+    //     List.of(
+    //         new AutoQuestion(
+    //             "Which side?",
+    //             List.of(AutoQuestionResponse.FIELD_SIDE, AutoQuestionResponse.WALL_SIDE)),
+    //         new AutoQuestion(
+    //             "Which level?",
+    //             List.of(
+    //                 AutoQuestionResponse.HIGH,
+    //                 AutoQuestionResponse.MID,
+    //                 AutoQuestionResponse.HYBRID)),
+    //         new AutoQuestion(
+    //             "Balance?", List.of(AutoQuestionResponse.YES, AutoQuestionResponse.NO))),
+    //     autoCommands.sideScoreTwoMaybeBalance());
+    // System.out.println("[Init] Instantiating auto routines (Side: Score One And Maybe Balance)");
+    // autoSelector.addRoutine(
+    //     "Side: Score One And Maybe Balance",
+    //     List.of(
+    //         new AutoQuestion(
+    //             "Which side?",
+    //             List.of(AutoQuestionResponse.FIELD_SIDE, AutoQuestionResponse.WALL_SIDE)),
+    //         new AutoQuestion(
+    //             "Which level?",
+    //             List.of(
+    //                 AutoQuestionResponse.HIGH,
+    //                 AutoQuestionResponse.MID,
+    //                 AutoQuestionResponse.HYBRID)),
+    //         new AutoQuestion(
+    //             "Which node?",
+    //             List.of(
+    //                 AutoQuestionResponse.FIELD_SIDE,
+    //                 AutoQuestionResponse.CENTER,
+    //                 AutoQuestionResponse.WALL_SIDE)),
+    //         new AutoQuestion(
+    //             "Balance?", List.of(AutoQuestionResponse.YES, AutoQuestionResponse.NO))),
+    //     autoCommands.sideScoreOneAndMaybeBalance());
+    // System.out.println(
+    //     "[Init] Instantiating auto routines (Center: Score One, Grab, Balance, And Maybe Score)");
+    // autoSelector.addRoutine(
+    //     "Center: Score One, Grab, Balance, And Maybe Score",
+    //     List.of(
+    //         new AutoQuestion(
+    //             "Which level?",
+    //             List.of(
+    //                 AutoQuestionResponse.HIGH,
+    //                 AutoQuestionResponse.MID,
+    //                 AutoQuestionResponse.HYBRID)),
+    //         new AutoQuestion(
+    //             "Which node?",
+    //             List.of(
+    //                 AutoQuestionResponse.FIELD_SIDE,
+    //                 AutoQuestionResponse.CENTER,
+    //                 AutoQuestionResponse.WALL_SIDE)),
+    //         new AutoQuestion(
+    //             "Which side to intake from?",
+    //             List.of(AutoQuestionResponse.FIELD_SIDE, AutoQuestionResponse.WALL_SIDE)),
+    //         new AutoQuestion(
+    //             "Score cube while balanced?",
+    //             List.of(AutoQuestionResponse.YES, AutoQuestionResponse.NO))),
+    //     autoCommands.centerScoreOneGrabAndBalance());
+    // System.out.println(
+    //     "[Init] Instantiating auto routines (Center: Score One, Mobility, And Balance)");
+    // autoSelector.addRoutine(
+    //     "Center: Score One, Mobility, And Balance",
+    //     List.of(
+    //         new AutoQuestion(
+    //             "Which level?",
+    //             List.of(
+    //                 AutoQuestionResponse.HIGH,
+    //                 AutoQuestionResponse.MID,
+    //                 AutoQuestionResponse.HYBRID)),
+    //         new AutoQuestion(
+    //             "Which node?",
+    //             List.of(
+    //                 AutoQuestionResponse.FIELD_SIDE,
+    //                 AutoQuestionResponse.CENTER,
+    //                 AutoQuestionResponse.WALL_SIDE))),
+    //     autoCommands.centerScoreOneMobilityAndBalance());
+    // System.out.println("[Init] Instantiating auto routines (Center: Score One And Balance)");
+    // autoSelector.addRoutine(
+    //     "Center: Score One And Balance",
+    //     List.of(
+    //         new AutoQuestion(
+    //             "Which level?",
+    //             List.of(
+    //                 AutoQuestionResponse.HIGH,
+    //                 AutoQuestionResponse.MID,
+    //                 AutoQuestionResponse.HYBRID)),
+    //         new AutoQuestion(
+    //             "Which node?",
+    //             List.of(
+    //                 AutoQuestionResponse.FIELD_SIDE,
+    //                 AutoQuestionResponse.CENTER,
+    //                 AutoQuestionResponse.WALL_SIDE))),
+    //     autoCommands.centerScoreOneAndBalance());
+    // System.out.println("[Init] Instantiating auto routines (Center: Balance)");
+    // autoSelector.addRoutine(
+    //     "Center: Balance",
+    //     List.of(),
+    //     Commands.runOnce(() -> drive.setPose(autoCommands.startingLocations[4]))
+    //         .andThen(autoCommands.driveAndBalance(autoCommands.startingLocations[4], false)));
+    // System.out.println("[Init] Instantiating auto routines (Reach for Inspection)");
+    // autoSelector.addRoutine(
+    //     "Reach for Inspection",
+    //     List.of(),
+    //     arm.runPathCommand(ArmPose.Preset.SCORE_HIGH_UPRIGHT_CONE));
+    // System.out.println("[Init] Instantiating auto routines (Drive Characterization)");
+    // autoSelector.addRoutine(
+    //     "Drive Characterization",
+    //     List.of(),
+    //     new FeedForwardCharacterization(
+    //         drive,
+    //         true,
+    //         new FeedForwardCharacterizationData("drive"),
+    //         drive::runCharacterizationVolts,
+    //         drive::getCharacterizationVelocity));
 
     // Startup alerts
     if (Constants.tuningMode) {
