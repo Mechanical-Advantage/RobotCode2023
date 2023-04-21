@@ -27,8 +27,8 @@ deploy {
                 // getTargetTypeClass is a shortcut to get the class type using a string
 
                 frcJava(getArtifactTypeClass("FRCJavaArtifact")) {
-                    gcType = edu.wpi.first.gradlerio.deploy.roborio.GarbageCollectorType.Other
-                    jvmArgs << "-XX:+UseG1GC"
+                    // gcType = edu.wpi.first.gradlerio.deploy.roborio.GarbageCollectorType.Other
+                    // jvmArgs << "-XX:+UseG1GC"
                     // jvmArgs << "-XX:+UseG1GC -Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.port=1099 -Dcom.sun.management.jmxremote.local.only=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -Djava.rmi.server.hostname=10.63.28.2"
                 }
 
