@@ -10,7 +10,11 @@ package org.littletonrobotics.frc2023.commands;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandBase;
+
+import org.littletonrobotics.frc2023.Constants;
+import org.littletonrobotics.frc2023.Constants.Mode;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
 import org.littletonrobotics.frc2023.util.LoggedTunableNumber;
 import org.littletonrobotics.junction.Logger;
@@ -22,9 +26,12 @@ public class AutoBalance extends CommandBase {
       new LoggedTunableNumber("AutoBalance/PositionThresholdDegrees", 3.0);
   private static final LoggedTunableNumber velocityThresholdDegreesPerSec =
       new LoggedTunableNumber("AutoBalance/VelocityThresholdDegreesPerSec", 8.0);
+      private static final LoggedTunableNumber stoppedFinalMinTime =
+      new LoggedTunableNumber("AutoBalance/StoppedFinalMinTime", 0.75);
 
   private final Drive drive;
   private double angleDegrees;
+  private double lastStoppedFinalTimestamp;
 
   public AutoBalance(Drive drive) {
     this.drive = drive;
@@ -34,6 +41,7 @@ public class AutoBalance extends CommandBase {
   @Override
   public void initialize() {
     angleDegrees = Double.POSITIVE_INFINITY;
+    lastStoppedFinalTimestamp = -1000.0;
   }
 
   @Override
@@ -45,14 +53,20 @@ public class AutoBalance extends CommandBase {
     double angleVelocityDegreesPerSec =
         drive.getRotation().getCos() * Units.radiansToDegrees(drive.getPitchVelocity())
             + drive.getRotation().getSin() * Units.radiansToDegrees(drive.getRollVelocity());
-    boolean shouldStop =
+    boolean shouldStopTemporary =
         (angleDegrees < 0.0 && angleVelocityDegreesPerSec > velocityThresholdDegreesPerSec.get())
             || (angleDegrees > 0.0
                 && angleVelocityDegreesPerSec < -velocityThresholdDegreesPerSec.get());
+    boolean shouldStopFinal = Math.abs(angleDegrees) < positionThresholdDegrees.get();
+    if (shouldStopFinal) {
+      lastStoppedFinalTimestamp = Timer.getFPGATimestamp();
+    }
 
     // Send velocity to drive
-    if (shouldStop) {
+    if (shouldStopTemporary) {
       drive.stop();
+    } else if (Timer.getFPGATimestamp() - lastStoppedFinalTimestamp < stoppedFinalMinTime.get()) {
+      drive.stopWithX();
     } else {
       drive.runVelocity(
           ChassisSpeeds.fromFieldRelativeSpeeds(
@@ -66,7 +80,8 @@ public class AutoBalance extends CommandBase {
     Logger.getInstance().recordOutput("AutoBalance/AngleDegrees", angleDegrees);
     Logger.getInstance()
         .recordOutput("AutoBalance/AngleVelocityDegreesPerSec", angleVelocityDegreesPerSec);
-    Logger.getInstance().recordOutput("AutoBalance/Stopped", shouldStop);
+    Logger.getInstance().recordOutput("AutoBalance/StoppedTemporary", shouldStopTemporary);
+    Logger.getInstance().recordOutput("AutoBalance/StoppedFinal", shouldStopFinal);
   }
 
   @Override
@@ -76,7 +91,7 @@ public class AutoBalance extends CommandBase {
 
   @Override
   public boolean isFinished() {
-    return Math.abs(angleDegrees) < positionThresholdDegrees.get()
+    return Constants.getMode() == Mode.SIM // Can't balance in sim
         || (DriverStation.getMatchTime() >= 0.0
             && DriverStation.getMatchTime() < DriveWithJoysticks.matchEndThreshold);
   }
