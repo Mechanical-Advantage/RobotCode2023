@@ -23,17 +23,25 @@ public class DriveToSubstation extends DriveToPose {
           Rotation2d.fromDegrees(90.0));
   public static final double doubleSubstationX =
       FieldConstants.LoadingZone.doubleSubstationX - 0.26;
+  public static final double doubleSubstationExtraX = 0.2;
 
   /** Automatically drives to the nearest substation. */
   public DriveToSubstation(Drive drive, Supplier<Boolean> useDouble) {
     super(
         drive,
         () -> {
-          var nearestTarget =
-              useDouble.get()
-                  ? AllianceFlipUtil.apply(
-                      new Pose2d(doubleSubstationX, drive.getPose().getY(), new Rotation2d()))
-                  : AllianceFlipUtil.apply(singleSubstationPose);
+          Pose2d nearestTarget;
+          if (useDouble.get()) {
+            double currentX = AllianceFlipUtil.apply(drive.getPose().getX());
+            nearestTarget =
+                new Pose2d(
+                    Math.max(doubleSubstationX, currentX + doubleSubstationExtraX),
+                    drive.getPose().getY(),
+                    new Rotation2d());
+          } else {
+            nearestTarget = singleSubstationPose;
+          }
+          nearestTarget = AllianceFlipUtil.apply(nearestTarget);
           if (drive.getRotation().minus(nearestTarget.getRotation()).getCos() < 0.0) {
             nearestTarget =
                 nearestTarget.transformBy(

@@ -9,9 +9,7 @@ package org.littletonrobotics.frc2023;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -524,21 +522,8 @@ public class RobotContainer {
         .leftTrigger()
         .whileTrue(
             driveToSubstation
-                .until(() -> driveToSubstation.atGoal() && isDouble.get())
-                .andThen(
-                    Commands.either(
-                        Commands.none(),
-                        Commands.startEnd(
-                            () ->
-                                drive.runVelocity(
-                                    ChassisSpeeds.fromFieldRelativeSpeeds(
-                                        DriverStation.getAlliance() == Alliance.Red ? -0.3 : 0.3,
-                                        0.0,
-                                        0.0,
-                                        drive.getRotation())),
-                            drive::stop,
-                            drive),
-                        intakeSubstationDouble::isGrabbed))
+                .until(
+                    () -> intakeSubstationSingle.isGrabbed() || intakeSubstationDouble.isGrabbed())
                 .deadlineWith(
                     Commands.startEnd(
                         () -> Leds.getInstance().autoSubstation = true,

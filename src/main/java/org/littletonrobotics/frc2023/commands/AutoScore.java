@@ -46,7 +46,7 @@ public class AutoScore extends SequentialCommandGroup {
   public static final double maxArmExtensionMid = 1.0;
   public static final double maxArmExtensionHigh = 1.35;
 
-  public static final double extendArmDriveTolerance = 3.0;
+  public static final double extendArmDriveTolerance = 1.8;
   public static final Rotation2d extendArmThetaTolerance = Rotation2d.fromDegrees(45.0);
   public static final Rotation2d extendArmTippingTolerancePosition = Rotation2d.fromDegrees(2.5);
   public static final Rotation2d extendArmTippingToleranceVelocity = Rotation2d.fromDegrees(5.0);
