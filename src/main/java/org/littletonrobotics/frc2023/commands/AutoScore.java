@@ -109,7 +109,7 @@ public class AutoScore extends SequentialCommandGroup {
           Pose2d currentPose = AllianceFlipUtil.apply(drive.getPose());
           double shiftT =
               MathUtil.clamp(
-                  (Math.abs(currentPose.getY() - targetPose.getY()) - 0.2) / (0.8 - 0.2), 0.0, 1.0);
+                  (Math.abs(currentPose.getY() - targetPose.getY()) - 0.4) / (1.2 - 0.4), 0.0, 1.0);
           Pose2d shiftedTargetPose =
               new Pose2d(
                   MathUtil.clamp(

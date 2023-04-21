@@ -12,7 +12,6 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandBase;
-
 import org.littletonrobotics.frc2023.Constants;
 import org.littletonrobotics.frc2023.Constants.Mode;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
@@ -26,7 +25,7 @@ public class AutoBalance extends CommandBase {
       new LoggedTunableNumber("AutoBalance/PositionThresholdDegrees", 3.0);
   private static final LoggedTunableNumber velocityThresholdDegreesPerSec =
       new LoggedTunableNumber("AutoBalance/VelocityThresholdDegreesPerSec", 8.0);
-      private static final LoggedTunableNumber stoppedFinalMinTime =
+  private static final LoggedTunableNumber stoppedFinalMinTime =
       new LoggedTunableNumber("AutoBalance/StoppedFinalMinTime", 0.75);
 
   private final Drive drive;
