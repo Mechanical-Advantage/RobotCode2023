@@ -70,20 +70,20 @@ public class AutoCommands {
   public static final double slowScoreConstraintRadius = 0.5;
   public static final double slowScoreMaxVelocity = Units.inchesToMeters(45.0);
   public static final Transform2d fieldCubeScoreTransform =
-      new Transform2d(new Translation2d(0.15, 0.0), new Rotation2d());
+      new Transform2d(new Translation2d(0.18, 0.0), new Rotation2d());
   public static final Transform2d fieldSecondCubeIntakeTransform =
-      new Transform2d(new Translation2d(0.15, -0.3), new Rotation2d());
+      new Transform2d(new Translation2d(0.15, -0.2), new Rotation2d());
   public static final Transform2d wallCubeScoreTransform =
       new Transform2d(new Translation2d(0.15, 0.0), new Rotation2d());
   public static final Transform2d wallFirstCubeIntakeTransform =
-      new Transform2d(new Translation2d(0.2, 0.0), new Rotation2d());
+      new Transform2d(new Translation2d(0.5, 0.0), new Rotation2d());
   public static final Transform2d wallSecondCubeIntakeTransform =
-      new Transform2d(new Translation2d(0.7, -0.2), new Rotation2d());
+      new Transform2d(new Translation2d(0.8, -0.2), new Rotation2d());
 
   // Waypoints
   public final Pose2d[] startingLocations = new Pose2d[9];
-  private final Rotation2d cableBumpRotationOut = Rotation2d.fromDegrees(30.0);
-  private final Rotation2d cableBumpRotationIn = Rotation2d.fromDegrees(-30.0);
+  public static final Rotation2d cableBumpRotationOut = Rotation2d.fromDegrees(30.0);
+  public static final Rotation2d cableBumpRotationIn = Rotation2d.fromDegrees(-30.0);
   private final Translation2d transitWallSideNearOut;
   private final Translation2d transitWallSideNearIn;
   private final Translation2d transitWallSideCenterOut;
@@ -347,6 +347,7 @@ public class AutoCommands {
                         () ->
                             AllianceFlipUtil.apply(drive.getPose().getX())
                                 > FieldConstants.Community.chargingStationOuterX)
+                    .deadlineWith(gripper.ejectCommand(EjectSpeed.FAST))
                     .andThen(gripper.intakeCommand()),
                 (objective.isConeNode() ? none() : cubeIntake.runCommand())),
         new Pose2d(

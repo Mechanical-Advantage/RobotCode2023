@@ -15,6 +15,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.ScheduleCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import java.util.function.Supplier;
 import org.littletonrobotics.frc2023.FieldConstants;
@@ -22,6 +23,7 @@ import org.littletonrobotics.frc2023.subsystems.arm.Arm;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmPose;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
 import org.littletonrobotics.frc2023.subsystems.gripper.Gripper;
+import org.littletonrobotics.frc2023.subsystems.gripper.Gripper.EjectSpeed;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.Objective;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
 import org.littletonrobotics.frc2023.util.GeomUtil;
@@ -44,7 +46,7 @@ public class AutoScore extends SequentialCommandGroup {
   public static final double maxArmExtensionMid = 1.0;
   public static final double maxArmExtensionHigh = 1.35;
 
-  public static final double extendArmDriveTolerance = 3.0;
+  public static final double extendArmDriveTolerance = 1.2;
   public static final Rotation2d extendArmThetaTolerance = Rotation2d.fromDegrees(45.0);
   public static final Rotation2d extendArmTippingTolerancePosition = Rotation2d.fromDegrees(2.5);
   public static final Rotation2d extendArmTippingToleranceVelocity = Rotation2d.fromDegrees(5.0);
@@ -107,7 +109,7 @@ public class AutoScore extends SequentialCommandGroup {
           Pose2d currentPose = AllianceFlipUtil.apply(drive.getPose());
           double shiftT =
               MathUtil.clamp(
-                  (Math.abs(currentPose.getY() - targetPose.getY()) - 0.5) / (2.0 - 0.5), 0.0, 1.0);
+                  (Math.abs(currentPose.getY() - targetPose.getY()) - 0.4) / (1.2 - 0.4), 0.0, 1.0);
           Pose2d shiftedTargetPose =
               new Pose2d(
                   MathUtil.clamp(
@@ -116,17 +118,34 @@ public class AutoScore extends SequentialCommandGroup {
                       FieldConstants.Community.chargingStationInnerX - 0.8),
                   targetPose.getY(),
                   targetPose.getRotation());
-          double intermediateY =
+          boolean isFieldSide =
               currentPose.getY()
-                      > (FieldConstants.Community.chargingStationLeftY
-                              + FieldConstants.Community.chargingStationRightY)
-                          / 2.0
+                  > (FieldConstants.Community.chargingStationLeftY
+                          + FieldConstants.Community.chargingStationRightY)
+                      / 2.0;
+          double intermediateY =
+              isFieldSide
                   ? (FieldConstants.Community.leftY + FieldConstants.Community.chargingStationLeftY)
                       / 2.0
                   : (FieldConstants.Community.rightY
                           + FieldConstants.Community.chargingStationRightY)
                       / 2.0;
-          if (currentPose.getX() > FieldConstants.Community.chargingStationInnerX - 0.3) {
+          if (currentPose.getX() > FieldConstants.Community.chargingStationOuterX) {
+            double t = (Math.abs(currentPose.getY() - intermediateY) - 0.2) / (0.6 - 0.2);
+            t = 1.0 - MathUtil.clamp(t, 0.0, 1.0);
+            double intermediateX =
+                MathUtil.interpolate(
+                    FieldConstants.Community.chargingStationOuterX + 0.7,
+                    FieldConstants.Community.chargingStationInnerX,
+                    t);
+            return AllianceFlipUtil.apply(
+                new Pose2d(
+                    intermediateX,
+                    intermediateY,
+                    isFieldSide
+                        ? shiftedTargetPose.getRotation()
+                        : shiftedTargetPose.getRotation().plus(AutoCommands.cableBumpRotationIn)));
+          } else if (currentPose.getX() > FieldConstants.Community.chargingStationInnerX - 0.3) {
             double t =
                 (currentPose.getX() - FieldConstants.Community.chargingStationInnerX)
                     / (FieldConstants.Community.chargingStationOuterX
@@ -136,7 +155,12 @@ public class AutoScore extends SequentialCommandGroup {
                 MathUtil.interpolate(
                     FieldConstants.Community.chargingStationInnerX, shiftedTargetPose.getX(), t);
             return AllianceFlipUtil.apply(
-                new Pose2d(intermediateX, intermediateY, shiftedTargetPose.getRotation()));
+                new Pose2d(
+                    intermediateX,
+                    intermediateY,
+                    isFieldSide
+                        ? shiftedTargetPose.getRotation()
+                        : shiftedTargetPose.getRotation().plus(AutoCommands.cableBumpRotationIn)));
           } else if (currentPose.getX() > FieldConstants.Community.chargingStationInnerX - 0.8) {
             double t =
                 (currentPose.getX() - (FieldConstants.Community.chargingStationInnerX - 0.8))
@@ -208,11 +232,17 @@ public class AutoScore extends SequentialCommandGroup {
     // Combine all commands
     addCommands(
         Commands.either(
-                Commands.waitUntil(() -> arm.isTrajectoryFinished() && !driveToPose.isRunning()),
+                Commands.waitUntil(() -> arm.isTrajectoryFinished() && driveToPose.atGoal()),
                 Commands.waitUntil(() -> ejectButton.get()),
                 () -> autoEject.get() && !fullManual.get())
             .deadlineWith(driveCommand, armCommand)
-            .andThen(gripper.ejectCommand(objective))
+            .andThen(
+                gripper.ejectCommand(objective),
+                new ScheduleCommand(
+                    gripper
+                        .ejectCommand(EjectSpeed.FAST, true)
+                        .withTimeout(1.0)) // Eject while retracting to remove trapped game pieces
+                )
             .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
   }
 
