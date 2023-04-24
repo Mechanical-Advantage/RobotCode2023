@@ -660,4 +660,8 @@ public class RobotContainer {
   public Command getAutonomousCommand() {
     return autoSelector.getCommand();
   }
+
+  public Pose2d getPose() {
+    return drive.getPose();
+  }
 }

@@ -8,6 +8,11 @@
 package org.littletonrobotics.frc2023;
 
 import edu.wpi.first.hal.AllianceStationID;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
@@ -17,7 +22,9 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -27,6 +34,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import org.littletonrobotics.frc2023.Constants.Mode;
 import org.littletonrobotics.frc2023.Constants.RobotType;
@@ -34,6 +43,7 @@ import org.littletonrobotics.frc2023.subsystems.leds.Leds;
 import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
 import org.littletonrobotics.frc2023.util.BatteryTracker;
+import org.littletonrobotics.frc2023.util.GeomUtil;
 import org.littletonrobotics.frc2023.util.VirtualSubsystem;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
@@ -70,6 +80,12 @@ public class Robot extends LoggedRobot {
       new Alert(
           "Battery voltage is very low, consider turning off the robot or replacing the battery.",
           AlertType.WARNING);
+
+  private final String zebraPath = "/Users/jonah/Downloads/2023cmptx_sf5m1_zebra.csv";
+  private final Transform2d zebraToCenter =
+      new Transform2d(new Translation2d(Units.inchesToMeters(2.0), 0.0), new Rotation2d());
+  private TreeMap<Double, Translation2d> zebraData = new TreeMap<>();
+  private Double matchStartTimestamp = null;
 
   public Robot() {
     super(Constants.loopPeriodSecs);
@@ -200,6 +216,23 @@ public class Robot extends LoggedRobot {
     disabledTimer.reset();
     disabledTimer.start();
 
+    // Read zebra data from file
+    String line = "";
+    try (BufferedReader bufferedReader = new BufferedReader(new FileReader(zebraPath))) {
+      while (true) {
+        line = bufferedReader.readLine();
+        if (line == null) {
+          break;
+        }
+        String[] entryData = line.split(",");
+        zebraData.put(
+            Double.parseDouble(entryData[0]),
+            new Translation2d(Double.parseDouble(entryData[1]), Double.parseDouble(entryData[2])));
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+
     // Instantiate RobotContainer
     System.out.println("[Init] Instantiating RobotContainer");
     robotContainer = new RobotContainer();
@@ -280,6 +313,55 @@ public class Robot extends LoggedRobot {
         fileWriter.close();
       } catch (IOException e) {
         e.printStackTrace();
+      }
+    }
+
+    // Log zebra data
+    if (matchStartTimestamp == null) {
+      if (DriverStation.isEnabled()) {
+        matchStartTimestamp = Timer.getFPGATimestamp() + 1.0;
+      }
+    }
+    if (matchStartTimestamp != null) {
+      double zebraTimestamp = Timer.getFPGATimestamp() - matchStartTimestamp;
+
+      Entry<Double, Translation2d> zebraEntryFloor = zebraData.floorEntry(zebraTimestamp);
+      Entry<Double, Translation2d> zebraEntryCeiling = zebraData.ceilingEntry(zebraTimestamp);
+      if (zebraEntryFloor != null && zebraEntryCeiling != null) {
+        Pose2d robotPose = robotContainer.getPose();
+        Translation2d zebraTranslation =
+            GeomUtil.interpolate(
+                    new Pose2d(zebraEntryFloor.getValue(), new Rotation2d()),
+                    new Pose2d(zebraEntryCeiling.getValue(), new Rotation2d()),
+                    (zebraTimestamp - zebraEntryFloor.getKey())
+                        / (zebraEntryCeiling.getKey() - zebraEntryFloor.getKey()))
+                .getTranslation();
+
+        // Convert to meters
+        zebraTranslation =
+            new Translation2d(
+                Units.feetToMeters(zebraTranslation.getX()),
+                Units.feetToMeters(zebraTranslation.getY()));
+
+        // Flip pose to blue origin
+        zebraTranslation =
+            new Translation2d(FieldConstants.fieldLength, FieldConstants.fieldWidth)
+                .minus(zebraTranslation);
+
+        // Find pose of robot center
+        Pose2d zebraPose =
+            new Pose2d(zebraTranslation, robotPose.getRotation()).transformBy(zebraToCenter);
+
+        Logger.getInstance()
+            .recordOutput(
+                "Odometry/Zebra",
+                new double[] {
+                  zebraPose.getX(), zebraPose.getY(), zebraPose.getRotation().getRadians()
+                });
+        Logger.getInstance()
+            .recordOutput(
+                "ZebraError",
+                zebraPose.getTranslation().getDistance(robotContainer.getPose().getTranslation()));
       }
     }
 
