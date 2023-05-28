@@ -11,7 +11,9 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -72,6 +74,7 @@ import org.littletonrobotics.frc2023.util.OverrideSwitches;
 import org.littletonrobotics.frc2023.util.SparkMaxBurnManager;
 import org.littletonrobotics.frc2023.util.TriggerUtil;
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.LoggedDashboardBoolean;
 import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
 public class RobotContainer {
@@ -95,7 +98,7 @@ public class RobotContainer {
   private final Trigger hpThrowGamePieceSwitch = overrides.multiDirectionSwitchRight();
   private final Trigger manualDrive = overrides.operatorSwitch(0);
   private final Trigger autoEject = overrides.operatorSwitch(1);
-  private final Trigger reachScoringEnable = overrides.operatorSwitch(2);
+  private final Trigger preferFront = overrides.operatorSwitch(2);
   private final Trigger forcePregenPaths = overrides.operatorSwitch(3);
   private final Trigger forceGripperEnable = overrides.operatorSwitch(4);
   private final Alert driverDisconnected =
@@ -104,10 +107,16 @@ public class RobotContainer {
       new Alert("Operator controller disconnected (port 1).", AlertType.WARNING);
   private final Alert overrideDisconnected =
       new Alert("Override controller disconnected (port 5).", AlertType.INFO);
+  private final Alert demoActivated =
+      new Alert("Demo mode is activated. Do not use in competition.", AlertType.INFO);
   private final LoggedDashboardNumber endgameAlert1 =
       new LoggedDashboardNumber("Endgame Alert #1", 30.0);
   private final LoggedDashboardNumber endgameAlert2 =
       new LoggedDashboardNumber("Endgame Alert #2", 15.0);
+  private final LoggedDashboardBoolean demoControls =
+      new LoggedDashboardBoolean("Demo Controls", false);
+  private boolean lastWasDemoControls = false;
+  private boolean demoManualArmMode = false;
 
   // Auto selector
   private final AutoSelector autoSelector = new AutoSelector("Auto");
@@ -429,7 +438,23 @@ public class RobotContainer {
 
     // Bind driver and operator controls
     System.out.println("[Init] Binding controls");
-    bindControls();
+    bindControls(demoControls.get());
+    lastWasDemoControls = demoControls.get();
+    demoActivated.set(demoControls.get());
+    Leds.getInstance().demoMode = demoControls.get();
+    AutoScore.preferFront = () -> preferFront.getAsBoolean();
+
+    // Rely on our custom alerts for disconnected controllers
+    DriverStation.silenceJoystickConnectionWarning(true);
+  }
+  /** Binds controls based on whether demo controls are active. */
+  public void updateDemoControls() {
+    if (demoControls.get() != lastWasDemoControls) {
+      bindControls(demoControls.get());
+      lastWasDemoControls = demoControls.get();
+      demoActivated.set(demoControls.get());
+      Leds.getInstance().demoMode = demoControls.get();
+    }
   }
 
   /** Updates the alerts for disconnected controllers. */
@@ -438,8 +463,9 @@ public class RobotContainer {
         !DriverStation.isJoystickConnected(driver.getHID().getPort())
             || !DriverStation.getJoystickIsXbox(driver.getHID().getPort()));
     operatorDisconnected.set(
-        !DriverStation.isJoystickConnected(operator.getHID().getPort())
-            || !DriverStation.getJoystickIsXbox(operator.getHID().getPort()));
+        !demoControls.get()
+            && (!DriverStation.isJoystickConnected(operator.getHID().getPort())
+                || !DriverStation.getJoystickIsXbox(operator.getHID().getPort())));
     overrideDisconnected.set(!overrides.isConnected());
   }
 
@@ -450,9 +476,9 @@ public class RobotContainer {
   }
 
   /** Binds the driver and operator controls. */
-  public void bindControls() {
-    // Rely on our custom alerts for disconnected controllers
-    DriverStation.silenceJoystickConnectionWarning(true);
+  public void bindControls(boolean demo) {
+    // Clear old buttons
+    CommandScheduler.getInstance().getActiveButtonLoop().clear();
 
     // Joystick command factories
     Function<Boolean, DriveWithJoysticks> driveWithJoysticksFactory =
@@ -470,17 +496,28 @@ public class RobotContainer {
         () ->
             new MoveArmWithJoysticks(
                 arm,
-                () -> operator.getLeftX(),
-                () -> -operator.getLeftY(),
-                () -> -operator.getRightY());
+                () -> (demo ? driver : operator).getLeftX(),
+                () -> -(demo ? driver : operator).getLeftY(),
+                () -> -(demo ? driver : operator).getRightY());
 
     // *** DRIVER CONTROLS ***
 
     // Drive controls
-    drive.setDefaultCommand(driveWithJoysticksFactory.apply(false));
+    Command driveWithJoysticksDefault =
+        Commands.either(
+            Commands.none(), driveWithJoysticksFactory.apply(false), () -> demoManualArmMode);
+
+    Command oldDefaultCommand = CommandScheduler.getInstance().getDefaultCommand(drive);
+
+    if (oldDefaultCommand != null) {
+      oldDefaultCommand.cancel();
+    }
+
+    drive.setDefaultCommand(driveWithJoysticksDefault);
     driver
         .start()
         .or(driver.back())
+        .and(() -> !demo || DriverStation.isDisabled())
         .onTrue(
             Commands.runOnce(
                     () -> {
@@ -490,33 +527,49 @@ public class RobotContainer {
                               AllianceFlipUtil.apply(new Rotation2d())));
                     })
                 .ignoringDisable(true));
-    driver
-        .b()
-        .and(DriverStation::isDisabled)
-        .whileTrue(
-            Commands.run(
-                    () -> {
-                      drive.setPose(
-                          new Pose2d(
-                              drive.getPose().getTranslation().getX()
-                                  + (driver.getLeftX() * Constants.loopPeriodSecs * 2.0),
-                              drive.getPose().getTranslation().getY()
-                                  - (driver.getLeftY() * Constants.loopPeriodSecs * 2.0),
-                              drive
-                                  .getRotation()
-                                  .plus(
-                                      new Rotation2d(
-                                          -driver.getRightX() * Constants.loopPeriodSecs * 2.0))));
-                    })
-                .ignoringDisable(true));
-    driver.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
+    if (!demo) {
+      driver
+          .b()
+          .and(DriverStation::isDisabled)
+          .whileTrue(
+              Commands.run(
+                      () -> {
+                        drive.setPose(
+                            new Pose2d(
+                                drive.getPose().getTranslation().getX()
+                                    + (driver.getLeftX() * Constants.loopPeriodSecs * 2.0),
+                                drive.getPose().getTranslation().getY()
+                                    - (driver.getLeftY() * Constants.loopPeriodSecs * 2.0),
+                                drive
+                                    .getRotation()
+                                    .plus(
+                                        new Rotation2d(
+                                            -driver.getRightX()
+                                                * Constants.loopPeriodSecs
+                                                * 2.0))));
+                      })
+                  .ignoringDisable(true));
+      driver.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
+    }
 
     // Auto align controls
     IntakeSubstation intakeSubstationSingle =
-        new IntakeSubstation(true, arm, drive, gripper, objectiveTracker.objective);
+        new IntakeSubstation(
+            true,
+            arm,
+            drive,
+            gripper,
+            objectiveTracker.objective,
+            () -> preferFront.getAsBoolean());
     IntakeSubstation intakeSubstationDouble =
-        new IntakeSubstation(false, arm, drive, gripper, objectiveTracker.objective);
-    Supplier<Boolean> isDouble = () -> !operator.a().getAsBoolean();
+        new IntakeSubstation(
+            false,
+            arm,
+            drive,
+            gripper,
+            objectiveTracker.objective,
+            () -> preferFront.getAsBoolean());
+    Supplier<Boolean> isDouble = () -> !(demo ? driver : operator).a().getAsBoolean();
     DriveToSubstation driveToSubstation = new DriveToSubstation(drive, isDouble);
     driver
         .leftTrigger()
@@ -537,7 +590,7 @@ public class RobotContainer {
                   intakeSubstationDouble.cancel();
                 }));
     var autoScoreTrigger = driver.rightTrigger();
-    var ejectTrigger = driver.a();
+    var ejectTrigger = demo ? driver.b() : driver.a();
     autoScoreTrigger
         .whileTrue(
             new AutoScore(
@@ -550,7 +603,7 @@ public class RobotContainer {
                     () -> ejectTrigger.getAsBoolean(),
                     () -> manualDrive.getAsBoolean(),
                     () -> autoEject.getAsBoolean(),
-                    () -> reachScoringEnable.getAsBoolean())
+                    () -> false)
                 .deadlineWith(
                     Commands.startEnd(
                         () -> Leds.getInstance().autoScore = true,
@@ -558,105 +611,167 @@ public class RobotContainer {
         .onTrue(Commands.runOnce(() -> Leds.getInstance().hpGamePiece = HPGamePiece.NONE));
 
     // Throw game piece
-    driver
-        .leftBumper()
-        .whileTrue(
-            new HoldFlippableArmPreset(
-                arm, drive, ArmPose.Preset.THROW.getPose(), Rotation2d.fromDegrees(180.0)));
-    driver.leftBumper().onFalse(gripper.ejectCommand(EjectSpeed.VERY_FAST));
+    if (!demo) {
+      driver
+          .leftBumper()
+          .whileTrue(
+              new HoldFlippableArmPreset(
+                  arm,
+                  drive,
+                  ArmPose.Preset.THROW.getPose(),
+                  Rotation2d.fromDegrees(180.0),
+                  () -> preferFront.getAsBoolean()));
+      driver.leftBumper().onFalse(gripper.ejectCommand(EjectSpeed.VERY_FAST));
+    }
 
     // Distraction LEDs
-    driver
-        .rightBumper()
-        .whileTrue(
-            Commands.startEnd(
-                    () -> Leds.getInstance().distraction = true,
-                    () -> Leds.getInstance().distraction = false)
-                .ignoringDisable(true));
+    if (!demo) {
+      driver
+          .rightBumper()
+          .whileTrue(
+              Commands.startEnd(
+                      () -> Leds.getInstance().distraction = true,
+                      () -> Leds.getInstance().distraction = false)
+                  .ignoringDisable(true));
+    }
 
     // Log marker
-    driver
-        .y()
-        .whileTrue(
-            Commands.startEnd(
-                    () -> Logger.getInstance().recordOutput("LogMarker", true),
-                    () -> Logger.getInstance().recordOutput("LogMarker", false))
-                .ignoringDisable(true));
+    if (!demo) {
+      driver
+          .y()
+          .whileTrue(
+              Commands.startEnd(
+                      () -> Logger.getInstance().recordOutput("LogMarker", true),
+                      () -> Logger.getInstance().recordOutput("LogMarker", false))
+                  .ignoringDisable(true));
+    }
 
     // Arm lift controls
-    driver
-        .povRight()
-        .whileTrue(
-            Commands.startEnd(
-                () -> arm.setEmergencyLiftDirection(LiftDirection.FRONT),
-                () -> {
-                  arm.setEmergencyLiftDirection(LiftDirection.NONE);
-                  arm.runPath(ArmPose.Preset.HOMED);
-                },
-                arm));
-    driver
-        .povLeft()
-        .whileTrue(
-            Commands.startEnd(
-                () -> arm.setEmergencyLiftDirection(LiftDirection.BACK),
-                () -> {
-                  arm.setEmergencyLiftDirection(LiftDirection.NONE);
-                  arm.runPath(ArmPose.Preset.HOMED);
-                },
-                arm));
+    if (!demo) {
+      driver
+          .povRight()
+          .whileTrue(
+              Commands.startEnd(
+                  () -> arm.setEmergencyLiftDirection(LiftDirection.FRONT),
+                  () -> {
+                    arm.setEmergencyLiftDirection(LiftDirection.NONE);
+                    arm.runPath(ArmPose.Preset.HOMED);
+                  },
+                  arm));
+      driver
+          .povLeft()
+          .whileTrue(
+              Commands.startEnd(
+                  () -> arm.setEmergencyLiftDirection(LiftDirection.BACK),
+                  () -> {
+                    arm.setEmergencyLiftDirection(LiftDirection.NONE);
+                    arm.runPath(ArmPose.Preset.HOMED);
+                  },
+                  arm));
+    }
 
     // *** OPERATOR CONTROLS ***
 
     // Intake controls
     TriggerUtil.whileTrueContinuous(
-        operator.a().and(operator.x().negate()), intakeSubstationSingle);
+        (demo ? driver : operator).a().and((demo ? driver : operator).x().negate()),
+        intakeSubstationSingle);
     TriggerUtil.whileTrueContinuous(
-        operator.x().and(operator.a().negate()), intakeSubstationDouble);
-    operator
-        .rightTrigger()
+        (demo ? driver : operator).x().and((demo ? driver : operator).a().negate()),
+        intakeSubstationDouble);
+    (demo ? driver.rightBumper() : operator.rightTrigger())
         .whileTrue(new IntakeCubeHandoff(cubeIntake, arm, gripper, objectiveTracker.objective));
-    operator.leftTrigger().whileTrue(new IntakeConeFloor(arm, gripper, objectiveTracker.objective));
-    var ejectBackCommand =
-        Commands.waitSeconds(DoublePressTracker.maxLengthSecs)
-            .andThen(new EjectHeld(false, arm, gripper).withName("EjectHeld_Back"));
-    operator.b().onTrue(ejectBackCommand);
-    DoublePressTracker.createTrigger(operator.b())
-        .onTrue(new EjectHeld(true, arm, gripper).withName("EjectHeld_Front"));
+    (demo ? driver.leftBumper() : operator.leftTrigger())
+        .whileTrue(new IntakeConeFloor(arm, gripper, objectiveTracker.objective));
+    if (!demo) {
+      var ejectBackCommand =
+          Commands.waitSeconds(DoublePressTracker.maxLengthSecs)
+              .andThen(new EjectHeld(false, arm, gripper).withName("EjectHeld_Back"));
+      operator.b().onTrue(ejectBackCommand);
+      DoublePressTracker.createTrigger(operator.b())
+          .onTrue(new EjectHeld(true, arm, gripper).withName("EjectHeld_Front"));
+    }
 
     // Manual arm controls
-    new Trigger(
-            () ->
-                Math.abs(operator.getLeftX()) > DriveWithJoysticks.deadband.get()
-                    || Math.abs(operator.getLeftY()) > DriveWithJoysticks.deadband.get()
-                    || Math.abs(operator.getRightY()) > DriveWithJoysticks.deadband.get())
-        .and(new Trigger(() -> arm.isTrajectoryFinished(false)))
+    if (!demo) {
+      new Trigger(
+              () ->
+                  Math.abs(operator.getLeftX()) > DriveWithJoysticks.deadband.get()
+                      || Math.abs(operator.getLeftY()) > DriveWithJoysticks.deadband.get()
+                      || Math.abs(operator.getRightY()) > DriveWithJoysticks.deadband.get())
+          .and(new Trigger(() -> arm.isTrajectoryFinished(false)))
+          .and(autoScoreTrigger.negate())
+          .whileTrue(moveArmWithJoysticksFactory.get());
+      operator
+          .leftStick()
+          .and(autoScoreTrigger.negate())
+          .onTrue(Commands.runOnce(() -> arm.runPath(ArmPose.Preset.HOMED), arm));
+      demoManualArmMode = false;
+      SmartDashboard.putBoolean("Demo Manual Arm", false);
+    } else {
+      driver
+          .y()
+          .onTrue(
+              Commands.runOnce(
+                  () -> {
+                    demoManualArmMode = !demoManualArmMode;
+                    SmartDashboard.putBoolean("Demo Manual Arm", demoManualArmMode);
+                    if (demoManualArmMode) {
+                      driveWithJoysticksDefault.cancel();
+                    }
+                  }));
+      new Trigger(() -> demoManualArmMode)
+          .and(
+              new Trigger(
+                  () ->
+                      Math.abs(driver.getLeftX()) > DriveWithJoysticks.deadband.get()
+                          || Math.abs(driver.getLeftY()) > DriveWithJoysticks.deadband.get()
+                          || Math.abs(driver.getRightY()) > DriveWithJoysticks.deadband.get()))
+          .and(new Trigger(() -> arm.isTrajectoryFinished(false)))
+          .and(autoScoreTrigger.negate())
+          .whileTrue(moveArmWithJoysticksFactory.get());
+      new Trigger(() -> demoManualArmMode)
+          .and(driver.leftStick())
+          .and(autoScoreTrigger.negate())
+          .onTrue(Commands.runOnce(() -> arm.runPath(ArmPose.Preset.HOMED), arm));
+    }
+    (demo ? driver : operator)
+        .back()
         .and(autoScoreTrigger.negate())
-        .whileTrue(moveArmWithJoysticksFactory.get());
-    operator
-        .leftStick()
+        .whileTrue(gripper.ejectCommand(EjectSpeed.FAST));
+    (demo ? driver : operator)
+        .start()
         .and(autoScoreTrigger.negate())
-        .onTrue(Commands.runOnce(() -> arm.runPath(ArmPose.Preset.HOMED), arm));
-    operator.back().and(autoScoreTrigger.negate()).whileTrue(gripper.ejectCommand(EjectSpeed.FAST));
-    operator.start().and(autoScoreTrigger.negate()).whileTrue(gripper.intakeCommand());
+        .whileTrue(gripper.intakeCommand());
 
     // Objective tracking controls
-    operator
-        .leftBumper()
-        .onTrue(
-            Commands.runOnce(() -> Leds.getInstance().hpGamePiece = HPGamePiece.CONE)
-                .ignoringDisable(true));
-    operator
-        .rightBumper()
-        .onTrue(
-            Commands.runOnce(() -> Leds.getInstance().hpGamePiece = HPGamePiece.CUBE)
-                .ignoringDisable(true));
+    if (!demo) {
+      operator
+          .leftBumper()
+          .onTrue(
+              Commands.runOnce(() -> Leds.getInstance().hpGamePiece = HPGamePiece.CONE)
+                  .ignoringDisable(true));
+      operator
+          .rightBumper()
+          .onTrue(
+              Commands.runOnce(() -> Leds.getInstance().hpGamePiece = HPGamePiece.CUBE)
+                  .ignoringDisable(true));
+      operator.y().onTrue(objectiveTracker.toggleConeOrientationCommand());
+    } else {
+      Leds.getInstance().hpGamePiece = HPGamePiece.NONE;
+    }
     new Trigger(DriverStation::isEnabled)
         .onTrue(Commands.runOnce(() -> Leds.getInstance().hpGamePiece = HPGamePiece.NONE));
-    operator.y().onTrue(objectiveTracker.toggleConeOrientationCommand());
-    operator.povUp().whileTrue(objectiveTracker.shiftNodeCommand(Direction.UP));
-    operator.povRight().whileTrue(objectiveTracker.shiftNodeCommand(Direction.RIGHT));
-    operator.povDown().whileTrue(objectiveTracker.shiftNodeCommand(Direction.DOWN));
-    operator.povLeft().whileTrue(objectiveTracker.shiftNodeCommand(Direction.LEFT));
+    (demo ? driver : operator).povUp().whileTrue(objectiveTracker.shiftNodeCommand(Direction.UP));
+    (demo ? driver : operator)
+        .povRight()
+        .whileTrue(objectiveTracker.shiftNodeCommand(Direction.RIGHT));
+    (demo ? driver : operator)
+        .povDown()
+        .whileTrue(objectiveTracker.shiftNodeCommand(Direction.DOWN));
+    (demo ? driver : operator)
+        .povLeft()
+        .whileTrue(objectiveTracker.shiftNodeCommand(Direction.LEFT));
   }
 
   /** Passes the autonomous command to the {@link Robot} class. */

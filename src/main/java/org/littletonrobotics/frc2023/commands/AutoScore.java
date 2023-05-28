@@ -29,6 +29,7 @@ import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
 import org.littletonrobotics.frc2023.util.GeomUtil;
 
 public class AutoScore extends SequentialCommandGroup {
+  public static Supplier<Boolean> preferFront = () -> false;
   public static final double bendCompensation = 0.0;
   // Units.inchesToMeters(-1.0); // Blue alliance
   // Units.inchesToMeters(1.0); // Red alliance
@@ -356,13 +357,17 @@ public class AutoScore extends SequentialCommandGroup {
       case BACK:
         return false;
       case EITHER:
-        var nodeTranslation = GeomUtil.translation3dTo2dXY(getNodeTranslation(objective));
-        var relativeRotation =
-            nodeTranslation
-                .minus(unflippedPose.getTranslation())
-                .getAngle()
-                .minus(unflippedPose.getRotation());
-        return relativeRotation.getCos() > 0.0;
+        if (preferFront.get()) {
+          return true;
+        } else {
+          var nodeTranslation = GeomUtil.translation3dTo2dXY(getNodeTranslation(objective));
+          var relativeRotation =
+              nodeTranslation
+                  .minus(unflippedPose.getTranslation())
+                  .getAngle()
+                  .minus(unflippedPose.getRotation());
+          return relativeRotation.getCos() > 0.0;
+        }
       default:
         return true;
     }

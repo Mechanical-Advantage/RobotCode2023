@@ -10,6 +10,7 @@ package org.littletonrobotics.frc2023.commands;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import java.util.function.Supplier;
 import org.littletonrobotics.frc2023.subsystems.arm.Arm;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmPose;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
@@ -21,7 +22,12 @@ public class IntakeSubstation extends SequentialCommandGroup {
 
   /** Holds the arm at the position for the a substation and runs the gripper. */
   public IntakeSubstation(
-      boolean single, Arm arm, Drive drive, Gripper gripper, Objective objective) {
+      boolean single,
+      Arm arm,
+      Drive drive,
+      Gripper gripper,
+      Objective objective,
+      Supplier<Boolean> preferFront) {
     var armCommand =
         new HoldFlippableArmPreset(
             arm,
@@ -29,7 +35,8 @@ public class IntakeSubstation extends SequentialCommandGroup {
             single
                 ? ArmPose.Preset.SINGLE_SUBTATION.getPose()
                 : ArmPose.Preset.DOUBLE_SUBTATION.getPose(),
-            Rotation2d.fromDegrees(single ? 90.0 : 0.0));
+            Rotation2d.fromDegrees(single ? 90.0 : 0.0),
+            preferFront);
     addCommands(
         armCommand.alongWith(
             Commands.runOnce(() -> gripperIntaking = true),

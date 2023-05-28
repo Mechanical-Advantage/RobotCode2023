@@ -10,6 +10,7 @@ package org.littletonrobotics.frc2023.commands;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.CommandBase;
+import java.util.function.Supplier;
 import org.littletonrobotics.frc2023.subsystems.arm.Arm;
 import org.littletonrobotics.frc2023.subsystems.arm.ArmPose;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
@@ -24,31 +25,45 @@ public class HoldFlippableArmPreset extends CommandBase {
   private final Rotation2d fieldRotation;
 
   private boolean isFlipped = false;
+  private Supplier<Boolean> skipFlipSupplier;
 
   /**
    * Moves the arm to the specified pose while flipping to align with the specified direction on the
    * field.
    */
-  public HoldFlippableArmPreset(Arm arm, Drive drive, ArmPose pose, Rotation2d fieldRotation) {
+  public HoldFlippableArmPreset(
+      Arm arm,
+      Drive drive,
+      ArmPose pose,
+      Rotation2d fieldRotation,
+      Supplier<Boolean> skipFlipSupplier) {
     this.arm = arm;
     this.drive = drive;
     this.pose = pose;
     this.fieldRotation = fieldRotation;
+    this.skipFlipSupplier = skipFlipSupplier;
+
     addRequirements(arm);
   }
 
   @Override
   public void initialize() {
+
     isFlipped = false;
-    updateFlip();
+    if (!skipFlipSupplier.get()) {
+      updateFlip();
+    }
     arm.runPath(pose.withFlip(isFlipped));
   }
 
   @Override
   public void execute() {
-    boolean changed = updateFlip();
-    if (changed) {
-      arm.runPath(pose.withFlip(isFlipped));
+
+    if (!skipFlipSupplier.get()) {
+      boolean changed = updateFlip();
+      if (changed) {
+        arm.runPath(pose.withFlip(isFlipped));
+      }
     }
   }
 
