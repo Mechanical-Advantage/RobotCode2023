@@ -60,7 +60,7 @@ public class Arm extends SubsystemBase {
   public static final Set<String> frontNodeConstraints = Set.of("nodeMidFront", "nodeHighFront");
   public static final Set<String> backNodeConstraints = Set.of("nodeMidBack", "nodeHighBack");
   public static final double avoidanceLookaheadSecsFromFront = 0.6;
-  public static final double avoidanceLookaheadSecsFromBack = 0.2;
+  public static final double avoidanceLookaheadSecsFromBack = 0.35;
   public static final double emergencyDisableMaxError = Units.degreesToRadians(20.0);
   public static final double emergencyDisableMaxErrorTime = 1.0;
   public static final double emergencyDisableBeyondLimitThreshold = Units.degreesToRadians(5.0);

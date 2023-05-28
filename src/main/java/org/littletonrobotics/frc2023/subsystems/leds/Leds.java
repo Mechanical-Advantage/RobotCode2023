@@ -48,6 +48,7 @@ public class Leds extends VirtualSubsystem {
   public boolean autoFinished = false;
   public double autoFinishedTime = 0.0;
   public boolean lowBatteryAlert = false;
+  public boolean demoMode = false;
 
   private Alliance alliance = Alliance.Invalid;
   private boolean lastEnabledAuto = false;
@@ -210,11 +211,16 @@ public class Leds extends VirtualSubsystem {
         solid((Timer.getFPGATimestamp() - autoFinishedTime) / fullTime, Color.kGreen);
       }
     } else {
+      // Demo mode background
+      if (demoMode) {
+        wave(Section.FULL, Color.kGold, Color.kDarkBlue, waveSlowCycleLength, waveSlowDuration);
+      }
+
       // Set HP indicator
-      Color hpColor = Color.kBlack;
+      Color hpColor = null;
       switch (hpGamePiece) {
         case NONE:
-          hpColor = Color.kBlack;
+          hpColor = null;
           break;
         case CUBE:
           hpColor = Color.kPurple;
@@ -272,8 +278,10 @@ public class Leds extends VirtualSubsystem {
   }
 
   private void solid(Section section, Color color) {
-    for (int i = section.start(); i < section.end(); i++) {
-      buffer.setLED(i, color);
+    if (color != null) {
+      for (int i = section.start(); i < section.end(); i++) {
+        buffer.setLED(i, color);
+      }
     }
   }
 

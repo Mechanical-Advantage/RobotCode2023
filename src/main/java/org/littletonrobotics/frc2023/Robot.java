@@ -215,6 +215,7 @@ public class Robot extends LoggedRobot {
     logReceiverQueueAlert.set(Logger.getInstance().getReceiverQueueFault());
 
     // Robot container periodic methods
+    robotContainer.updateDemoControls();
     robotContainer.checkControllers();
     robotContainer.updateHPModeLeds();
 
