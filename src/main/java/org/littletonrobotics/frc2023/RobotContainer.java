@@ -447,6 +447,7 @@ public class RobotContainer {
     // Rely on our custom alerts for disconnected controllers
     DriverStation.silenceJoystickConnectionWarning(true);
   }
+
   /** Binds controls based on whether demo controls are active. */
   public void updateDemoControls() {
     if (demoControls.get() != lastWasDemoControls) {
