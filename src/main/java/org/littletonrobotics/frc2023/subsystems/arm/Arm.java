@@ -143,9 +143,9 @@ public class Arm extends SubsystemBase {
     if (!Constants.disableHAL) { // Don't run during trajectory cache generation
       switch (Constants.getRobot()) {
         case ROBOT_2023C:
-          shoulderKp.initDefault(4.5);
-          shoulderKd.initDefault(0.18);
-          shoulderKs.initDefault(0.3);
+          shoulderKp.initDefault(16.0);
+          shoulderKd.initDefault(0.25);
+          shoulderKs.initDefault(0.5);
           shoulderKsDeadband.initDefault(0.05);
           elbowKp.initDefault(13.0);
           elbowKd.initDefault(0.3);
