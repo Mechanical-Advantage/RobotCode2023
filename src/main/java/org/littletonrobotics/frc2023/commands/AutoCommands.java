@@ -74,16 +74,16 @@ public class AutoCommands {
   public static final Transform2d fieldSecondCubeIntakeTransform =
       new Transform2d(new Translation2d(0.15, -0.2), new Rotation2d());
   public static final Transform2d wallCubeScoreTransform =
-      new Transform2d(new Translation2d(0.15, 0.0), new Rotation2d());
+      fieldCubeScoreTransform; // BattleCry (no bump)
   public static final Transform2d wallFirstCubeIntakeTransform =
-      new Transform2d(new Translation2d(0.5, 0.0), new Rotation2d());
+      new Transform2d(); // BattleCry (no bump)
   public static final Transform2d wallSecondCubeIntakeTransform =
-      new Transform2d(new Translation2d(0.8, -0.2), new Rotation2d());
+      new Transform2d(new Translation2d(0.15, 0.2), new Rotation2d()); // BattleCry (no bump)
 
   // Waypoints
   public final Pose2d[] startingLocations = new Pose2d[9];
-  public static final Rotation2d cableBumpRotationOut = Rotation2d.fromDegrees(30.0);
-  public static final Rotation2d cableBumpRotationIn = Rotation2d.fromDegrees(-30.0);
+  public static final Rotation2d cableBumpRotationOut = new Rotation2d(); // BattleCry (no bump)
+  public static final Rotation2d cableBumpRotationIn = new Rotation2d(); // BattleCry (no bump)
   private final Translation2d transitWallSideNearOut;
   private final Translation2d transitWallSideNearIn;
   private final Translation2d transitWallSideCenterOut;
@@ -133,27 +133,27 @@ public class AutoCommands {
     transitWallSideNearOut =
         new Translation2d(
             Community.chargingStationInnerX + 0.5,
-            (Community.chargingStationRightY + Community.rightY) / 2.0 - 0.15);
+            (Community.chargingStationRightY + Community.rightY) / 2.0);
     transitWallSideNearIn =
         new Translation2d(
             Community.chargingStationInnerX + 0.5,
-            (Community.chargingStationRightY + Community.rightY) / 2.0 + 0.15);
+            (Community.chargingStationRightY + Community.rightY) / 2.0);
     transitWallSideCenterOut =
         new Translation2d(
             (Community.chargingStationInnerX + Community.chargingStationOuterX) / 2.0,
-            (Community.chargingStationRightY + Community.rightY) / 2.0 - 0.15);
+            (Community.chargingStationRightY + Community.rightY) / 2.0);
     transitWallSideCenterIn =
         new Translation2d(
             (Community.chargingStationInnerX + Community.chargingStationOuterX) / 2.0,
-            (Community.chargingStationRightY + Community.rightY) / 2.0 + 0.15);
+            (Community.chargingStationRightY + Community.rightY) / 2.0);
     transitWallSideFarOut =
         new Translation2d(
             Community.chargingStationOuterX - 0.5,
-            (Community.chargingStationRightY + Community.rightY) / 2.0 - 0.15);
+            (Community.chargingStationRightY + Community.rightY) / 2.0);
     transitWallSideFarIn =
         new Translation2d(
             Community.chargingStationOuterX - 0.5,
-            (Community.chargingStationRightY + Community.rightY) / 2.0 + 0.15);
+            (Community.chargingStationRightY + Community.rightY) / 2.0);
     transitWallSideNearOutWaypoint =
         new Waypoint(transitWallSideNearOut, new Rotation2d(), cableBumpRotationOut);
     transitWallSideNearInWaypoint =
@@ -460,8 +460,8 @@ public class AutoCommands {
             enterFront ? Community.chargingStationInnerX : Community.chargingStationOuterX,
             MathUtil.clamp(
                 startingPosition.getY(),
-                Community.chargingStationRightY + 0.8,
-                Community.chargingStationLeftY - 0.8),
+                Community.chargingStationRightY + 0.6,
+                Community.chargingStationLeftY - 0.6),
             enterFront ? new Rotation2d() : Rotation2d.fromDegrees(180.0));
     Pose2d position1 =
         new Pose2d(
