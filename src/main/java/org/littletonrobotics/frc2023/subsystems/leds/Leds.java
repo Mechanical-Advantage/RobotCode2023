@@ -49,6 +49,7 @@ public class Leds extends VirtualSubsystem {
   public double autoFinishedTime = 0.0;
   public boolean lowBatteryAlert = false;
   public boolean demoMode = false;
+  public Double balancePosition = 0.0;
 
   private Alliance alliance = Alliance.Invalid;
   private boolean lastEnabledAuto = false;
@@ -209,6 +210,28 @@ public class Leds extends VirtualSubsystem {
       if (autoFinished) {
         double fullTime = (double) length / waveFastCycleLength * waveFastDuration;
         solid((Timer.getFPGATimestamp() - autoFinishedTime) / fullTime, Color.kGreen);
+      }
+    } else if (balancePosition != null) {
+      Color pulseColor;
+      switch (alliance) {
+        case Red -> pulseColor = Color.kRed;
+        case Blue -> pulseColor = Color.kBlue;
+        default -> pulseColor = Color.kWhite;
+      }
+      if (balancePosition == 0.0) {
+        solid(Section.FULL, pulseColor);
+      } else {
+        solid(Section.FULL, Color.kBlack);
+        int pulseLength = 6;
+        int start =
+            (int)
+                Math.round(
+                    MathUtil.interpolate(0, length - pulseLength, (balancePosition + 1.0) / 2.0));
+        for (int i = start; i < start + pulseLength; i++) {
+          if (i >= 0 && i < length) {
+            buffer.setLED(i, pulseColor);
+          }
+        }
       }
     } else {
       // Demo mode background

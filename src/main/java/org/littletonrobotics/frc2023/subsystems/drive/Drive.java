@@ -7,6 +7,7 @@
 
 package org.littletonrobotics.frc2023.subsystems.drive;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -25,7 +26,9 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.Arrays;
 import java.util.List;
 import org.littletonrobotics.frc2023.Constants;
+import org.littletonrobotics.frc2023.FieldConstants;
 import org.littletonrobotics.frc2023.subsystems.leds.Leds;
+import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
 import org.littletonrobotics.frc2023.util.LoggedTunableNumber;
 import org.littletonrobotics.frc2023.util.PoseEstimator;
 import org.littletonrobotics.frc2023.util.PoseEstimator.TimestampedVisionUpdate;
@@ -273,6 +276,32 @@ public class Drive extends SubsystemBase {
         Units.radiansToDegrees(Math.abs(gyroInputs.pitchPositionRad)) > ledsFallenAngleDegrees
             || Units.radiansToDegrees(Math.abs(gyroInputs.rollPositionRad))
                 > ledsFallenAngleDegrees;
+
+    // Update balance position for LEDs
+    if (DriverStation.isDisabled() && false) {
+      Leds.getInstance().balancePosition = null;
+    } else {
+      Translation2d driveTranslation = AllianceFlipUtil.apply(getPose().getTranslation());
+      boolean onChargeStation =
+          driveTranslation.getX() > FieldConstants.Community.chargingStationInnerX
+              && driveTranslation.getX() < FieldConstants.Community.chargingStationOuterX
+              && driveTranslation.getY() > FieldConstants.Community.chargingStationRightY
+              && driveTranslation.getY() < FieldConstants.Community.chargingStationLeftY;
+      onChargeStation = true;
+      if (onChargeStation) {
+        double balanceAngleDegrees =
+            getRotation().getCos() * getPitch().getDegrees()
+                + getRotation().getSin() * getRoll().getDegrees();
+        if (Math.abs(balanceAngleDegrees) < Units.degreesToRadians(2.5)) {
+          Leds.getInstance().balancePosition = 0.0;
+        } else {
+          Leds.getInstance().balancePosition =
+              MathUtil.clamp(balanceAngleDegrees / Units.degreesToRadians(15.0), -1.0, 1.0);
+        }
+      } else {
+        Leds.getInstance().balancePosition = null;
+      }
+    }
   }
 
   /**
