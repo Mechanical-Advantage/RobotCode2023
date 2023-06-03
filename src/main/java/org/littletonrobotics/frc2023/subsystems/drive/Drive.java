@@ -289,14 +289,14 @@ public class Drive extends SubsystemBase {
               && driveTranslation.getY() < FieldConstants.Community.chargingStationLeftY;
       onChargeStation = true;
       if (onChargeStation) {
-        double balanceAngleDegrees =
-            getRotation().getCos() * getPitch().getDegrees()
-                + getRotation().getSin() * getRoll().getDegrees();
-        if (Math.abs(balanceAngleDegrees) < Units.degreesToRadians(2.5)) {
+        double balanceAngle =
+            getRotation().getCos() * getPitch().getRadians()
+                + getRotation().getSin() * getRoll().getRadians();
+        if (Math.abs(balanceAngle) < Units.degreesToRadians(2.5)) {
           Leds.getInstance().balancePosition = 0.0;
         } else {
           Leds.getInstance().balancePosition =
-              MathUtil.clamp(balanceAngleDegrees / Units.degreesToRadians(15.0), -1.0, 1.0);
+              MathUtil.clamp(balanceAngle / Units.degreesToRadians(15.0), -1.0, 1.0);
         }
       } else {
         Leds.getInstance().balancePosition = null;
