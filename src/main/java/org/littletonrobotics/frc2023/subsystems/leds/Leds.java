@@ -17,7 +17,6 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.util.Color;
 import java.util.List;
 import org.littletonrobotics.frc2023.util.VirtualSubsystem;
-import org.littletonrobotics.junction.Logger;
 
 public class Leds extends VirtualSubsystem {
 
@@ -138,7 +137,7 @@ public class Leds extends VirtualSubsystem {
     solid(Section.FULL, Color.kBlack); // Default to off
     if (estopped) {
       solid(Section.FULL, Color.kRed);
-    } else if (DriverStation.isDisabled() && false) {
+    } else if (DriverStation.isDisabled()) {
       if (lastEnabledAuto && Timer.getFPGATimestamp() - lastEnabledTime < autoFadeMaxTime) {
         // Auto fade
         solid(1.0 - ((Timer.getFPGATimestamp() - lastEnabledTime) / autoFadeTime), Color.kGreen);
@@ -213,7 +212,6 @@ public class Leds extends VirtualSubsystem {
         solid((Timer.getFPGATimestamp() - autoFinishedTime) / fullTime, Color.kGreen);
       }
     } else if (balancePosition != null) {
-      Logger.getInstance().recordOutput("BalancePosition", balancePosition);
       Color pulseColor;
       switch (DriverStation.getAlliance()) { // Use alliance color even when off the field
         case Red -> pulseColor = Color.kRed;

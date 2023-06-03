@@ -278,16 +278,15 @@ public class Drive extends SubsystemBase {
                 > ledsFallenAngleDegrees;
 
     // Update balance position for LEDs
-    if (DriverStation.isDisabled() && false) {
+    if (DriverStation.isDisabled() || DriverStation.getMatchTime() > 15.0) {
       Leds.getInstance().balancePosition = null;
     } else {
       Translation2d driveTranslation = AllianceFlipUtil.apply(getPose().getTranslation());
       boolean onChargeStation =
-          driveTranslation.getX() > FieldConstants.Community.chargingStationInnerX
-              && driveTranslation.getX() < FieldConstants.Community.chargingStationOuterX
+          driveTranslation.getX() > FieldConstants.Community.chargingStationInnerX - 0.3
+              && driveTranslation.getX() < FieldConstants.Community.chargingStationOuterX + 0.3
               && driveTranslation.getY() > FieldConstants.Community.chargingStationRightY
               && driveTranslation.getY() < FieldConstants.Community.chargingStationLeftY;
-      onChargeStation = true;
       if (onChargeStation) {
         double balanceAngle =
             getRotation().getCos() * getPitch().getRadians()
