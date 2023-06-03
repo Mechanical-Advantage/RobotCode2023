@@ -96,7 +96,8 @@ public class RobotContainer {
   private final Trigger hpThrowGamePieceSwitch = overrides.multiDirectionSwitchRight();
   private final Trigger manualDrive = overrides.operatorSwitch(0);
   private final Trigger autoEject = overrides.operatorSwitch(1);
-  private final Trigger preferFront = overrides.operatorSwitch(2);
+  private final Trigger preferFront = new Trigger(() -> false);
+  private final Trigger reachScoreEnable = overrides.operatorSwitch(2);
   private final Trigger forcePregenPaths = overrides.operatorSwitch(3);
   private final Trigger forceGripperEnable = overrides.operatorSwitch(4);
   private final Alert driverDisconnected =
@@ -602,7 +603,7 @@ public class RobotContainer {
                     () -> ejectTrigger.getAsBoolean(),
                     () -> manualDrive.getAsBoolean(),
                     () -> autoEject.getAsBoolean(),
-                    () -> false)
+                    () -> reachScoreEnable.getAsBoolean())
                 .deadlineWith(
                     Commands.startEnd(
                         () -> Leds.getInstance().autoScore = true,
