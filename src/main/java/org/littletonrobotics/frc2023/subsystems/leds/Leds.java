@@ -137,7 +137,7 @@ public class Leds extends VirtualSubsystem {
     solid(Section.FULL, Color.kBlack); // Default to off
     if (estopped) {
       solid(Section.FULL, Color.kRed);
-    } else if (DriverStation.isDisabled()) {
+    } else if (DriverStation.isDisabled() && false) {
       if (lastEnabledAuto && Timer.getFPGATimestamp() - lastEnabledTime < autoFadeMaxTime) {
         // Auto fade
         solid(1.0 - ((Timer.getFPGATimestamp() - lastEnabledTime) / autoFadeTime), Color.kGreen);
