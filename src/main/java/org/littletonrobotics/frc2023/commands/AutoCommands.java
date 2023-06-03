@@ -466,7 +466,7 @@ public class AutoCommands {
     Pose2d position1 =
         new Pose2d(
             (Community.chargingStationOuterX + Community.chargingStationInnerX) / 2.0
-                + (enterFront ? 0.4 : -0.4),
+                + (enterFront ? 0.15 : -0.15),
             position0.getY(),
             position0.getRotation());
     return path(

@@ -24,7 +24,7 @@ import org.littletonrobotics.frc2023.util.LoggedTunableNumber;
 import org.littletonrobotics.junction.Logger;
 
 public class DriveToPose extends CommandBase {
-  private final Drive drive;
+  protected final Drive drive;
   private final Supplier<Pose2d> poseSupplier;
 
   private boolean running = false;
