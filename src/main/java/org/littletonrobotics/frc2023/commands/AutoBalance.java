@@ -26,7 +26,7 @@ public class AutoBalance extends DriveToPose {
                         MathUtil.interpolate(
                             FieldConstants.Community.chargingStationInnerX,
                             FieldConstants.Community.chargingStationOuterX,
-                            0.35)),
+                            0.6)),
                     drive.getPose().getY()),
                 drive.getRotation()));
   }
