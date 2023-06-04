@@ -205,12 +205,6 @@ public class Leds extends VirtualSubsystem {
       }
     } else if (fallen) {
       strobe(Section.FULL, Color.kWhite, strobeFastDuration);
-    } else if (DriverStation.isAutonomous()) {
-      wave(Section.FULL, Color.kGold, Color.kDarkBlue, waveFastCycleLength, waveFastDuration);
-      if (autoFinished) {
-        double fullTime = (double) length / waveFastCycleLength * waveFastDuration;
-        solid((Timer.getFPGATimestamp() - autoFinishedTime) / fullTime, Color.kGreen);
-      }
     } else if (balancePosition != null) {
       Color pulseColor;
       switch (DriverStation.getAlliance()) { // Use alliance color even when off the field
@@ -232,6 +226,12 @@ public class Leds extends VirtualSubsystem {
             buffer.setLED(i, pulseColor);
           }
         }
+      }
+    } else if (DriverStation.isAutonomous()) {
+      wave(Section.FULL, Color.kGold, Color.kDarkBlue, waveFastCycleLength, waveFastDuration);
+      if (autoFinished) {
+        double fullTime = (double) length / waveFastCycleLength * waveFastDuration;
+        solid((Timer.getFPGATimestamp() - autoFinishedTime) / fullTime, Color.kGreen);
       }
     } else {
       // Demo mode background
