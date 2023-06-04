@@ -7,6 +7,7 @@
 
 package org.littletonrobotics.frc2023.commands;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -22,9 +23,10 @@ public class AutoBalance extends DriveToPose {
             new Pose2d(
                 new Translation2d(
                     AllianceFlipUtil.apply(
-                        (FieldConstants.Community.chargingStationInnerX
-                                + FieldConstants.Community.chargingStationOuterX)
-                            / 2.0),
+                        MathUtil.interpolate(
+                            FieldConstants.Community.chargingStationInnerX,
+                            FieldConstants.Community.chargingStationOuterX,
+                            0.35)),
                     drive.getPose().getY()),
                 drive.getRotation()));
   }
