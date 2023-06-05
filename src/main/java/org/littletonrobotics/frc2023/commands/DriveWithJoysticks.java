@@ -72,6 +72,11 @@ public class DriveWithJoysticks extends CommandBase {
     angularSpeedLimitChooser.addOption("Slow Speed (15%)", 0.15);
   }
 
+  /** Returns whether at least one demo speed limit is active. */
+  public static boolean isDemo() {
+    return linearSpeedLimitChooser.get() != 1.0 || angularSpeedLimitChooser.get() != 1.0;
+  }
+
   /** Creates a new DriveWithJoysticks. */
   public DriveWithJoysticks(
       Drive drive,

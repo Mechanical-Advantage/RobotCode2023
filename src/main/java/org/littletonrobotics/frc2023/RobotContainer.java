@@ -107,8 +107,10 @@ public class RobotContainer {
       new Alert("Operator controller disconnected (port 1).", AlertType.WARNING);
   private final Alert overrideDisconnected =
       new Alert("Override controller disconnected (port 5).", AlertType.INFO);
-  private final Alert demoActivated =
-      new Alert("Demo mode is activated. Do not use in competition.", AlertType.INFO);
+  private final Alert demoControlsActivated =
+      new Alert("Demo controls are active. Do not use in competition.", AlertType.INFO);
+  private final Alert demoSpeedActivated =
+      new Alert("Demo speed limits are active. Do not use in competition.", AlertType.INFO);
   private final LoggedDashboardNumber endgameAlert1 =
       new LoggedDashboardNumber("Endgame Alert #1", 30.0);
   private final LoggedDashboardNumber endgameAlert2 =
@@ -440,7 +442,7 @@ public class RobotContainer {
     System.out.println("[Init] Binding controls");
     bindControls(demoControls.get());
     lastWasDemoControls = demoControls.get();
-    demoActivated.set(demoControls.get());
+    demoControlsActivated.set(demoControls.get());
     Leds.getInstance().demoMode = demoControls.get();
     AutoScore.preferFront = () -> preferFront.getAsBoolean();
 
@@ -448,14 +450,18 @@ public class RobotContainer {
     DriverStation.silenceJoystickConnectionWarning(true);
   }
 
-  /** Binds controls based on whether demo controls are active. */
+  /** Binds controls based on whether demo controls are active and update alerts. */
   public void updateDemoControls() {
+    // Update control binding
     if (demoControls.get() != lastWasDemoControls) {
       bindControls(demoControls.get());
       lastWasDemoControls = demoControls.get();
-      demoActivated.set(demoControls.get());
-      Leds.getInstance().demoMode = demoControls.get();
     }
+
+    // Update alerts
+    Leds.getInstance().demoMode = demoControls.get();
+    demoControlsActivated.set(demoControls.get());
+    demoSpeedActivated.set(DriveWithJoysticks.isDemo());
   }
 
   /** Updates the alerts for disconnected controllers. */
