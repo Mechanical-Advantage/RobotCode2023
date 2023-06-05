@@ -506,14 +506,12 @@ public class RobotContainer {
     // Drive controls
     Command driveWithJoysticksDefault =
         Commands.either(
-            Commands.none(), driveWithJoysticksFactory.apply(false), () -> demoManualArmMode);
-
+                Commands.none(), driveWithJoysticksFactory.apply(false), () -> demoManualArmMode)
+            .withName("DriveWithJoysticks");
     Command oldDefaultCommand = CommandScheduler.getInstance().getDefaultCommand(drive);
-
     if (oldDefaultCommand != null) {
       oldDefaultCommand.cancel();
     }
-
     drive.setDefaultCommand(driveWithJoysticksDefault);
     driver
         .start()
@@ -600,7 +598,7 @@ public class RobotContainer {
                     gripper,
                     objectiveTracker.objective,
                     driveWithJoysticksFactory.apply(true),
-                    moveArmWithJoysticksFactory.get(),
+                    demo ? Commands.none() : moveArmWithJoysticksFactory.get(),
                     () -> ejectTrigger.getAsBoolean(),
                     () -> manualDrive.getAsBoolean(),
                     () -> autoEject.getAsBoolean(),
