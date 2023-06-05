@@ -43,7 +43,7 @@ public class AutoScore extends SequentialCommandGroup {
   public static final double minDriveY = 0.7;
   public static final double maxDriveY = FieldConstants.Community.leftY - 0.5;
   public static final double minArmExtension = 0.3;
-  public static final double maxArmExtensionHybrid = 0.4;
+  public static final double maxArmExtensionHybrid = 0.8;
   public static final double maxArmExtensionMid = 1.0;
   public static final double maxArmExtensionHigh = 1.35;
 
@@ -71,7 +71,7 @@ public class AutoScore extends SequentialCommandGroup {
       Arm arm,
       Gripper gripper,
       Objective objective,
-      Supplier<Boolean> reachScoreDisable) {
+      Supplier<Boolean> reachScoreEnable) {
     this(
         drive,
         arm,
@@ -82,7 +82,7 @@ public class AutoScore extends SequentialCommandGroup {
         () -> false,
         () -> false,
         () -> false,
-        reachScoreDisable);
+        reachScoreEnable);
   }
 
   /** Auto score a game piece on the grid with support for overrides. */
