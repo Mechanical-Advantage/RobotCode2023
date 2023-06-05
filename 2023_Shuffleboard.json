@@ -252,6 +252,115 @@
           }
         }
       }
+    },
+    {
+      "title": "Demo",
+      "autoPopulate": false,
+      "autoPopulatePrefix": "",
+      "widgetPane": {
+        "gridSize": 128.0,
+        "showGrid": true,
+        "hgap": 16.0,
+        "vgap": 16.0,
+        "titleType": 0,
+        "tiles": {
+          "2,1": {
+            "size": [
+              3,
+              4
+            ],
+            "content": {
+              "_type": "Alerts",
+              "_source0": "network_table:///SmartDashboard/Alerts",
+              "_title": "Alerts",
+              "_glyph": 180,
+              "_showGlyph": true
+            }
+          },
+          "2,0": {
+            "size": [
+              3,
+              1
+            ],
+            "content": {
+              "_type": "Boolean Box",
+              "_source0": "network_table:///SmartDashboard/Cone Tipped",
+              "_title": "Cone Tipped",
+              "_glyph": 419,
+              "_showGlyph": true,
+              "Colors/Color when true": "#FF4000FF",
+              "Colors/Color when false": "#FFD91EFF"
+            }
+          },
+          "0,0": {
+            "size": [
+              2,
+              1
+            ],
+            "content": {
+              "_type": "Toggle Switch",
+              "_source0": "network_table:///SmartDashboard/Demo Controls",
+              "_title": "Demo Controls",
+              "_glyph": 116,
+              "_showGlyph": true
+            }
+          },
+          "0,1": {
+            "size": [
+              2,
+              1
+            ],
+            "content": {
+              "_type": "Boolean Box",
+              "_source0": "network_table:///SmartDashboard/Demo Manual Arm",
+              "_title": "Manual Arm",
+              "_glyph": 33,
+              "_showGlyph": true,
+              "Colors/Color when true": "#7CFC00FF",
+              "Colors/Color when false": "#8B0000FF"
+            }
+          },
+          "0,2": {
+            "size": [
+              2,
+              1
+            ],
+            "content": {
+              "_type": "ComboBox Chooser",
+              "_source0": "network_table:///SmartDashboard/Linear Speed Limit",
+              "_title": "Linear Speed Limit",
+              "_glyph": 492,
+              "_showGlyph": false
+            }
+          },
+          "0,3": {
+            "size": [
+              2,
+              1
+            ],
+            "content": {
+              "_type": "ComboBox Chooser",
+              "_source0": "network_table:///SmartDashboard/Angular Speed Limit",
+              "_title": "Angular Speed Limit",
+              "_glyph": 148,
+              "_showGlyph": false
+            }
+          },
+          "0,4": {
+            "size": [
+              2,
+              1
+            ],
+            "content": {
+              "_type": "Text View",
+              "_source0": "network_table:///SmartDashboard/Selected Node",
+              "_title": "Selected Node",
+              "_glyph": 146,
+              "_showGlyph": true
+            }
+          }
+        }
+      }
     }
   ],
   "windowGeometry": {
