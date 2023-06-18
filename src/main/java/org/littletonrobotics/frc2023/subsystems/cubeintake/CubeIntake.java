@@ -210,12 +210,12 @@ public class CubeIntake extends SubsystemBase {
         },
         () -> state = State.HOLDING);
   }
-  
+
   public Command ejectMidCommand() {
     return startEnd(
-      () -> {
-        state = State.EJECTING_MID;
-      },
-      () -> state = State.HOLDING);
+        () -> {
+          state = State.EJECTING_MID;
+        },
+        () -> state = State.HOLDING);
   }
 }
