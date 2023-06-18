@@ -17,12 +17,6 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,10 +24,8 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import org.littletonrobotics.frc2023.Constants.Mode;
 import org.littletonrobotics.frc2023.Constants.RobotType;
-import org.littletonrobotics.frc2023.subsystems.leds.Leds;
 import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
-import org.littletonrobotics.frc2023.util.BatteryTracker;
 import org.littletonrobotics.frc2023.util.VirtualSubsystem;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
@@ -44,7 +36,7 @@ import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
 public class Robot extends LoggedRobot {
-  private static final String batteryNameFile = "/home/lvuser/battery-name.txt";
+
   private static final double canErrorTimeThreshold = 0.5; // Seconds to disable alert
   private static final double lowBatteryVoltage = 10.0;
   private static final double lowBatteryDisabledTime = 1.5;
@@ -53,7 +45,6 @@ public class Robot extends LoggedRobot {
   private Command autoCommand;
   private double autoStart;
   private boolean autoMessagePrinted;
-  private boolean batteryNameWritten = false;
   private final Timer canErrorTimer = new Timer();
   private final Timer canErrorTimerInitial = new Timer();
   private final Timer disabledTimer = new Timer();
@@ -62,8 +53,6 @@ public class Robot extends LoggedRobot {
       new Alert("No log path set for current robot. Data will NOT be logged.", AlertType.WARNING);
   private final Alert logReceiverQueueAlert =
       new Alert("Logging queue exceeded capacity, data will NOT be logged.", AlertType.ERROR);
-  private final Alert sameBatteryAlert =
-      new Alert("The battery has not been changed since the last match.", AlertType.WARNING);
   private final Alert canErrorAlert =
       new Alert("CAN errors detected, robot may not be controllable.", AlertType.ERROR);
   private final Alert lowBatteryAlert =
@@ -78,12 +67,10 @@ public class Robot extends LoggedRobot {
   @Override
   public void robotInit() {
     Logger logger = Logger.getInstance();
-    Leds.getInstance();
 
     // Record metadata
     logger.recordMetadata("Robot", Constants.getRobot().toString());
-    System.out.println("[Init] Scanning battery");
-    logger.recordMetadata("BatteryName", "BAT-" + BatteryTracker.scanBattery(1.5));
+
     System.out.println("[Init] Starting AdvantageKit");
     logger.recordMetadata("TuningMode", Boolean.toString(Constants.tuningMode));
     logger.recordMetadata("RuntimeType", getRuntimeType().toString());
@@ -135,29 +122,6 @@ public class Robot extends LoggedRobot {
     logger.start();
 
     // Check for battery alert
-    if (Constants.getMode() == Mode.REAL
-        && !BatteryTracker.getName().equals(BatteryTracker.defaultName)) {
-      File file = new File(batteryNameFile);
-      if (file.exists()) {
-        // Read previous battery name
-        String previousBatteryName = "";
-        try {
-          previousBatteryName =
-              new String(Files.readAllBytes(Paths.get(batteryNameFile)), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
-
-        if (previousBatteryName.equals(BatteryTracker.getName())) {
-          // Same battery, set alert
-          sameBatteryAlert.set(true);
-          Leds.getInstance().sameBattery = true;
-        } else {
-          // New battery, delete file
-          file.delete();
-        }
-      }
-    }
 
     // Log active commands
     Map<String, Integer> commandCounts = new HashMap<>();
@@ -215,9 +179,7 @@ public class Robot extends LoggedRobot {
     logReceiverQueueAlert.set(Logger.getInstance().getReceiverQueueFault());
 
     // Robot container periodic methods
-    robotContainer.updateDemoControls();
     robotContainer.checkControllers();
-    robotContainer.updateHPModeLeds();
 
     // Update CAN error alert
     var canStatus = RobotController.getCANStatus();
@@ -234,7 +196,7 @@ public class Robot extends LoggedRobot {
     }
     if (RobotController.getBatteryVoltage() < lowBatteryVoltage
         && disabledTimer.hasElapsed(lowBatteryDisabledTime)) {
-      Leds.getInstance().lowBatteryAlert = true;
+
       lowBatteryAlert.set(true);
     }
 
@@ -264,23 +226,6 @@ public class Robot extends LoggedRobot {
                   "*** Auto cancelled in %.2f secs ***", Timer.getFPGATimestamp() - autoStart));
         }
         autoMessagePrinted = true;
-        Leds.getInstance().autoFinished = true;
-        Leds.getInstance().autoFinishedTime = Timer.getFPGATimestamp();
-      }
-    }
-
-    // Write battery name if connected to field
-    if (Constants.getMode() == Mode.REAL
-        && !batteryNameWritten
-        && !BatteryTracker.getName().equals(BatteryTracker.defaultName)
-        && DriverStation.isFMSAttached()) {
-      batteryNameWritten = true;
-      try {
-        FileWriter fileWriter = new FileWriter(batteryNameFile);
-        fileWriter.write(BatteryTracker.getName());
-        fileWriter.close();
-      } catch (IOException e) {
-        e.printStackTrace();
       }
     }
 

@@ -13,11 +13,7 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.RelativeEncoder;
-import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.DutyCycleEncoder;
-import edu.wpi.first.wpilibj.Encoder;
 import org.littletonrobotics.frc2023.Constants;
 import org.littletonrobotics.frc2023.util.SparkMaxBurnManager;
 import org.littletonrobotics.frc2023.util.SparkMaxPeriodicFrameConfig;
@@ -25,16 +21,10 @@ import org.littletonrobotics.frc2023.util.SparkMaxPeriodicFrameConfig;
 public class CubeIntakeIOSparkMax implements CubeIntakeIO {
   private final CANSparkMax armSparkMax;
   private final CANSparkMax rollerSparkMax;
-
-  private final DutyCycleEncoder armAbsoluteEncoder;
-  private final Encoder armRelativeEncoder;
   private final RelativeEncoder armInternalEncoder;
-
   private final boolean armInvert;
-  private final boolean armExternalEncoderInvert;
   private final boolean rollerInvert;
   private final double armInternalEncoderReduction;
-  private final Rotation2d armAbsoluteEncoderOffset;
 
   public CubeIntakeIOSparkMax() {
     System.out.println("[Init] Creating CubeIntakeIOSparkMax");
@@ -45,16 +35,9 @@ public class CubeIntakeIOSparkMax implements CubeIntakeIO {
         rollerSparkMax = new CANSparkMax(12, MotorType.kBrushed);
 
         armInvert = false;
-        armExternalEncoderInvert = false;
         rollerInvert = true;
         armInternalEncoderReduction = 5.0 * 5.0 * (30.0 / 18.0) * (30.0 / 18.0);
-        armAbsoluteEncoderOffset =
-            new Rotation2d(-0.5208908464613042).plus(Rotation2d.fromDegrees(-90.0));
 
-        armAbsoluteEncoder = new DutyCycleEncoder(10);
-        armAbsoluteEncoder.setDutyCycleRange(1.0 / 1025.0, 1024.0 / 1025.0);
-        armRelativeEncoder = new Encoder(12, 11);
-        armRelativeEncoder.setDistancePerPulse((2 * Math.PI) / 2048);
         break;
       default:
         throw new RuntimeException("Invalid robot for CubeIntakeIOSparkMax!");
@@ -99,19 +82,12 @@ public class CubeIntakeIOSparkMax implements CubeIntakeIO {
 
   @Override
   public void updateInputs(CubeIntakeIOInputs inputs) {
-    inputs.armAbsolutePositionRad =
-        MathUtil.angleModulus(
-            Units.rotationsToRadians(armAbsoluteEncoder.get()) * (armExternalEncoderInvert ? -1 : 1)
-                - armAbsoluteEncoderOffset.getRadians());
-    inputs.armRelativePositionRad =
-        armRelativeEncoder.getDistance() * (armExternalEncoderInvert ? -1 : 1);
+
     inputs.armInternalPositionRad =
         cleanSparkMaxValue(
             inputs.armInternalPositionRad,
             Units.rotationsToRadians(armInternalEncoder.getPosition())
                 / armInternalEncoderReduction);
-    inputs.armRelativeVelocityRadPerSec =
-        armRelativeEncoder.getRate() * (armExternalEncoderInvert ? -1 : 1);
     inputs.armInternalVelocityRadPerSec =
         cleanSparkMaxValue(
             inputs.armInternalVelocityRadPerSec,

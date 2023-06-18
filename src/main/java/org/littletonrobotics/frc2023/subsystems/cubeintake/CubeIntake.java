@@ -38,18 +38,24 @@ public class CubeIntake extends SubsystemBase {
 
   private boolean isZeroed = false;
   private double absoluteAngleOffset = 0.0;
-  private boolean isRunning = false;
+  private State state = State.HOLDING;
   private boolean lastCoast = false;
 
-  private Supplier<Boolean> forceExtendSupplier = () -> false;
   private Supplier<Boolean> coastSupplier = () -> false;
 
   private static final LoggedTunableNumber neutralPositionDegrees =
       new LoggedTunableNumber("CubeIntake/NeutralPositionDegrees");
   private static final LoggedTunableNumber deployPositionDegrees =
       new LoggedTunableNumber("CubeIntake/DeployPositionDegrees");
-  private static final LoggedTunableNumber rollerVolts =
-      new LoggedTunableNumber("CubeIntake/RollerVolts");
+  private static final LoggedTunableNumber intakingRollerVolts =
+      new LoggedTunableNumber("CubeIntake/intakingRollerVolts");
+  private static final LoggedTunableNumber holdingRollerVolts =
+      new LoggedTunableNumber("CubeIntake/holdingRollerVolts");
+  private static final LoggedTunableNumber ejectingHybridRollerVolts =
+      new LoggedTunableNumber("CubeIntake/ejectingHybridRollerVolts");
+  private static final LoggedTunableNumber ejectingMidRollerVolts =
+      new LoggedTunableNumber("CubeIntake/ejectingMidRollerVolts");
+
   private static final LoggedTunableNumber kP = new LoggedTunableNumber("CubeIntake/kP");
   private static final LoggedTunableNumber kD = new LoggedTunableNumber("CubeIntake/kD");
   private static final LoggedTunableNumber maxVelocity =
@@ -62,10 +68,13 @@ public class CubeIntake extends SubsystemBase {
 
   static {
     switch (Constants.getRobot()) {
-      case ROBOT_2023C:
+      case ROBOT_2023P:
         neutralPositionDegrees.initDefault(92.0);
         deployPositionDegrees.initDefault(8.0);
-        rollerVolts.initDefault(7.0);
+        intakingRollerVolts.initDefault(7.0);
+        ejectingHybridRollerVolts.initDefault(-7.0);
+        ejectingMidRollerVolts.initDefault(-10.0);
+        holdingRollerVolts.initDefault(1.27235);
         kP.initDefault(6.0);
         kD.initDefault(0.0);
         maxVelocity.initDefault(7.0);
@@ -74,7 +83,10 @@ public class CubeIntake extends SubsystemBase {
       case ROBOT_SIMBOT:
         neutralPositionDegrees.initDefault(90.0);
         deployPositionDegrees.initDefault(0.0);
-        rollerVolts.initDefault(8.0);
+        intakingRollerVolts.initDefault(7.0);
+        ejectingHybridRollerVolts.initDefault(-7.0);
+        ejectingMidRollerVolts.initDefault(-10.00);
+        holdingRollerVolts.initDefault(1.27235);
         kP.initDefault(30.0);
         kD.initDefault(2.0);
         maxVelocity.initDefault(10.0);
@@ -99,8 +111,7 @@ public class CubeIntake extends SubsystemBase {
             new MechanismLigament2d("IntakeArm", 0.35, 90, 4, new Color8Bit(Color.kLightGreen)));
   }
 
-  public void setSuppliers(Supplier<Boolean> forceExtendSupplier, Supplier<Boolean> coastSupplier) {
-    this.forceExtendSupplier = forceExtendSupplier;
+  public void setSuppliers(Supplier<Boolean> coastSupplier) {
     this.coastSupplier = coastSupplier;
   }
 
@@ -128,12 +139,12 @@ public class CubeIntake extends SubsystemBase {
 
     // Zero with absolute encoder
     if (!isZeroed) {
-      absoluteAngleOffset = inputs.armAbsolutePositionRad - inputs.armRelativePositionRad;
+      absoluteAngleOffset = (Math.PI / 2) - inputs.armInternalPositionRad;
       isZeroed = true;
     }
 
     // Get measured positions
-    double angle = inputs.armRelativePositionRad + absoluteAngleOffset;
+    double angle = inputs.armInternalPositionRad + absoluteAngleOffset;
     mechanismLigament.setAngle(new Rotation2d(angle));
     Logger.getInstance().recordOutput("Mechanism2d/CubeIntake", mechanism);
     Logger.getInstance().recordOutput("Mechanism3d/CubeIntake", getPose3d(angle));
@@ -147,11 +158,11 @@ public class CubeIntake extends SubsystemBase {
       io.setArmVoltage(0.0);
       io.setRollerVoltage(0.0);
       controller.reset(angle);
-      isRunning = false;
+      state = State.HOLDING;
 
     } else {
       // Run controller when enabled
-      if (isRunning || forceExtendSupplier.get()) {
+      if (state == State.INTAKING) {
         controller.setGoal(Units.degreesToRadians(deployPositionDegrees.get()));
       } else {
         controller.setGoal(Units.degreesToRadians(neutralPositionDegrees.get()));
@@ -159,7 +170,14 @@ public class CubeIntake extends SubsystemBase {
       io.setArmVoltage(controller.calculate(angle));
 
       // Run roller
-      io.setRollerVoltage(isRunning ? rollerVolts.get() : 0.0);
+      io.setRollerVoltage(
+          switch (state) {
+            case INTAKING -> intakingRollerVolts.get();
+            case EJECTING_HYBRID -> ejectingHybridRollerVolts.get();
+            case EJECTING_MID -> ejectingMidRollerVolts.get();
+            case HOLDING -> holdingRollerVolts.get();
+            default -> 0.00;
+          });
     }
   }
 
@@ -169,17 +187,35 @@ public class CubeIntake extends SubsystemBase {
         rootPosition.getX(), 0.0, rootPosition.getY(), new Rotation3d(0.0, -angle, 0.0));
   }
 
-  /** Returns whether the intake is extended. */
-  public boolean getExtended() {
-    return isRunning || forceExtendSupplier.get();
+  private enum State {
+    INTAKING,
+    EJECTING_HYBRID,
+    EJECTING_MID,
+    HOLDING
   }
 
   /** Command factory to extend and run the roller. */
-  public Command runCommand() {
+  public Command intakeCommand() {
     return startEnd(
         () -> {
-          isRunning = true;
+          state = State.INTAKING;
         },
-        () -> isRunning = false);
+        () -> state = State.HOLDING);
+  }
+
+  public Command ejectHybridCommand() {
+    return startEnd(
+        () -> {
+          state = State.EJECTING_HYBRID;
+        },
+        () -> state = State.HOLDING);
+  }
+  
+  public Command ejectMidCommand() {
+    return startEnd(
+      () -> {
+        state = State.EJECTING_MID;
+      },
+      () -> state = State.HOLDING);
   }
 }

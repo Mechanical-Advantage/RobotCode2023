@@ -27,10 +27,8 @@ public class CubeIntakeIOSim implements CubeIntakeIO {
   public void updateInputs(CubeIntakeIOInputs inputs) {
     armSim.update(Constants.loopPeriodSecs);
 
-    inputs.armAbsolutePositionRad = armSim.getAngleRads();
-    inputs.armRelativePositionRad = armSim.getAngleRads();
     inputs.armInternalPositionRad = armSim.getAngleRads();
-    inputs.armRelativeVelocityRadPerSec = armSim.getVelocityRadPerSec();
+
     inputs.armInternalVelocityRadPerSec = armSim.getVelocityRadPerSec();
     inputs.armAppliedVolts = armAppliedVolts;
     inputs.armCurrentAmps = new double[] {armSim.getCurrentDrawAmps()};
