@@ -19,8 +19,11 @@ public interface CubeIntakeIO {
     public double[] armCurrentAmps = new double[] {};
     public double[] armTempCelcius = new double[] {};
 
+    public double rollerInternalPositionRad = 0.0;
+    public double rollerInternalVelocityRadPerSec = 0.0;
     public double rollerAppliedVolts = 0.0;
     public double[] rollerCurrentAmps = new double[] {};
+    public double[] rollerTempCelcius = new double[] {};
   }
   /** Updates the set of loggable inputs. */
   public default void updateInputs(CubeIntakeIOInputs inputs) {}

@@ -9,6 +9,7 @@ package org.littletonrobotics.frc2023;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -18,10 +19,15 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import org.littletonrobotics.frc2023.Constants.Mode;
 import org.littletonrobotics.frc2023.commands.DriveWithJoysticks;
+import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization;
+import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
+import org.littletonrobotics.frc2023.commands.autos.FieldsideTwoPiece;
+import org.littletonrobotics.frc2023.commands.autos.ScoreAndBalance;
+import org.littletonrobotics.frc2023.commands.autos.ScoreAndDoNothing;
+import org.littletonrobotics.frc2023.commands.autos.WallsideTwoPiece;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntake;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntakeIO;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntakeIOSim;
-import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntakeIOSparkMax;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
 import org.littletonrobotics.frc2023.subsystems.drive.GyroIO;
 import org.littletonrobotics.frc2023.subsystems.drive.GyroIOPigeon2;
@@ -32,13 +38,13 @@ import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
 import org.littletonrobotics.frc2023.util.SparkMaxBurnManager;
+import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
 public class RobotContainer {
 
   // Subsystems
   private Drive drive;
-
   private CubeIntake cubeIntake;
 
   // OI objects
@@ -54,6 +60,9 @@ public class RobotContainer {
       new LoggedDashboardNumber("Endgame Alert #1", 30.0);
   private final LoggedDashboardNumber endgameAlert2 =
       new LoggedDashboardNumber("Endgame Alert #2", 15.0);
+
+  private final LoggedDashboardChooser<Command> autoChooser =
+      new LoggedDashboardChooser<>("Auto Chooser");
 
   public RobotContainer() {
     // Check if flash should be burned
@@ -81,7 +90,7 @@ public class RobotContainer {
                   new ModuleIOSparkMax(2),
                   new ModuleIOSparkMax(3));
 
-          cubeIntake = new CubeIntake(new CubeIntakeIOSparkMax());
+          // cubeIntake = new CubeIntake(new CubeIntakeIOSparkMax());
 
           break;
         case ROBOT_SIMBOT:
@@ -117,17 +126,25 @@ public class RobotContainer {
     // Set up subsystems
 
     // Set up auto routines
-
-    // System.out.println("[Init] Instantiating auto routines (Drive Characterization)");
-    // autoSelector.addRoutine(
-    //     "Drive Characterization",
-    //     List.of(),
-    //     new FeedForwardCharacterization(
-    //         drive,
-    //         true,
-    //         new FeedForwardCharacterizationData("drive"),
-    //         drive::runCharacterizationVolts,
-    //         drive::getCharacterizationVelocity));
+    autoChooser.addDefaultOption(
+        "Do Almost Nothing",
+        Commands.runOnce(
+            () ->
+                drive.setPose(
+                    AllianceFlipUtil.apply(
+                        new Pose2d(new Translation2d(), new Rotation2d(Math.PI))))));
+    autoChooser.addOption("Score and Do Nothing", new ScoreAndDoNothing(drive, cubeIntake));
+    autoChooser.addOption("Wallside Two Piece", new WallsideTwoPiece(drive, cubeIntake));
+    autoChooser.addOption("Fieldside Two Piece", new FieldsideTwoPiece(drive, cubeIntake));
+    autoChooser.addOption("Score and Balance", new ScoreAndBalance(drive, cubeIntake));
+    autoChooser.addOption(
+        "Drive Characterization",
+        new FeedForwardCharacterization(
+            drive,
+            true,
+            new FeedForwardCharacterizationData("drive"),
+            (Double voltage) -> drive.runCharacterizationVolts(voltage),
+            drive::getCharacterizationVelocity));
 
     // Startup alerts
     if (Constants.tuningMode) {
@@ -220,11 +237,13 @@ public class RobotContainer {
 
     drive.setDefaultCommand(
         new DriveWithJoysticks(
-            drive, () -> -driver.getLeftY(), () -> -driver.getLeftX(), () -> -driver.getRightX()));
+            drive,
+            () -> -driver.getLeftY(),
+            () -> -driver.getLeftX(),
+            () -> -driver.getRightX())); // right
     driver
         .start()
         .or(driver.back())
-        .and(() -> DriverStation.isDisabled())
         .onTrue(
             Commands.runOnce(
                     () -> {
@@ -242,6 +261,6 @@ public class RobotContainer {
   }
 
   public Command getAutonomousCommand() {
-    return Commands.none();
+    return autoChooser.get();
   }
 }

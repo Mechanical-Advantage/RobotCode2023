@@ -25,6 +25,8 @@ public class CubeIntakeIOSparkMax implements CubeIntakeIO {
   private final boolean armInvert;
   private final boolean rollerInvert;
   private final double armInternalEncoderReduction;
+  private final double rollerInternalEncoderReduction;
+  private final RelativeEncoder rollerInternalEncoder;
 
   public CubeIntakeIOSparkMax() {
     System.out.println("[Init] Creating CubeIntakeIOSparkMax");
@@ -32,11 +34,12 @@ public class CubeIntakeIOSparkMax implements CubeIntakeIO {
     switch (Constants.getRobot()) {
       case ROBOT_2023C:
         armSparkMax = new CANSparkMax(6, MotorType.kBrushless);
-        rollerSparkMax = new CANSparkMax(12, MotorType.kBrushed);
+        rollerSparkMax = new CANSparkMax(12, MotorType.kBrushless);
 
         armInvert = false;
         rollerInvert = true;
         armInternalEncoderReduction = 5.0 * 5.0 * (30.0 / 18.0) * (30.0 / 18.0);
+        rollerInternalEncoderReduction = 5.0 * 10.0;
 
         break;
       default:
@@ -52,6 +55,7 @@ public class CubeIntakeIOSparkMax implements CubeIntakeIO {
     rollerSparkMax.setCANTimeout(SparkMaxBurnManager.configCANTimeout);
 
     armInternalEncoder = armSparkMax.getEncoder();
+    rollerInternalEncoder = rollerSparkMax.getEncoder();
 
     for (int i = 0; i < SparkMaxBurnManager.configCount; i++) {
       SparkMaxPeriodicFrameConfig.configNotLeader(armSparkMax);
@@ -60,6 +64,10 @@ public class CubeIntakeIOSparkMax implements CubeIntakeIO {
       armInternalEncoder.setPosition(0.0);
       armInternalEncoder.setMeasurementPeriod(10);
       armInternalEncoder.setAverageDepth(2);
+
+      rollerInternalEncoder.setPosition(0.0);
+      rollerInternalEncoder.setMeasurementPeriod(10);
+      rollerInternalEncoder.setAverageDepth(2);
 
       armSparkMax.setInverted(armInvert);
       rollerSparkMax.setInverted(rollerInvert);
@@ -82,7 +90,6 @@ public class CubeIntakeIOSparkMax implements CubeIntakeIO {
 
   @Override
   public void updateInputs(CubeIntakeIOInputs inputs) {
-
     inputs.armInternalPositionRad =
         cleanSparkMaxValue(
             inputs.armInternalPositionRad,
@@ -99,6 +106,18 @@ public class CubeIntakeIOSparkMax implements CubeIntakeIO {
 
     inputs.rollerAppliedVolts = rollerSparkMax.getAppliedOutput() * rollerSparkMax.getBusVoltage();
     inputs.rollerCurrentAmps = new double[] {rollerSparkMax.getOutputCurrent()};
+
+    inputs.rollerTempCelcius = new double[] {rollerSparkMax.getMotorTemperature()};
+    inputs.rollerInternalPositionRad =
+        cleanSparkMaxValue(
+            inputs.rollerInternalPositionRad,
+            Units.rotationsToRadians(rollerInternalEncoder.getPosition())
+                / rollerInternalEncoderReduction);
+    inputs.rollerInternalVelocityRadPerSec =
+        cleanSparkMaxValue(
+            inputs.rollerInternalVelocityRadPerSec,
+            Units.rotationsPerMinuteToRadiansPerSecond(rollerInternalEncoder.getPosition())
+                / rollerInternalEncoderReduction);
   }
 
   @Override

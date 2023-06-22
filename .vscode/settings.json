@@ -49,5 +49,6 @@
   "wpilib.deployOffline": true,
   "wpilib.offline": false,
   "wpilib.skipTests": false,
-  "python.analysis.typeCheckingMode": "off"
+  "python.analysis.typeCheckingMode": "off",
+  "java.debug.settings.onBuildFailureProceed": true
 }

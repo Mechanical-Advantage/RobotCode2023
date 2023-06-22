@@ -17,6 +17,7 @@ public class CubeIntakeIOSim implements CubeIntakeIO {
   private SingleJointedArmSim armSim =
       new SingleJointedArmSim(DCMotor.getNEO(1), 50, 0.5, 0.5, 0.0, Math.PI / 2.0, true);
   private double armAppliedVolts = 0.0;
+  private double rollerAppliedVolts = 0.0;
 
   public CubeIntakeIOSim() {
     System.out.println("[Init] Creating CubeIntakeIOSim");
@@ -33,6 +34,8 @@ public class CubeIntakeIOSim implements CubeIntakeIO {
     inputs.armAppliedVolts = armAppliedVolts;
     inputs.armCurrentAmps = new double[] {armSim.getCurrentDrawAmps()};
     inputs.armTempCelcius = new double[] {};
+
+    inputs.rollerAppliedVolts = rollerAppliedVolts;
   }
 
   @Override
@@ -42,5 +45,7 @@ public class CubeIntakeIOSim implements CubeIntakeIO {
   }
 
   @Override
-  public void setRollerVoltage(double voltage) {}
+  public void setRollerVoltage(double voltage) {
+    rollerAppliedVolts = MathUtil.clamp(voltage, -12.0, 12.0);
+  }
 }

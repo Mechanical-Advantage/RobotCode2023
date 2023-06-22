@@ -197,25 +197,28 @@ public class CubeIntake extends SubsystemBase {
   /** Command factory to extend and run the roller. */
   public Command intakeCommand() {
     return startEnd(
-        () -> {
-          state = State.INTAKING;
-        },
-        () -> state = State.HOLDING);
+            () -> {
+              state = State.INTAKING;
+            },
+            () -> state = State.HOLDING)
+        .withName("CubeIntake/Intake");
   }
 
   public Command ejectHybridCommand() {
     return startEnd(
-        () -> {
-          state = State.EJECTING_HYBRID;
-        },
-        () -> state = State.HOLDING);
+            () -> {
+              state = State.EJECTING_HYBRID;
+            },
+            () -> state = State.HOLDING)
+        .withName("CubeIntake/EjectHybrid");
   }
 
   public Command ejectMidCommand() {
     return startEnd(
-        () -> {
-          state = State.EJECTING_MID;
-        },
-        () -> state = State.HOLDING);
+            () -> {
+              state = State.EJECTING_MID;
+            },
+            () -> state = State.HOLDING)
+        .withName("CubeIntake/EjectMid");
   }
 }
