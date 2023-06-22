@@ -27,7 +27,7 @@ public class DriveWithJoysticks extends CommandBase {
   public static final double matchEndThreshold =
       0.25; // FMS reports "0" ~250ms before the end of the match anyway
   public static final LoggedTunableNumber deadband =
-      new LoggedTunableNumber("DriveWithJoysticks/Deadband", 0.1);
+      new LoggedTunableNumber("DriveWithJoysticks/Deadband", 0.01);
 
   private final Drive drive;
   private final Supplier<Double> leftXSupplier;

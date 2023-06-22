@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import org.littletonrobotics.frc2023.Constants.Mode;
@@ -48,13 +49,16 @@ public class RobotContainer {
   private CubeIntake cubeIntake;
 
   // OI objects
-  private final CommandXboxController driver = new CommandXboxController(0);
-  private final CommandXboxController operator = new CommandXboxController(1);
+  private final CommandJoystick driverLeft = new CommandJoystick(0);
+  private final CommandJoystick driverRight = new CommandJoystick(1);
+  private final CommandXboxController operator = new CommandXboxController(2);
 
-  private final Alert driverDisconnected =
-      new Alert("Driver controller disconnected (port 0).", AlertType.WARNING);
+  private final Alert driverLeftDisconnected =
+      new Alert("Left driver controller disconnected (port 0).", AlertType.WARNING);
+  private final Alert driverRightDisconnected =
+      new Alert("Right driver controller disconnected (port 1).", AlertType.WARNING);
   private final Alert operatorDisconnected =
-      new Alert("Operator controller disconnected (port 1).", AlertType.WARNING);
+      new Alert("Operator controller disconnected (port 2).", AlertType.WARNING);
 
   private final LoggedDashboardNumber endgameAlert1 =
       new LoggedDashboardNumber("Endgame Alert #1", 30.0);
@@ -62,7 +66,7 @@ public class RobotContainer {
       new LoggedDashboardNumber("Endgame Alert #2", 15.0);
 
   private final LoggedDashboardChooser<Command> autoChooser =
-      new LoggedDashboardChooser<>("Auto Chooser");
+      new LoggedDashboardChooser<>("Auto Routine");
 
   public RobotContainer() {
     // Check if flash should be burned
@@ -163,14 +167,12 @@ public class RobotContainer {
         .onTrue(
             Commands.run(
                     () -> {
-                      driver.getHID().setRumble(RumbleType.kBothRumble, 1.0);
                       operator.getHID().setRumble(RumbleType.kBothRumble, 1.0);
                     })
                 .withTimeout(1.5)
                 .andThen(
                     Commands.run(
                             () -> {
-                              driver.getHID().setRumble(RumbleType.kBothRumble, 0.0);
                               operator.getHID().setRumble(RumbleType.kBothRumble, 0.0);
                             })
                         .withTimeout(1.0)));
@@ -183,25 +185,21 @@ public class RobotContainer {
             Commands.sequence(
                 Commands.run(
                         () -> {
-                          driver.getHID().setRumble(RumbleType.kBothRumble, 1.0);
                           operator.getHID().setRumble(RumbleType.kBothRumble, 1.0);
                         })
                     .withTimeout(0.5),
                 Commands.run(
                         () -> {
-                          driver.getHID().setRumble(RumbleType.kBothRumble, 0.0);
                           operator.getHID().setRumble(RumbleType.kBothRumble, 0.0);
                         })
                     .withTimeout(0.5),
                 Commands.run(
                         () -> {
-                          driver.getHID().setRumble(RumbleType.kBothRumble, 1.0);
                           operator.getHID().setRumble(RumbleType.kBothRumble, 1.0);
                         })
                     .withTimeout(0.5),
                 Commands.run(
                         () -> {
-                          driver.getHID().setRumble(RumbleType.kBothRumble, 0.0);
                           operator.getHID().setRumble(RumbleType.kBothRumble, 0.0);
                         })
                     .withTimeout(1.0)));
@@ -216,9 +214,12 @@ public class RobotContainer {
 
   /** Updates the alerts for disconnected controllers. */
   public void checkControllers() {
-    driverDisconnected.set(
-        !DriverStation.isJoystickConnected(driver.getHID().getPort())
-            || !DriverStation.getJoystickIsXbox(driver.getHID().getPort()));
+    driverLeftDisconnected.set(
+        !DriverStation.isJoystickConnected(driverLeft.getHID().getPort())
+            || DriverStation.getJoystickIsXbox(driverLeft.getHID().getPort()));
+    driverRightDisconnected.set(
+        !DriverStation.isJoystickConnected(driverRight.getHID().getPort())
+            || DriverStation.getJoystickIsXbox(driverRight.getHID().getPort()));
     operatorDisconnected.set(
         !DriverStation.isJoystickConnected(operator.getHID().getPort())
             || !DriverStation.getJoystickIsXbox(operator.getHID().getPort()));
@@ -238,12 +239,12 @@ public class RobotContainer {
     drive.setDefaultCommand(
         new DriveWithJoysticks(
             drive,
-            () -> -driver.getLeftY(),
-            () -> -driver.getLeftX(),
-            () -> -driver.getRightX())); // right
-    driver
-        .start()
-        .or(driver.back())
+            () -> -driverLeft.getRawAxis(1),
+            () -> -driverLeft.getRawAxis(0),
+            () -> -driverRight.getRawAxis(0)));
+    driverRight
+        .button(1)
+        .or(driverRight.button(2))
         .onTrue(
             Commands.runOnce(
                     () -> {
@@ -254,7 +255,7 @@ public class RobotContainer {
                     })
                 .ignoringDisable(true));
 
-    driver.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
+    driverLeft.button(1).or(driverLeft.button(2)).onTrue(Commands.runOnce(drive::stopWithX, drive));
     operator.y().whileTrue(cubeIntake.ejectMidCommand());
     operator.b().whileTrue(cubeIntake.ejectHybridCommand());
     operator.a().whileTrue(cubeIntake.intakeCommand());
