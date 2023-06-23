@@ -79,9 +79,9 @@ public class DriveTrajectory extends CommandBase {
         turnKd.initDefault(0.0);
         break;
       case ROBOT_SIMBOT:
-        maxVelocityMetersPerSec = Units.inchesToMeters(160.0);
-        maxAccelerationMetersPerSec2 = Units.inchesToMeters(105.0);
-        maxCentripetalAccelerationMetersPerSec2 = Units.inchesToMeters(150.0);
+        maxVelocityMetersPerSec = Units.inchesToMeters(140.0);
+        maxAccelerationMetersPerSec2 = Units.inchesToMeters(80.0);
+        maxCentripetalAccelerationMetersPerSec2 = Units.inchesToMeters(130.0);
 
         driveKp.initDefault(2.5);
         driveKd.initDefault(0.0);
