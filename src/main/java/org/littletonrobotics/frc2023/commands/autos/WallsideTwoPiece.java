@@ -81,13 +81,12 @@ public class WallsideTwoPiece extends SequentialCommandGroup {
     addCommands(cubeIntake.ejectCommand().withTimeout(.5));
     addCommands(
         new DriveTrajectory(
-                drive,
-                List.of(
-                    Waypoint.fromHolonomicPose(startPosition),
-                    Waypoint.fromDifferentialPose(intermediatePosition),
-                    Waypoint.fromHolonomicPose(endPosition)))
-            .deadlineWith(
-                Commands.sequence(Commands.waitSeconds(1.2), cubeIntake.intakeCommand())));
+            drive,
+            List.of(
+                Waypoint.fromHolonomicPose(startPosition),
+                Waypoint.fromDifferentialPose(intermediatePosition),
+                Waypoint.fromHolonomicPose(endPosition))));
+    addCommands(cubeIntake.intakeCommand().withTimeout(1));
     addCommands(
         new DriveTrajectory(
             drive,

@@ -22,9 +22,11 @@ import org.littletonrobotics.frc2023.Constants.Mode;
 import org.littletonrobotics.frc2023.commands.DriveWithJoysticks;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
+import org.littletonrobotics.frc2023.commands.autos.FieldSideThreePiece;
 import org.littletonrobotics.frc2023.commands.autos.FieldsideTwoPiece;
 import org.littletonrobotics.frc2023.commands.autos.ScoreAndBalance;
 import org.littletonrobotics.frc2023.commands.autos.ScoreAndDoNothing;
+import org.littletonrobotics.frc2023.commands.autos.WallsideThreePiece;
 import org.littletonrobotics.frc2023.commands.autos.WallsideTwoPiece;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntake;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntakeIO;
@@ -142,9 +144,11 @@ public class RobotContainer {
     autoChooser.addOption("Wallside Two Piece", new WallsideTwoPiece(drive, cubeIntake, false));
     autoChooser.addOption(
         "Wallside Two Piece Balance", new WallsideTwoPiece(drive, cubeIntake, true));
+    autoChooser.addOption("Wallside Three Piece", new WallsideThreePiece(drive, cubeIntake));
     autoChooser.addOption("Fieldside Two Piece", new FieldsideTwoPiece(drive, cubeIntake, false));
     autoChooser.addOption(
         "Fieldside Two Piece Balance", new FieldsideTwoPiece(drive, cubeIntake, true));
+    autoChooser.addOption("Fieldside Three Piece", new FieldSideThreePiece(drive, cubeIntake));
     autoChooser.addOption("Score and Balance", new ScoreAndBalance(drive, cubeIntake));
     autoChooser.addOption(
         "Drive Characterization",
