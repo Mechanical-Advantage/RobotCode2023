@@ -21,6 +21,7 @@ import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.function.Supplier;
 import org.littletonrobotics.frc2023.Constants;
@@ -48,13 +49,11 @@ public class CubeIntake extends SubsystemBase {
   private static final LoggedTunableNumber deployPositionDegrees =
       new LoggedTunableNumber("CubeIntake/DeployPositionDegrees");
   private static final LoggedTunableNumber intakingRollerVolts =
-      new LoggedTunableNumber("CubeIntake/intakingRollerVolts");
+      new LoggedTunableNumber("CubeIntake/IntakingRollerVolts");
   private static final LoggedTunableNumber holdingRollerVolts =
-      new LoggedTunableNumber("CubeIntake/holdingRollerVolts");
-  private static final LoggedTunableNumber ejectingHybridRollerVolts =
-      new LoggedTunableNumber("CubeIntake/ejectingHybridRollerVolts");
-  private static final LoggedTunableNumber ejectingMidRollerVolts =
-      new LoggedTunableNumber("CubeIntake/ejectingMidRollerVolts");
+      new LoggedTunableNumber("CubeIntake/HoldingRollerVolts");
+  private static final LoggedTunableNumber ejectingRollerVolts =
+      new LoggedTunableNumber("CubeIntake/EjectingRollerVolts");
 
   private static final LoggedTunableNumber kP = new LoggedTunableNumber("CubeIntake/kP");
   private static final LoggedTunableNumber kD = new LoggedTunableNumber("CubeIntake/kD");
@@ -69,23 +68,21 @@ public class CubeIntake extends SubsystemBase {
   static {
     switch (Constants.getRobot()) {
       case ROBOT_2023P:
-        neutralPositionDegrees.initDefault(92.0);
-        deployPositionDegrees.initDefault(8.0);
-        intakingRollerVolts.initDefault(7.0);
-        ejectingHybridRollerVolts.initDefault(-7.0);
-        ejectingMidRollerVolts.initDefault(-10.0);
-        holdingRollerVolts.initDefault(1.27235);
-        kP.initDefault(6.0);
+        neutralPositionDegrees.initDefault(90.0);
+        deployPositionDegrees.initDefault(6.0);
+        intakingRollerVolts.initDefault(6.0);
+        ejectingRollerVolts.initDefault(-3.5);
+        holdingRollerVolts.initDefault(0.5);
+        kP.initDefault(15.0);
         kD.initDefault(0.0);
-        maxVelocity.initDefault(7.0);
-        maxAcceleration.initDefault(50.0);
+        maxVelocity.initDefault(10.0);
+        maxAcceleration.initDefault(15.0);
         break;
       case ROBOT_SIMBOT:
         neutralPositionDegrees.initDefault(90.0);
         deployPositionDegrees.initDefault(0.0);
         intakingRollerVolts.initDefault(7.0);
-        ejectingHybridRollerVolts.initDefault(-7.0);
-        ejectingMidRollerVolts.initDefault(-10.00);
+        ejectingRollerVolts.initDefault(-10.00);
         holdingRollerVolts.initDefault(1.27235);
         kP.initDefault(30.0);
         kD.initDefault(2.0);
@@ -173,8 +170,7 @@ public class CubeIntake extends SubsystemBase {
       io.setRollerVoltage(
           switch (state) {
             case INTAKING -> intakingRollerVolts.get();
-            case EJECTING_HYBRID -> ejectingHybridRollerVolts.get();
-            case EJECTING_MID -> ejectingMidRollerVolts.get();
+            case EJECTING -> ejectingRollerVolts.get();
             case HOLDING -> holdingRollerVolts.get();
             default -> 0.00;
           });
@@ -189,8 +185,7 @@ public class CubeIntake extends SubsystemBase {
 
   private enum State {
     INTAKING,
-    EJECTING_HYBRID,
-    EJECTING_MID,
+    EJECTING,
     HOLDING
   }
 
@@ -201,24 +196,21 @@ public class CubeIntake extends SubsystemBase {
               state = State.INTAKING;
             },
             () -> state = State.HOLDING)
+        .raceWith(
+            Commands.sequence(
+                Commands.waitSeconds(.25),
+                Commands.waitUntil(
+                    () ->
+                        inputs.rollerCurrentAmps.length > 0 && inputs.rollerCurrentAmps[0] > 20.0)))
         .withName("CubeIntake/Intake");
   }
 
-  public Command ejectHybridCommand() {
+  public Command ejectCommand() {
     return startEnd(
             () -> {
-              state = State.EJECTING_HYBRID;
+              state = State.EJECTING;
             },
             () -> state = State.HOLDING)
-        .withName("CubeIntake/EjectHybrid");
-  }
-
-  public Command ejectMidCommand() {
-    return startEnd(
-            () -> {
-              state = State.EJECTING_MID;
-            },
-            () -> state = State.HOLDING)
-        .withName("CubeIntake/EjectMid");
+        .withName("CubeIntake/Eject");
   }
 }

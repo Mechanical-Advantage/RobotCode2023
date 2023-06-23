@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import java.util.List;
 import org.littletonrobotics.frc2023.FieldConstants;
+import org.littletonrobotics.frc2023.commands.AutoBalance;
 import org.littletonrobotics.frc2023.commands.DriveTrajectory;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntake;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
@@ -30,37 +31,64 @@ public class FieldsideTwoPiece extends SequentialCommandGroup {
       new Pose2d(
           new Translation2d(
               FieldConstants.Community.chargingStationOuterX,
-              (FieldConstants.Community.chargingStationLeftY + FieldConstants.Community.leftY) / 2),
+              ((FieldConstants.Community.chargingStationLeftY + FieldConstants.Community.leftY) / 2)
+                  + .09),
           new Rotation2d());
 
   private static final Pose2d returnIntermediatePosition =
       new Pose2d(
           new Translation2d(
               FieldConstants.Community.chargingStationInnerX,
-              (FieldConstants.Community.chargingStationLeftY + FieldConstants.Community.leftY) / 2),
+              ((FieldConstants.Community.chargingStationLeftY + FieldConstants.Community.leftY) / 2)
+                  + .09),
           new Rotation2d(Math.PI));
 
   private static final Pose2d returnPosition =
       new Pose2d(
-          new Translation2d(FieldConstants.Grids.outerX + .7, FieldConstants.Grids.nodeY[8] - .15),
-          Rotation2d.fromDegrees(170));
+          new Translation2d(FieldConstants.Grids.outerX + .63, FieldConstants.Grids.nodeY[8] - .12),
+          Rotation2d.fromDegrees(150));
 
   private static final Pose2d endPosition =
-      new Pose2d(FieldConstants.StagingLocations.translations[3], Rotation2d.fromDegrees(1));
+      new Pose2d(
+          new Translation2d(
+              FieldConstants.StagingLocations.positionX - .30,
+              FieldConstants.StagingLocations.firstY
+                  + (FieldConstants.StagingLocations.separationY * 3)
+                  - .40),
+          Rotation2d.fromDegrees(30));
+
+  private static final Pose2d chargeStationIntermediate =
+      new Pose2d(
+          new Translation2d(
+              FieldConstants.Grids.outerX + 1,
+              FieldConstants.Community.chargingStationLeftY
+                  - (FieldConstants.Community.chargingStationLength / 4)
+                  - .25),
+          new Rotation2d());
+
+  private static final Pose2d chargeStation =
+      new Pose2d(
+          new Translation2d(
+              (FieldConstants.Community.chargingStationInnerX
+                      + FieldConstants.Community.chargingStationOuterX)
+                  / 2,
+              FieldConstants.Community.chargingStationLeftY
+                  - (FieldConstants.Community.chargingStationLength / 4)
+                  - .25),
+          new Rotation2d(Math.PI));
 
   /** Creates a new FieldsideTwoPiece */
-  public FieldsideTwoPiece(Drive drive, CubeIntake cubeIntake) {
+  public FieldsideTwoPiece(Drive drive, CubeIntake cubeIntake, boolean shouldBalance) {
     addCommands(Commands.runOnce(() -> drive.setPose(AllianceFlipUtil.apply(startPosition))));
-    addCommands(cubeIntake.ejectMidCommand().withTimeout(2));
+    addCommands(cubeIntake.ejectCommand().withTimeout(.9));
     addCommands(
         new DriveTrajectory(
-                drive,
-                List.of(
-                    Waypoint.fromHolonomicPose(startPosition),
-                    Waypoint.fromDifferentialPose(intermediatePosition),
-                    Waypoint.fromHolonomicPose(endPosition)))
-            .deadlineWith(
-                Commands.sequence(Commands.waitSeconds(1.2), cubeIntake.intakeCommand())));
+            drive,
+            List.of(
+                Waypoint.fromHolonomicPose(startPosition),
+                Waypoint.fromDifferentialPose(intermediatePosition),
+                Waypoint.fromHolonomicPose(endPosition))));
+    addCommands(cubeIntake.intakeCommand().withTimeout(1));
     addCommands(
         new DriveTrajectory(
             drive,
@@ -68,6 +96,16 @@ public class FieldsideTwoPiece extends SequentialCommandGroup {
                 Waypoint.fromHolonomicPose(endPosition),
                 Waypoint.fromDifferentialPose(returnIntermediatePosition),
                 Waypoint.fromHolonomicPose(returnPosition))));
-    addCommands(cubeIntake.ejectHybridCommand().withTimeout(2));
+    addCommands(cubeIntake.ejectCommand().withTimeout(.5));
+    if (shouldBalance) {
+      addCommands(
+          new DriveTrajectory(
+              drive,
+              List.of(
+                  Waypoint.fromHolonomicPose(returnPosition),
+                  Waypoint.fromDifferentialPose(chargeStationIntermediate, new Rotation2d(Math.PI)),
+                  Waypoint.fromHolonomicPose(chargeStation))));
+      addCommands(new AutoBalance(drive));
+    }
   }
 }

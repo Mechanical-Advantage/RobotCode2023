@@ -29,6 +29,7 @@ import org.littletonrobotics.frc2023.commands.autos.WallsideTwoPiece;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntake;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntakeIO;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntakeIOSim;
+import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntakeIOSparkMax;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
 import org.littletonrobotics.frc2023.subsystems.drive.GyroIO;
 import org.littletonrobotics.frc2023.subsystems.drive.GyroIOPigeon2;
@@ -94,7 +95,7 @@ public class RobotContainer {
                   new ModuleIOSparkMax(2),
                   new ModuleIOSparkMax(3));
 
-          // cubeIntake = new CubeIntake(new CubeIntakeIOSparkMax());
+          cubeIntake = new CubeIntake(new CubeIntakeIOSparkMax());
 
           break;
         case ROBOT_SIMBOT:
@@ -138,8 +139,12 @@ public class RobotContainer {
                     AllianceFlipUtil.apply(
                         new Pose2d(new Translation2d(), new Rotation2d(Math.PI))))));
     autoChooser.addOption("Score and Do Nothing", new ScoreAndDoNothing(drive, cubeIntake));
-    autoChooser.addOption("Wallside Two Piece", new WallsideTwoPiece(drive, cubeIntake));
-    autoChooser.addOption("Fieldside Two Piece", new FieldsideTwoPiece(drive, cubeIntake));
+    autoChooser.addOption("Wallside Two Piece", new WallsideTwoPiece(drive, cubeIntake, false));
+    autoChooser.addOption(
+        "Wallside Two Piece Balance", new WallsideTwoPiece(drive, cubeIntake, true));
+    autoChooser.addOption("Fieldside Two Piece", new FieldsideTwoPiece(drive, cubeIntake, false));
+    autoChooser.addOption(
+        "Fieldside Two Piece Balance", new FieldsideTwoPiece(drive, cubeIntake, true));
     autoChooser.addOption("Score and Balance", new ScoreAndBalance(drive, cubeIntake));
     autoChooser.addOption(
         "Drive Characterization",
@@ -256,8 +261,7 @@ public class RobotContainer {
                 .ignoringDisable(true));
 
     driverLeft.button(1).or(driverLeft.button(2)).onTrue(Commands.runOnce(drive::stopWithX, drive));
-    operator.y().whileTrue(cubeIntake.ejectMidCommand());
-    operator.b().whileTrue(cubeIntake.ejectHybridCommand());
+    operator.b().whileTrue(cubeIntake.ejectCommand());
     operator.a().whileTrue(cubeIntake.intakeCommand());
   }
 

@@ -25,6 +25,6 @@ public class ScoreAndDoNothing extends SequentialCommandGroup {
                 drive.setPose(
                     AllianceFlipUtil.apply(
                         new Pose2d(new Translation2d(), new Rotation2d(Math.PI))))));
-    addCommands(cubeIntake.ejectMidCommand().withTimeout(2));
+    addCommands(cubeIntake.ejectCommand().withTimeout(2));
   }
 }

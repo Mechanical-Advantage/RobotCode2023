@@ -40,7 +40,7 @@ public class ScoreAndBalance extends SequentialCommandGroup {
   /** Creates a new ScoreAndBalance. */
   public ScoreAndBalance(Drive drive, CubeIntake cubeIntake) {
     addCommands(Commands.runOnce(() -> drive.setPose(AllianceFlipUtil.apply(startPosition))));
-    addCommands(cubeIntake.ejectMidCommand().withTimeout(2));
+    addCommands(cubeIntake.ejectCommand().withTimeout(2));
     addCommands(
         new DriveTrajectory(
             drive,

@@ -32,14 +32,14 @@ public class CubeIntakeIOSparkMax implements CubeIntakeIO {
     System.out.println("[Init] Creating CubeIntakeIOSparkMax");
 
     switch (Constants.getRobot()) {
-      case ROBOT_2023C:
-        armSparkMax = new CANSparkMax(6, MotorType.kBrushless);
-        rollerSparkMax = new CANSparkMax(12, MotorType.kBrushless);
+      case ROBOT_2023P:
+        armSparkMax = new CANSparkMax(2, MotorType.kBrushless);
+        rollerSparkMax = new CANSparkMax(3, MotorType.kBrushless);
 
         armInvert = false;
         rollerInvert = true;
-        armInternalEncoderReduction = 5.0 * 5.0 * (30.0 / 18.0) * (30.0 / 18.0);
-        rollerInternalEncoderReduction = 5.0 * 10.0;
+        armInternalEncoderReduction = (5.0 * 3.0 * 24.0) / 8;
+        rollerInternalEncoderReduction = 3.0;
 
         break;
       default:
