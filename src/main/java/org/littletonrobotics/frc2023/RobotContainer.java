@@ -56,6 +56,7 @@ public class RobotContainer {
   private final CommandJoystick driverRight = new CommandJoystick(1);
   private final CommandXboxController operator = new CommandXboxController(2);
 
+  // Alerts
   private final Alert driverLeftDisconnected =
       new Alert("Left driver controller disconnected (port 0).", AlertType.WARNING);
   private final Alert driverRightDisconnected =
@@ -63,13 +64,13 @@ public class RobotContainer {
   private final Alert operatorDisconnected =
       new Alert("Operator controller disconnected (port 2).", AlertType.WARNING);
 
+  // Dashboard inputs
+  private final LoggedDashboardChooser<Command> autoChooser =
+      new LoggedDashboardChooser<>("Auto Routine");
   private final LoggedDashboardNumber endgameAlert1 =
       new LoggedDashboardNumber("Endgame Alert #1", 30.0);
   private final LoggedDashboardNumber endgameAlert2 =
       new LoggedDashboardNumber("Endgame Alert #2", 15.0);
-
-  private final LoggedDashboardChooser<Command> autoChooser =
-      new LoggedDashboardChooser<>("Auto Routine");
 
   public RobotContainer() {
     // Check if flash should be burned
@@ -86,7 +87,6 @@ public class RobotContainer {
                   new ModuleIOSparkMax(1),
                   new ModuleIOSparkMax(2),
                   new ModuleIOSparkMax(3));
-
           break;
         case ROBOT_2023P:
           drive =
@@ -96,9 +96,7 @@ public class RobotContainer {
                   new ModuleIOSparkMax(1),
                   new ModuleIOSparkMax(2),
                   new ModuleIOSparkMax(3));
-
           cubeIntake = new CubeIntake(new CubeIntakeIOSparkMax());
-
           break;
         case ROBOT_SIMBOT:
           drive =
@@ -108,9 +106,7 @@ public class RobotContainer {
                   new ModuleIOSim(),
                   new ModuleIOSim(),
                   new ModuleIOSim());
-
           cubeIntake = new CubeIntake(new CubeIntakeIOSim());
-
           break;
       }
     }
@@ -129,8 +125,6 @@ public class RobotContainer {
     if (cubeIntake == null) {
       cubeIntake = new CubeIntake(new CubeIntakeIO() {});
     }
-
-    // Set up subsystems
 
     // Set up auto routines
     autoChooser.addDefaultOption(
@@ -239,12 +233,7 @@ public class RobotContainer {
     // Clear old buttons
     CommandScheduler.getInstance().getActiveButtonLoop().clear();
 
-    // Joystick command factories
-
     // *** DRIVER CONTROLS ***
-
-    // Drive controls
-
     drive.setDefaultCommand(
         new DriveWithJoysticks(
             drive,
@@ -263,8 +252,9 @@ public class RobotContainer {
                               AllianceFlipUtil.apply(new Rotation2d())));
                     })
                 .ignoringDisable(true));
-
     driverLeft.button(1).or(driverLeft.button(2)).onTrue(Commands.runOnce(drive::stopWithX, drive));
+
+    // *** OPERATOR CONTROLS ***
     operator.b().whileTrue(cubeIntake.ejectCommand());
     operator.a().whileTrue(cubeIntake.intakeCommand());
   }

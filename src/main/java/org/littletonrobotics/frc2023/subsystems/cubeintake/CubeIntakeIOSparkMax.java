@@ -40,7 +40,6 @@ public class CubeIntakeIOSparkMax implements CubeIntakeIO {
         rollerInvert = true;
         armInternalEncoderReduction = (5.0 * 3.0 * 24.0) / 8;
         rollerInternalEncoderReduction = 3.0;
-
         break;
       default:
         throw new RuntimeException("Invalid robot for CubeIntakeIOSparkMax!");
@@ -104,10 +103,6 @@ public class CubeIntakeIOSparkMax implements CubeIntakeIO {
     inputs.armCurrentAmps = new double[] {armSparkMax.getOutputCurrent()};
     inputs.armTempCelcius = new double[] {armSparkMax.getMotorTemperature()};
 
-    inputs.rollerAppliedVolts = rollerSparkMax.getAppliedOutput() * rollerSparkMax.getBusVoltage();
-    inputs.rollerCurrentAmps = new double[] {rollerSparkMax.getOutputCurrent()};
-
-    inputs.rollerTempCelcius = new double[] {rollerSparkMax.getMotorTemperature()};
     inputs.rollerInternalPositionRad =
         cleanSparkMaxValue(
             inputs.rollerInternalPositionRad,
@@ -118,6 +113,9 @@ public class CubeIntakeIOSparkMax implements CubeIntakeIO {
             inputs.rollerInternalVelocityRadPerSec,
             Units.rotationsPerMinuteToRadiansPerSecond(rollerInternalEncoder.getPosition())
                 / rollerInternalEncoderReduction);
+    inputs.rollerAppliedVolts = rollerSparkMax.getAppliedOutput() * rollerSparkMax.getBusVoltage();
+    inputs.rollerCurrentAmps = new double[] {rollerSparkMax.getOutputCurrent()};
+    inputs.rollerTempCelcius = new double[] {rollerSparkMax.getMotorTemperature()};
   }
 
   @Override

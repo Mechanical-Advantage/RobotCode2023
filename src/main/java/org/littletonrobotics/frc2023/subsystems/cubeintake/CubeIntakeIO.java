@@ -12,7 +12,6 @@ import org.littletonrobotics.junction.AutoLog;
 public interface CubeIntakeIO {
   @AutoLog
   public static class CubeIntakeIOInputs {
-
     public double armInternalPositionRad = 0.0;
     public double armInternalVelocityRadPerSec = 0.0;
     public double armAppliedVolts = 0.0;
