@@ -318,7 +318,7 @@ public class Arm extends SubsystemBase {
     Logger.getInstance().recordOutput("Arm/TrajectoryCountGenerated", trajectoryCountGenerated);
 
     // Set setpoint to current position when disabled (don't move when enabling)
-    if (isDisabled() || emergencyLiftDirection != LiftDirection.NONE) {
+    if (isDisabled() || emergencyLiftDirection != LiftDirection.NONE || setpointPose == null) {
       setpointPose =
           new ArmPose(
               kinematics.forward(VecBuilder.fill(shoulderAngle, elbowAngle)),
