@@ -93,10 +93,6 @@ public class Arm extends SubsystemBase {
   private final ArmVisualizer visualizerSetpoint;
 
   private boolean isZeroed = false;
-  private final Alert notZeroedAlert =
-      new Alert(
-          "Arm not zeroed due to ambiguous position, movement disabled. Please reposition the arm.",
-          AlertType.ERROR);
   private double shoulderAngleOffset = 0.0;
   private double elbowAngleOffset = 0.0;
   private double wristAngleOffset = 0.0;
@@ -270,22 +266,15 @@ public class Arm extends SubsystemBase {
 
     // Zero with absolute encoders
     if (!isZeroed) {
-      // Check if elbow is above horizontal (ambiguous, maybe we're past the limits)
-      double elbowAngle =
-          MathUtil.inputModulus(inputs.elbowAbsolutePositionRad, 0.0, Math.PI * 2.0);
-      if (elbowAngle > Math.PI / 2.0 && elbowAngle < 3.0 * Math.PI / 2.0) {
-        // Elbow angle is below horizontal, zero normally
-        shoulderAngleOffset =
-            MathUtil.inputModulus(inputs.shoulderAbsolutePositionRad, -Math.PI, Math.PI)
-                - inputs.shoulderRelativePositionRad;
-        elbowAngleOffset = elbowAngle - inputs.elbowRelativePositionRad;
-        wristAngleOffset =
-            MathUtil.inputModulus(inputs.wristAbsolutePositionRad, -Math.PI, Math.PI)
-                - inputs.wristRelativePositionRad;
-        isZeroed = true;
-      }
+      shoulderAngleOffset =
+          MathUtil.inputModulus(inputs.shoulderAbsolutePositionRad, -Math.PI, Math.PI)
+              - inputs.shoulderRelativePositionRad;
+      elbowAngleOffset = elbowAngle - inputs.elbowRelativePositionRad;
+      wristAngleOffset =
+          MathUtil.inputModulus(inputs.wristAbsolutePositionRad, -Math.PI, Math.PI)
+              - inputs.wristRelativePositionRad;
+      isZeroed = true;
     }
-    notZeroedAlert.set(!isZeroed);
 
     // Get measured positions
     shoulderAngle = inputs.shoulderRelativePositionRad + shoulderAngleOffset;
