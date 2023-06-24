@@ -41,11 +41,11 @@ public class FieldSideThreePiece extends SequentialCommandGroup {
   private static final Pose2d secondPiece =
       new Pose2d(
           new Translation2d(
-              FieldConstants.StagingLocations.positionX - .28,
+              FieldConstants.StagingLocations.positionX - .1,
               FieldConstants.StagingLocations.firstY
                   + (FieldConstants.StagingLocations.separationY * 3)
-                  - .43),
-          Rotation2d.fromDegrees(50));
+                  - .30),
+          Rotation2d.fromDegrees(10));
 
   private static final Pose2d secondPieceIntermediate =
       new Pose2d(
@@ -70,9 +70,9 @@ public class FieldSideThreePiece extends SequentialCommandGroup {
   private static final Pose2d thirdPieceReturnIntermediateIntermediate =
       new Pose2d(
           new Translation2d(
-              FieldConstants.StagingLocations.positionX - 1,
-              FieldConstants.StagingLocations.firstY
-                  + (FieldConstants.StagingLocations.separationY * 3)),
+              FieldConstants.StagingLocations.positionX - 2,
+              ((FieldConstants.Community.chargingStationLeftY + FieldConstants.Community.leftY)
+                  / 2)),
           new Rotation2d(Math.PI));
 
   private static final Pose2d thirdPieceReturnIntermediate =
@@ -80,7 +80,7 @@ public class FieldSideThreePiece extends SequentialCommandGroup {
           new Translation2d(
               FieldConstants.Community.chargingStationOuterX - 1.55,
               ((FieldConstants.Community.chargingStationLeftY + FieldConstants.Community.leftY) / 2)
-                  + .08),
+                  + .1),
           new Rotation2d(Math.PI / 3));
 
   private static final Pose2d thirdPiece =
@@ -89,8 +89,8 @@ public class FieldSideThreePiece extends SequentialCommandGroup {
               FieldConstants.StagingLocations.positionX - .30,
               FieldConstants.StagingLocations.firstY
                   + (FieldConstants.StagingLocations.separationY * 2)
-                  - .40),
-          Rotation2d.fromDegrees(40));
+                  + .1),
+          Rotation2d.fromDegrees(-15));
 
   private static final Pose2d thirdPieceScore =
       new Pose2d(
@@ -103,16 +103,17 @@ public class FieldSideThreePiece extends SequentialCommandGroup {
     // addCommands(new FooCommand(), new BarCommand());
     addCommands(Commands.runOnce(() -> drive.setPose(AllianceFlipUtil.apply(startPosition))));
 
-    addCommands(cubeIntake.ejectCommand().withTimeout(.5));
+    addCommands(cubeIntake.ejectCommand().withTimeout(.1));
 
     addCommands(
         new DriveTrajectory(
-            drive,
-            List.of(
-                Waypoint.fromHolonomicPose(startPosition),
-                Waypoint.fromDifferentialPose(exitIntermediatePosition),
-                Waypoint.fromHolonomicPose(secondPiece))));
-    addCommands(cubeIntake.intakeCommand().withTimeout(.7));
+                drive,
+                List.of(
+                    Waypoint.fromHolonomicPose(startPosition),
+                    Waypoint.fromDifferentialPose(exitIntermediatePosition),
+                    Waypoint.fromHolonomicPose(secondPiece)))
+            .alongWith(
+                Commands.waitSeconds(1.4).andThen(cubeIntake.intakeCommand().withTimeout(.9))));
 
     addCommands(
         new DriveTrajectory(
@@ -121,17 +122,18 @@ public class FieldSideThreePiece extends SequentialCommandGroup {
                 Waypoint.fromHolonomicPose(secondPiece),
                 Waypoint.fromHolonomicPose(secondPieceIntermediate),
                 Waypoint.fromHolonomicPose(secondPieceScore))));
-    addCommands(cubeIntake.ejectCommand().withTimeout(.4));
+
+    addCommands(cubeIntake.ejectCommand().withTimeout(.1));
 
     addCommands(
         new DriveTrajectory(
-            drive,
-            List.of(
-                Waypoint.fromHolonomicPose(secondPieceScore),
-                Waypoint.fromDifferentialPose(thirdPieceIntermediate),
-                Waypoint.fromHolonomicPose(thirdPiece))));
-
-    addCommands(cubeIntake.intakeCommand().withTimeout(.7));
+                drive,
+                List.of(
+                    Waypoint.fromHolonomicPose(secondPieceScore),
+                    Waypoint.fromDifferentialPose(thirdPieceIntermediate),
+                    Waypoint.fromHolonomicPose(thirdPiece)))
+            .alongWith(
+                Commands.waitSeconds(2.4).andThen(cubeIntake.intakeCommand().withTimeout(.7))));
 
     addCommands(
         new DriveTrajectory(
@@ -141,6 +143,6 @@ public class FieldSideThreePiece extends SequentialCommandGroup {
                 Waypoint.fromDifferentialPose(thirdPieceReturnIntermediateIntermediate),
                 Waypoint.fromHolonomicPose(thirdPieceReturnIntermediate),
                 Waypoint.fromHolonomicPose(thirdPieceScore))));
-    addCommands(cubeIntake.ejectCommand().withTimeout(.4));
+    addCommands(cubeIntake.ejectCommand().withTimeout(.1));
   }
 }
