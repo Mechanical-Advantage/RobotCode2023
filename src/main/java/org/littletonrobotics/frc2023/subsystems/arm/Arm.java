@@ -269,7 +269,9 @@ public class Arm extends SubsystemBase {
       shoulderAngleOffset =
           MathUtil.inputModulus(inputs.shoulderAbsolutePositionRad, -Math.PI, Math.PI)
               - inputs.shoulderRelativePositionRad;
-      elbowAngleOffset = elbowAngle - inputs.elbowRelativePositionRad;
+      elbowAngleOffset =
+          MathUtil.inputModulus(inputs.elbowAbsolutePositionRad, 0.0, Math.PI * 2.0)
+              - inputs.elbowRelativePositionRad;
       wristAngleOffset =
           MathUtil.inputModulus(inputs.wristAbsolutePositionRad, -Math.PI, Math.PI)
               - inputs.wristRelativePositionRad;
