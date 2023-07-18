@@ -13,7 +13,7 @@
     "motor": {
       "type": "neo",
       "count": 2,
-      "reduction": 204.9327846365
+      "reduction": 168.768175583
     }
   },
   "elbow": {
