@@ -86,7 +86,7 @@ public class Gripper extends SubsystemBase {
     Logger.getInstance().processInputs("Gripper", inputs);
 
     // Stop movement when disabled
-    if (DriverStation.isDisabled() || tooHotAlertActive) {
+    if (DriverStation.isDisabled() || (tooHotAlertActive && !forceEnableSupplier.get())) {
       io.setVoltage(0.0);
     }
 
