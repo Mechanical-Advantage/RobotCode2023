@@ -13,6 +13,8 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Quaternion;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import java.util.ArrayList;
@@ -21,10 +23,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import org.littletonrobotics.frc2023.Constants;
 import org.littletonrobotics.frc2023.FieldConstants;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIO.AprilTagVisionIOInputs;
 import org.littletonrobotics.frc2023.subsystems.drive.Module;
+import org.littletonrobotics.frc2023.util.Alert;
+import org.littletonrobotics.frc2023.util.Alert.AlertType;
 import org.littletonrobotics.frc2023.util.GeomUtil;
 import org.littletonrobotics.frc2023.util.PoseEstimator.TimestampedVisionUpdate;
 import org.littletonrobotics.frc2023.util.VirtualSubsystem;
@@ -35,6 +40,7 @@ public class AprilTagVision extends VirtualSubsystem {
   private static final double targetLogTimeSecs = 0.1;
   private static final double fieldBorderMargin = 0.5;
   private static final double zMargin = 0.75;
+  private static final double demoTagPosePersistenceSecs = 0.5;
   private static final Pose3d[] cameraPoses;
   private static final double xyStdDevCoefficient;
   private static final double thetaStdDevCoefficient;
@@ -42,9 +48,15 @@ public class AprilTagVision extends VirtualSubsystem {
   private final AprilTagVisionIO[] io;
   private final AprilTagVisionIOInputs[] inputs;
 
+  private boolean enableVisionUpdates = true;
+  private Alert enableVisionUpdatesAlert =
+      new Alert("Vision updates are temporarily disabled.", AlertType.WARNING);
   private Consumer<List<TimestampedVisionUpdate>> visionConsumer = (x) -> {};
+  private Supplier<Pose2d> poseSupplier = () -> new Pose2d();
   private Map<Integer, Double> lastFrameTimes = new HashMap<>();
   private Map<Integer, Double> lastTagDetectionTimes = new HashMap<>();
+  private Pose3d demoTagPose = null;
+  private double lastDemoTagPoseTimestamp = 0.0;
 
   static {
     switch (Constants.getRobot()) {
@@ -116,8 +128,21 @@ public class AprilTagVision extends VirtualSubsystem {
             });
   }
 
-  public void setDataInterface(Consumer<List<TimestampedVisionUpdate>> visionConsumer) {
+  public void setDataInterfaces(
+      Consumer<List<TimestampedVisionUpdate>> visionConsumer, Supplier<Pose2d> poseSupplier) {
     this.visionConsumer = visionConsumer;
+    this.poseSupplier = poseSupplier;
+  }
+
+  /** Returns the field relative pose of the demo tag. */
+  public Optional<Pose3d> getDemoTagPose() {
+    return Optional.ofNullable(demoTagPose);
+  }
+
+  /** Sets whether vision updates for odometry are enabled. */
+  public void setVisionUpdatesEnabled(boolean enabled) {
+    enableVisionUpdates = enabled;
+    enableVisionUpdatesAlert.set(!enabled);
   }
 
   public void periodic() {
@@ -137,6 +162,11 @@ public class AprilTagVision extends VirtualSubsystem {
         lastFrameTimes.put(instanceIndex, Timer.getFPGATimestamp());
         var timestamp = inputs[instanceIndex].timestamps[frameIndex];
         var values = inputs[instanceIndex].frames[frameIndex];
+
+        // Exit if blank frame
+        if (values.length == 0 || values[0] == 0) {
+          continue;
+        }
 
         // Switch based on number of poses
         Pose3d cameraPose = null;
@@ -252,6 +282,72 @@ public class AprilTagVision extends VirtualSubsystem {
                 tagPoses.toArray(new Pose3d[tagPoses.size()]));
       }
 
+      // Record demo tag pose
+      if (inputs[instanceIndex].demoFrame.length > 0) {
+        var values = inputs[instanceIndex].demoFrame;
+        double error0 = values[0];
+        double error1 = values[8];
+        Pose3d fieldToCameraPose =
+            new Pose3d(poseSupplier.get())
+                .transformBy(GeomUtil.pose3dToTransform3d(cameraPoses[instanceIndex]));
+        Pose3d fieldToTagPose0 =
+            fieldToCameraPose.transformBy(
+                new Transform3d(
+                    new Translation3d(values[1], values[2], values[3]),
+                    new Rotation3d(new Quaternion(values[4], values[5], values[6], values[7]))));
+        Pose3d fieldToTagPose1 =
+            fieldToCameraPose.transformBy(
+                new Transform3d(
+                    new Translation3d(values[9], values[10], values[11]),
+                    new Rotation3d(
+                        new Quaternion(values[12], values[13], values[14], values[15]))));
+        Pose3d fieldToTagPose;
+
+        // Find best pose
+        if (demoTagPose == null && error0 < error1) {
+          fieldToTagPose = fieldToTagPose0;
+        } else if (demoTagPose == null && error0 >= error1) {
+          fieldToTagPose = fieldToTagPose1;
+        } else if (error0 < error1 * ambiguityThreshold) {
+          fieldToTagPose = fieldToTagPose0;
+        } else if (error1 < error0 * ambiguityThreshold) {
+          fieldToTagPose = fieldToTagPose1;
+        } else {
+          var pose0Quaternion = fieldToTagPose0.getRotation().getQuaternion();
+          var pose1Quaternion = fieldToTagPose1.getRotation().getQuaternion();
+          var referenceQuaternion = demoTagPose.getRotation().getQuaternion();
+          double pose0Distance =
+              Math.acos(
+                  pose0Quaternion.getW() * referenceQuaternion.getW()
+                      + pose0Quaternion.getX() * referenceQuaternion.getX()
+                      + pose0Quaternion.getY() * referenceQuaternion.getY()
+                      + pose0Quaternion.getZ() * referenceQuaternion.getZ());
+          double pose1Distance =
+              Math.acos(
+                  pose1Quaternion.getW() * referenceQuaternion.getW()
+                      + pose1Quaternion.getX() * referenceQuaternion.getX()
+                      + pose1Quaternion.getY() * referenceQuaternion.getY()
+                      + pose1Quaternion.getZ() * referenceQuaternion.getZ());
+          if (pose0Distance > Math.PI / 2) {
+            pose0Distance = Math.PI - pose0Distance;
+          }
+          if (pose1Distance > Math.PI / 2) {
+            pose1Distance = Math.PI - pose1Distance;
+          }
+          if (pose0Distance < pose1Distance) {
+            fieldToTagPose = fieldToTagPose0;
+          } else {
+            fieldToTagPose = fieldToTagPose1;
+          }
+        }
+
+        // Save pose
+        if (fieldToTagPose != null) {
+          demoTagPose = fieldToTagPose;
+          lastDemoTagPoseTimestamp = Timer.getFPGATimestamp();
+        }
+      }
+
       // If no frames from instances, clear robot pose
       if (inputs[instanceIndex].timestamps.length == 0) {
         Logger.getInstance()
@@ -271,6 +367,11 @@ public class AprilTagVision extends VirtualSubsystem {
                 "AprilTagVision/Inst" + Integer.toString(instanceIndex) + "/TagPoses",
                 new double[] {});
       }
+    }
+
+    // Clear demo tag pose
+    if (Timer.getFPGATimestamp() - lastDemoTagPoseTimestamp > demoTagPosePersistenceSecs) {
+      demoTagPose = null;
     }
 
     // Log robot poses
@@ -293,7 +394,17 @@ public class AprilTagVision extends VirtualSubsystem {
         .recordOutput(
             "AprilTagVision/TagPoses", allTagPoses.toArray(new Pose3d[allTagPoses.size()]));
 
+    // Log demo tag pose
+    if (demoTagPose == null) {
+      Logger.getInstance().recordOutput("AprilTagVision/DemoTagPose", new double[] {});
+    } else {
+      Logger.getInstance().recordOutput("AprilTagVision/DemoTagPose", demoTagPose);
+    }
+    Logger.getInstance().recordOutput("AprilTagVision/DemoTagPoseId", new long[] {29});
+
     // Send results to pose esimator
-    visionConsumer.accept(visionUpdates);
+    if (enableVisionUpdates) {
+      visionConsumer.accept(visionUpdates);
+    }
   }
 }

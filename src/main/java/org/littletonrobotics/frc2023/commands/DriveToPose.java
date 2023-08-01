@@ -25,6 +25,7 @@ import org.littletonrobotics.junction.Logger;
 
 public class DriveToPose extends CommandBase {
   private final Drive drive;
+  private final boolean slowMode;
   private final Supplier<Pose2d> poseSupplier;
 
   private boolean running = false;
@@ -44,16 +45,24 @@ public class DriveToPose extends CommandBase {
   private static final LoggedTunableNumber thetaKd = new LoggedTunableNumber("DriveToPose/ThetaKd");
   private static final LoggedTunableNumber driveMaxVelocity =
       new LoggedTunableNumber("DriveToPose/DriveMaxVelocity");
+  private static final LoggedTunableNumber driveMaxVelocitySlow =
+      new LoggedTunableNumber("DriveToPose/DriveMaxVelocitySlow");
   private static final LoggedTunableNumber driveMaxAcceleration =
       new LoggedTunableNumber("DriveToPose/DriveMaxAcceleration");
   private static final LoggedTunableNumber thetaMaxVelocity =
       new LoggedTunableNumber("DriveToPose/ThetaMaxVelocity");
+  private static final LoggedTunableNumber thetaMaxVelocitySlow =
+      new LoggedTunableNumber("DriveToPose/ThetaMaxVelocitySlow");
   private static final LoggedTunableNumber thetaMaxAcceleration =
       new LoggedTunableNumber("DriveToPose/ThetaMaxAcceleration");
   private static final LoggedTunableNumber driveTolerance =
       new LoggedTunableNumber("DriveToPose/DriveTolerance");
+  private static final LoggedTunableNumber driveToleranceSlow =
+      new LoggedTunableNumber("DriveToPose/DriveToleranceSlow");
   private static final LoggedTunableNumber thetaTolerance =
       new LoggedTunableNumber("DriveToPose/ThetaTolerance");
+  private static final LoggedTunableNumber thetaToleranceSlow =
+      new LoggedTunableNumber("DriveToPose/ThetaToleranceSlow");
   private static final LoggedTunableNumber ffMinRadius =
       new LoggedTunableNumber("DriveToPose/FFMinRadius");
   private static final LoggedTunableNumber ffMaxRadius =
@@ -69,11 +78,15 @@ public class DriveToPose extends CommandBase {
         thetaKp.initDefault(5.0);
         thetaKd.initDefault(0.0);
         driveMaxVelocity.initDefault(Units.inchesToMeters(150.0));
+        driveMaxVelocitySlow.initDefault(Units.inchesToMeters(50.0));
         driveMaxAcceleration.initDefault(Units.inchesToMeters(95.0));
         thetaMaxVelocity.initDefault(Units.degreesToRadians(360.0));
+        thetaMaxVelocitySlow.initDefault(Units.degreesToRadians(90.0));
         thetaMaxAcceleration.initDefault(Units.degreesToRadians(720.0));
         driveTolerance.initDefault(0.01);
+        driveToleranceSlow.initDefault(0.06);
         thetaTolerance.initDefault(Units.degreesToRadians(1.0));
+        thetaToleranceSlow.initDefault(Units.degreesToRadians(3.0));
         ffMinRadius.initDefault(0.2);
         ffMaxRadius.initDefault(0.8);
       default:
@@ -83,12 +96,23 @@ public class DriveToPose extends CommandBase {
 
   /** Drives to the specified pose under full software control. */
   public DriveToPose(Drive drive, Pose2d pose) {
-    this(drive, () -> pose);
+    this(drive, false, pose);
+  }
+
+  /** Drives to the specified pose under full software control. */
+  public DriveToPose(Drive drive, boolean slowMode, Pose2d pose) {
+    this(drive, slowMode, () -> pose);
   }
 
   /** Drives to the specified pose under full software control. */
   public DriveToPose(Drive drive, Supplier<Pose2d> poseSupplier) {
+    this(drive, false, poseSupplier);
+  }
+
+  /** Drives to the specified pose under full software control. */
+  public DriveToPose(Drive drive, boolean slowMode, Supplier<Pose2d> poseSupplier) {
     this.drive = drive;
+    this.slowMode = slowMode;
     this.poseSupplier = poseSupplier;
     addRequirements(drive);
     thetaController.enableContinuousInput(-Math.PI, Math.PI);
@@ -120,20 +144,34 @@ public class DriveToPose extends CommandBase {
     running = true;
 
     // Update from tunable numbers
-    if (driveKp.hasChanged(hashCode())
+    if (driveMaxVelocity.hasChanged(hashCode())
+        || driveMaxVelocitySlow.hasChanged(hashCode())
+        || driveMaxAcceleration.hasChanged(hashCode())
+        || driveTolerance.hasChanged(hashCode())
+        || driveToleranceSlow.hasChanged(hashCode())
+        || thetaMaxVelocity.hasChanged(hashCode())
+        || thetaMaxVelocitySlow.hasChanged(hashCode())
+        || thetaMaxAcceleration.hasChanged(hashCode())
+        || thetaTolerance.hasChanged(hashCode())
+        || thetaToleranceSlow.hasChanged(hashCode())
+        || driveKp.hasChanged(hashCode())
         || driveKd.hasChanged(hashCode())
         || thetaKp.hasChanged(hashCode())
         || thetaKd.hasChanged(hashCode())) {
       driveController.setP(driveKp.get());
       driveController.setD(driveKd.get());
       driveController.setConstraints(
-          new TrapezoidProfile.Constraints(driveMaxVelocity.get(), driveMaxAcceleration.get()));
-      driveController.setTolerance(driveTolerance.get());
+          new TrapezoidProfile.Constraints(
+              slowMode ? driveMaxVelocitySlow.get() : driveMaxVelocity.get(),
+              driveMaxAcceleration.get()));
+      driveController.setTolerance(slowMode ? driveToleranceSlow.get() : driveTolerance.get());
       thetaController.setP(thetaKp.get());
       thetaController.setD(thetaKd.get());
       thetaController.setConstraints(
-          new TrapezoidProfile.Constraints(thetaMaxVelocity.get(), thetaMaxAcceleration.get()));
-      thetaController.setTolerance(thetaTolerance.get());
+          new TrapezoidProfile.Constraints(
+              slowMode ? thetaMaxVelocitySlow.get() : thetaMaxVelocity.get(),
+              thetaMaxAcceleration.get()));
+      thetaController.setTolerance(slowMode ? thetaToleranceSlow.get() : thetaTolerance.get());
     }
 
     // Get current and target pose
@@ -155,7 +193,7 @@ public class DriveToPose extends CommandBase {
     double driveVelocityScalar =
         driveController.getSetpoint().velocity * ffScaler
             + driveController.calculate(driveErrorAbs, 0.0);
-    if (driveController.atGoal()) driveVelocityScalar = 0.0;
+    if (currentDistance < driveController.getPositionTolerance()) driveVelocityScalar = 0.0;
     lastSetpointTranslation =
         new Pose2d(
                 targetPose.getTranslation(),
@@ -171,7 +209,7 @@ public class DriveToPose extends CommandBase {
                 currentPose.getRotation().getRadians(), targetPose.getRotation().getRadians());
     thetaErrorAbs =
         Math.abs(currentPose.getRotation().minus(targetPose.getRotation()).getRadians());
-    if (thetaController.atGoal()) thetaVelocity = 0.0;
+    if (thetaErrorAbs < thetaController.getPositionTolerance()) thetaVelocity = 0.0;
 
     // Command speeds
     var driveVelocity =

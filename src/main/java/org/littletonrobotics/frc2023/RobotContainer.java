@@ -30,11 +30,13 @@ import org.littletonrobotics.frc2023.commands.DriveWithJoysticks;
 import org.littletonrobotics.frc2023.commands.EjectHeld;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
+import org.littletonrobotics.frc2023.commands.FollowDemoTag;
 import org.littletonrobotics.frc2023.commands.HoldFlippableArmPreset;
 import org.littletonrobotics.frc2023.commands.IntakeConeFloor;
 import org.littletonrobotics.frc2023.commands.IntakeCubeHandoff;
 import org.littletonrobotics.frc2023.commands.IntakeSubstation;
 import org.littletonrobotics.frc2023.commands.MoveArmWithJoysticks;
+import org.littletonrobotics.frc2023.commands.ReachForDemoTag;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVision;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIO;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIONorthstar;
@@ -223,7 +225,7 @@ public class RobotContainer {
         () -> forcePregenPaths.getAsBoolean());
     gripper.setOverrides(() -> forceGripperEnable.getAsBoolean());
     cubeIntake.setSuppliers(arm::cubeIntakeShouldExtend, () -> armCoast.getAsBoolean());
-    aprilTagVision.setDataInterface(drive::addVisionData);
+    aprilTagVision.setDataInterfaces(drive::addVisionData, drive::getPose);
 
     // Set up auto routines
     System.out.println("[Init] Instantiating auto routines");
@@ -361,6 +363,11 @@ public class RobotContainer {
         "Reach for Inspection",
         List.of(),
         arm.runPathCommand(ArmPose.Preset.SCORE_HIGH_UPRIGHT_CONE));
+    System.out.println("[Init] Instantiating auto routines (Follow Demo Tag)");
+    autoSelector.addRoutine("Follow Demo Tag", List.of(), new FollowDemoTag(drive, aprilTagVision));
+    System.out.println("[Init] Instantiating auto routines (Reach For Demo Tag)");
+    autoSelector.addRoutine(
+        "Reach For Demo Tag", List.of(), new ReachForDemoTag(drive, arm, aprilTagVision));
     System.out.println("[Init] Instantiating auto routines (Drive Characterization)");
     autoSelector.addRoutine(
         "Drive Characterization",

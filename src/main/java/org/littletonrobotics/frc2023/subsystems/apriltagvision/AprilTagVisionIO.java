@@ -14,6 +14,7 @@ public interface AprilTagVisionIO {
   public static class AprilTagVisionIOInputs implements LoggableInputs {
     public double[] timestamps = new double[] {};
     public double[][] frames = new double[][] {};
+    public double[] demoFrame = new double[] {};
     public long fps = 0;
 
     @Override
@@ -23,6 +24,7 @@ public interface AprilTagVisionIO {
       for (int i = 0; i < frames.length; i++) {
         table.put("Frame/" + Integer.toString(i), frames[i]);
       }
+      table.put("DemoFrame", demoFrame);
       table.put("Fps", fps);
     }
 
@@ -34,6 +36,7 @@ public interface AprilTagVisionIO {
       for (int i = 0; i < frameCount; i++) {
         frames[i] = table.getDoubleArray("Frame/" + Integer.toString(i), new double[] {});
       }
+      demoFrame = table.getDoubleArray("DemoFrame", demoFrame);
       fps = table.getInteger("Fps", fps);
     }
   }

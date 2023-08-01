@@ -27,6 +27,7 @@ public class AprilTagVisionIONorthstar implements AprilTagVisionIO {
   private static final int cameraGain = 25;
 
   private final DoubleArraySubscriber observationSubscriber;
+  private final DoubleArraySubscriber demoObservationSubscriber;
   private final IntegerSubscriber fpsSubscriber;
 
   private static final double disconnectedTimeout = 0.5;
@@ -60,6 +61,11 @@ public class AprilTagVisionIONorthstar implements AprilTagVisionIO {
             .getDoubleArrayTopic("observations")
             .subscribe(
                 new double[] {}, PubSubOption.keepDuplicates(true), PubSubOption.sendAll(true));
+    demoObservationSubscriber =
+        outputTable
+            .getDoubleArrayTopic("demo_observations")
+            .subscribe(
+                new double[] {}, PubSubOption.keepDuplicates(true), PubSubOption.sendAll(true));
     fpsSubscriber = outputTable.getIntegerTopic("fps").subscribe(0);
 
     disconnectedAlert = new Alert("No data from \"" + identifier + "\"", AlertType.ERROR);
@@ -73,6 +79,10 @@ public class AprilTagVisionIONorthstar implements AprilTagVisionIO {
     for (int i = 0; i < queue.length; i++) {
       inputs.timestamps[i] = queue[i].timestamp / 1000000.0;
       inputs.frames[i] = queue[i].value;
+    }
+    inputs.demoFrame = new double[] {};
+    for (double[] demoFrame : demoObservationSubscriber.readQueueValues()) {
+      inputs.demoFrame = demoFrame;
     }
     inputs.fps = fpsSubscriber.get();
 
