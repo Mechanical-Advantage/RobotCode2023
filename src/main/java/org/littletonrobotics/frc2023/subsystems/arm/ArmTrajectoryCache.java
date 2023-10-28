@@ -94,6 +94,10 @@ public class ArmTrajectoryCache {
     List<TrajectoryCache> allTrajectories = new ArrayList<>();
     List<ArmPose> allPoses = new ArrayList<>();
     for (var preset : ArmPose.Preset.values()) {
+      if (preset.equals(ArmPose.Preset.SCORE_HIGH_TIPPED_CONE)
+          || preset.equals(ArmPose.Preset.SCORE_MID_TIPPED_CONE)) {
+        continue;
+      }
       allPoses.add(preset.getPose());
       if (preset.shouldPregenerateFlip()) {
         allPoses.add(preset.getPose().withFlip(true));
@@ -133,11 +137,12 @@ public class ArmTrajectoryCache {
             ArmPose.Preset.SCORE_MID_UPRIGHT_CONE.getPose(),
             ArmPose.Preset.SCORE_MID_UPRIGHT_CONE.getPose().withFlip(true),
             ArmPose.Preset.SCORE_HIGH_UPRIGHT_CONE.getPose(),
-            ArmPose.Preset.SCORE_HIGH_UPRIGHT_CONE.getPose().withFlip(true),
-            ArmPose.Preset.SCORE_MID_TIPPED_CONE.getPose(),
-            ArmPose.Preset.SCORE_MID_TIPPED_CONE.getPose().withFlip(true),
-            ArmPose.Preset.SCORE_HIGH_TIPPED_CONE.getPose(),
-            ArmPose.Preset.SCORE_HIGH_TIPPED_CONE.getPose().withFlip(true))
+            ArmPose.Preset.SCORE_HIGH_UPRIGHT_CONE.getPose().withFlip(true)
+            // ArmPose.Preset.SCORE_MID_TIPPED_CONE.getPose(),
+            // ArmPose.Preset.SCORE_MID_TIPPED_CONE.getPose().withFlip(true),
+            // ArmPose.Preset.SCORE_HIGH_TIPPED_CONE.getPose(),
+            // ArmPose.Preset.SCORE_HIGH_TIPPED_CONE.getPose().withFlip(true))
+            )
         .forEach(
             (ArmPose targetPose) -> {
               double xPosition = targetPose.endEffectorPosition().getX();
