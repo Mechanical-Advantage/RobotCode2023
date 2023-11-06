@@ -26,10 +26,7 @@ import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
 import org.littletonrobotics.frc2023.util.LoggedTunableNumber;
-import org.littletonrobotics.frc2023.util.trajectory.CustomHolonomicDriveController;
-import org.littletonrobotics.frc2023.util.trajectory.CustomTrajectoryGenerator;
-import org.littletonrobotics.frc2023.util.trajectory.RotationSequence;
-import org.littletonrobotics.frc2023.util.trajectory.Waypoint;
+import org.littletonrobotics.frc2023.util.trajectory.*;
 import org.littletonrobotics.junction.Logger;
 
 public class DriveTrajectory extends CommandBase {
@@ -65,6 +62,8 @@ public class DriveTrajectory extends CommandBase {
   private Supplier<Double> startVelocitySupplier = null;
   private CustomTrajectoryGenerator customGenerator = new CustomTrajectoryGenerator();
 
+  private FullStateSwerveTrajectory fullStateTrajectory = null;
+
   static {
     switch (Constants.getRobot()) {
       case ROBOT_2023C:
@@ -92,6 +91,12 @@ public class DriveTrajectory extends CommandBase {
         supportedRobot = false;
         break;
     }
+  }
+
+  public DriveTrajectory(Drive drive, FullStateSwerveTrajectory trajectory) {
+    this.drive = drive;
+    addRequirements(drive);
+    this.fullStateTrajectory = trajectory;
   }
 
   /** Creates a DriveTrajectory command with a dynamic set of waypoints. */
@@ -164,11 +169,16 @@ public class DriveTrajectory extends CommandBase {
           waypointsSupplier.get(), constraintsSupplier.get(), startVelocitySupplier.get(), false);
     }
 
+    List<Trajectory.State> states =
+        fullStateTrajectory != null
+            ? fullStateTrajectory.getAsWpilibStates()
+            : customGenerator.getDriveTrajectory().getStates();
+
     // Log trajectory
     Logger.getInstance()
         .recordOutput(
             "Odometry/Trajectory",
-            customGenerator.getDriveTrajectory().getStates().stream()
+            states.stream()
                 .map(state -> AllianceFlipUtil.apply(state.poseMeters))
                 .toArray(Pose2d[]::new));
 
@@ -203,6 +213,29 @@ public class DriveTrajectory extends CommandBase {
       thetaController.setD(turnKd.get());
     }
 
+    if (fullStateTrajectory != null) {
+      FullStateSwerveTrajectoryState state = fullStateTrajectory.sample(timer.get()).maybeFlip();
+      Pose2d statePose = state.getPose();
+      Logger.getInstance().recordOutput("Odometry/TrajectorySetpoint", statePose);
+      ChassisSpeeds nextDriveState =
+          customHolonomicDriveController.calculate(drive.getPose(), state);
+
+      Logger.getInstance()
+          .recordOutput(
+              "Drive/ffSpeeds",
+              new double[] {state.velocityX(), state.velocityY(), state.angularVelocity()});
+      Logger.getInstance()
+          .recordOutput(
+              "Drive/autoSpeeds",
+              new double[] {
+                nextDriveState.vxMetersPerSecond,
+                nextDriveState.vyMetersPerSecond,
+                nextDriveState.omegaRadiansPerSecond
+              });
+      drive.runVelocity(nextDriveState);
+      return;
+    }
+
     // Exit if trajectory generation failed
     if (customGenerator.getDriveTrajectory().getStates().size() <= 1) {
       return;
@@ -222,6 +255,7 @@ public class DriveTrajectory extends CommandBase {
     ChassisSpeeds nextDriveState =
         customHolonomicDriveController.calculate(
             drive.getPose(), driveState, holonomicRotationState);
+
     drive.runVelocity(nextDriveState);
   }
 
@@ -235,6 +269,10 @@ public class DriveTrajectory extends CommandBase {
   // Returns true when the command should end.
   @Override
   public boolean isFinished() {
+    if (fullStateTrajectory != null) {
+      return timer.hasElapsed(fullStateTrajectory.getDuration());
+    }
+
     return timer.hasElapsed(customGenerator.getDriveTrajectory().getTotalTimeSeconds());
   }
 }

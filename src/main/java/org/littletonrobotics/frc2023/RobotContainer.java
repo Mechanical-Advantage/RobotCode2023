@@ -22,12 +22,7 @@ import org.littletonrobotics.frc2023.Constants.Mode;
 import org.littletonrobotics.frc2023.commands.DriveWithJoysticks;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
-import org.littletonrobotics.frc2023.commands.autos.FieldSideThreePiece;
-import org.littletonrobotics.frc2023.commands.autos.FieldsideTwoPiece;
-import org.littletonrobotics.frc2023.commands.autos.ScoreAndBalance;
-import org.littletonrobotics.frc2023.commands.autos.ScoreAndDoNothing;
-import org.littletonrobotics.frc2023.commands.autos.WallsideThreePiece;
-import org.littletonrobotics.frc2023.commands.autos.WallsideTwoPiece;
+import org.littletonrobotics.frc2023.commands.autos.*;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntake;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntakeIO;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntakeIOSim;
@@ -152,6 +147,8 @@ public class RobotContainer {
             new FeedForwardCharacterizationData("drive"),
             (Double voltage) -> drive.runCharacterizationVolts(voltage),
             drive::getCharacterizationVelocity));
+
+    autoChooser.addOption("New Path", new TestPathAuto(drive));
 
     // Startup alerts
     if (Constants.tuningMode) {

@@ -75,6 +75,34 @@ public class CustomHolonomicDriveController {
     m_poseTolerance = tolerance;
   }
 
+  public ChassisSpeeds calculate(Pose2d currentPose, FullStateSwerveTrajectoryState state) {
+
+    // Calculate feedforward velocities (field-relative).
+    double xFF = state.velocityX();
+    double yFF = state.velocityY();
+    double thetaFF = state.angularVelocity();
+
+    Pose2d poseRef = state.getPose();
+
+    m_poseError = poseRef.relativeTo(currentPose);
+    m_rotationError = poseRef.getRotation().minus(currentPose.getRotation());
+
+    if (!m_enabled) {
+      return ChassisSpeeds.fromFieldRelativeSpeeds(xFF, yFF, thetaFF, currentPose.getRotation());
+    }
+
+    // Calculate feedback velocities (based on position error).
+    double xFeedback = m_xController.calculate(currentPose.getX(), poseRef.getX());
+    double yFeedback = m_yController.calculate(currentPose.getY(), poseRef.getY());
+    double thetaFeedback =
+        m_thetaController.calculate(
+            currentPose.getRotation().getRadians(), poseRef.getRotation().getRadians());
+
+    // Return next output.
+    return ChassisSpeeds.fromFieldRelativeSpeeds(
+        xFF + xFeedback, yFF + yFeedback, thetaFF + thetaFeedback, currentPose.getRotation());
+  }
+
   /**
    * Returns the next output of the holonomic drive controller.
    *
