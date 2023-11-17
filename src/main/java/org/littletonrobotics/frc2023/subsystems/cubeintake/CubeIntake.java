@@ -21,7 +21,6 @@ import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.function.Supplier;
 import org.littletonrobotics.frc2023.Constants;
@@ -192,10 +191,10 @@ public class CubeIntake extends SubsystemBase {
   /** Command factory to extend and run the roller. */
   public Command intakeCommand() {
     return startEnd(
-            () -> {
-              state = State.INTAKING;
-            },
-            () -> state = State.HOLDING);
+        () -> {
+          state = State.INTAKING;
+        },
+        () -> state = State.HOLDING);
   }
 
   public Command ejectCommand() {

@@ -9,6 +9,7 @@ package org.littletonrobotics.frc2023;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -18,6 +19,8 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import org.littletonrobotics.frc2023.Constants.Mode;
 import org.littletonrobotics.frc2023.commands.DriveWithJoysticks;
+import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization;
+import org.littletonrobotics.frc2023.commands.autos.*;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntake;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntakeIO;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntakeIOSim;
@@ -32,6 +35,7 @@ import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
 import org.littletonrobotics.frc2023.util.SparkMaxBurnManager;
+import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
 public class RobotContainer {
@@ -45,15 +49,17 @@ public class RobotContainer {
   private final CommandXboxController driver = new CommandXboxController(0);
   private final CommandXboxController operator = new CommandXboxController(1);
 
-  private final Alert driverDisconnected =
-      new Alert("Driver controller disconnected (port 0).", AlertType.WARNING);
-  private final Alert operatorDisconnected =
-      new Alert("Operator controller disconnected (port 1).", AlertType.WARNING);
-
+  private final LoggedDashboardChooser<Command> autoChooser =
+      new LoggedDashboardChooser<>("Auto Routine");
   private final LoggedDashboardNumber endgameAlert1 =
       new LoggedDashboardNumber("Endgame Alert #1", 30.0);
   private final LoggedDashboardNumber endgameAlert2 =
       new LoggedDashboardNumber("Endgame Alert #2", 15.0);
+
+  private final Alert driverDisconnected =
+      new Alert("Driver controller disconnected (port 0).", AlertType.WARNING);
+  private final Alert operatorDisconnected =
+      new Alert("Operator controller disconnected (port 1).", AlertType.WARNING);
 
   public RobotContainer() {
     // Check if flash should be burned
@@ -117,6 +123,31 @@ public class RobotContainer {
     // Set up subsystems
 
     // Set up auto routines
+    autoChooser.addDefaultOption(
+        "Do Almost Nothing",
+        Commands.runOnce(
+            () ->
+                drive.setPose(
+                    AllianceFlipUtil.apply(
+                        new Pose2d(new Translation2d(), new Rotation2d(Math.PI))))));
+    autoChooser.addOption("Score and Do Nothing", new ScoreAndDoNothing(drive, cubeIntake));
+    autoChooser.addOption("Wallside Two Piece", new WallsideTwoPiece(drive, cubeIntake, false));
+    autoChooser.addOption(
+        "Wallside Two Piece Balance", new WallsideTwoPiece(drive, cubeIntake, true));
+    autoChooser.addOption("Wallside Three Piece", new WallsideThreePiece(drive, cubeIntake));
+    autoChooser.addOption("Fieldside Two Piece", new FieldsideTwoPiece(drive, cubeIntake, false));
+    autoChooser.addOption(
+        "Fieldside Two Piece Balance", new FieldsideTwoPiece(drive, cubeIntake, true));
+    autoChooser.addOption("Fieldside Three Piece", new FieldSideThreePiece(drive, cubeIntake));
+    autoChooser.addOption("Score and Balance", new ScoreAndBalance(drive, cubeIntake));
+    autoChooser.addOption(
+        "Drive Characterization",
+        new FeedForwardCharacterization(
+            drive,
+            true,
+            new FeedForwardCharacterization.FeedForwardCharacterizationData("drive"),
+            (Double voltage) -> drive.runCharacterizationVolts(voltage),
+            drive::getCharacterizationVelocity));
 
     // System.out.println("[Init] Instantiating auto routines (Drive Characterization)");
     // autoSelector.addRoutine(
@@ -211,7 +242,6 @@ public class RobotContainer {
   public void bindControls() {
     // Clear old buttons
     CommandScheduler.getInstance().getActiveButtonLoop().clear();
-
 
     // Drive controls
 
