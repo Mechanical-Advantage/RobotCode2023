@@ -195,14 +195,7 @@ public class CubeIntake extends SubsystemBase {
             () -> {
               state = State.INTAKING;
             },
-            () -> state = State.HOLDING)
-        .raceWith(
-            Commands.sequence(
-                Commands.waitSeconds(.25),
-                Commands.waitUntil(
-                    () ->
-                        inputs.rollerCurrentAmps.length > 0 && inputs.rollerCurrentAmps[0] > 26.0)))
-        .withName("CubeIntake/Intake");
+            () -> state = State.HOLDING);
   }
 
   public Command ejectCommand() {
