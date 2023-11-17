@@ -9,20 +9,15 @@ package org.littletonrobotics.frc2023;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import org.littletonrobotics.frc2023.Constants.Mode;
 import org.littletonrobotics.frc2023.commands.DriveWithJoysticks;
-import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization;
-import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
-import org.littletonrobotics.frc2023.commands.autos.*;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntake;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntakeIO;
 import org.littletonrobotics.frc2023.subsystems.cubeintake.CubeIntakeIOSim;
@@ -37,31 +32,24 @@ import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
 import org.littletonrobotics.frc2023.util.SparkMaxBurnManager;
-import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
 public class RobotContainer {
 
   // Subsystems
   private Drive drive;
+
   private CubeIntake cubeIntake;
 
   // OI objects
-  private final CommandJoystick driverLeft = new CommandJoystick(0);
-  private final CommandJoystick driverRight = new CommandJoystick(1);
-  private final CommandXboxController operator = new CommandXboxController(2);
+  private final CommandXboxController driver = new CommandXboxController(0);
+  private final CommandXboxController operator = new CommandXboxController(1);
 
-  // Alerts
-  private final Alert driverLeftDisconnected =
-      new Alert("Left driver controller disconnected (port 0).", AlertType.WARNING);
-  private final Alert driverRightDisconnected =
-      new Alert("Right driver controller disconnected (port 1).", AlertType.WARNING);
+  private final Alert driverDisconnected =
+      new Alert("Driver controller disconnected (port 0).", AlertType.WARNING);
   private final Alert operatorDisconnected =
-      new Alert("Operator controller disconnected (port 2).", AlertType.WARNING);
+      new Alert("Operator controller disconnected (port 1).", AlertType.WARNING);
 
-  // Dashboard inputs
-  private final LoggedDashboardChooser<Command> autoChooser =
-      new LoggedDashboardChooser<>("Auto Routine");
   private final LoggedDashboardNumber endgameAlert1 =
       new LoggedDashboardNumber("Endgame Alert #1", 30.0);
   private final LoggedDashboardNumber endgameAlert2 =
@@ -82,6 +70,7 @@ public class RobotContainer {
                   new ModuleIOSparkMax(1),
                   new ModuleIOSparkMax(2),
                   new ModuleIOSparkMax(3));
+
           break;
         case ROBOT_2023P:
           drive =
@@ -91,7 +80,9 @@ public class RobotContainer {
                   new ModuleIOSparkMax(1),
                   new ModuleIOSparkMax(2),
                   new ModuleIOSparkMax(3));
+
           cubeIntake = new CubeIntake(new CubeIntakeIOSparkMax());
+
           break;
         case ROBOT_SIMBOT:
           drive =
@@ -101,7 +92,9 @@ public class RobotContainer {
                   new ModuleIOSim(),
                   new ModuleIOSim(),
                   new ModuleIOSim());
+
           cubeIntake = new CubeIntake(new CubeIntakeIOSim());
+
           break;
       }
     }
@@ -121,34 +114,20 @@ public class RobotContainer {
       cubeIntake = new CubeIntake(new CubeIntakeIO() {});
     }
 
-    // Set up auto routines
-    autoChooser.addDefaultOption(
-        "Do Almost Nothing",
-        Commands.runOnce(
-            () ->
-                drive.setPose(
-                    AllianceFlipUtil.apply(
-                        new Pose2d(new Translation2d(), new Rotation2d(Math.PI))))));
-    autoChooser.addOption("Score and Do Nothing", new ScoreAndDoNothing(drive, cubeIntake));
-    autoChooser.addOption("Wallside Two Piece", new WallsideTwoPiece(drive, cubeIntake, false));
-    autoChooser.addOption(
-        "Wallside Two Piece Balance", new WallsideTwoPiece(drive, cubeIntake, true));
-    autoChooser.addOption("Wallside Three Piece", new WallsideThreePiece(drive, cubeIntake));
-    autoChooser.addOption("Fieldside Two Piece", new FieldsideTwoPiece(drive, cubeIntake, false));
-    autoChooser.addOption(
-        "Fieldside Two Piece Balance", new FieldsideTwoPiece(drive, cubeIntake, true));
-    autoChooser.addOption("Fieldside Three Piece", new FieldSideThreePiece(drive, cubeIntake));
-    autoChooser.addOption("Score and Balance", new ScoreAndBalance(drive, cubeIntake));
-    autoChooser.addOption(
-        "Drive Characterization",
-        new FeedForwardCharacterization(
-            drive,
-            true,
-            new FeedForwardCharacterizationData("drive"),
-            (Double voltage) -> drive.runCharacterizationVolts(voltage),
-            drive::getCharacterizationVelocity));
+    // Set up subsystems
 
-    autoChooser.addOption("New Path", new TestPathAuto(drive));
+    // Set up auto routines
+
+    // System.out.println("[Init] Instantiating auto routines (Drive Characterization)");
+    // autoSelector.addRoutine(
+    //     "Drive Characterization",
+    //     List.of(),
+    //     new FeedForwardCharacterization(
+    //         drive,
+    //         true,
+    //         new FeedForwardCharacterizationData("drive"),
+    //         drive::runCharacterizationVolts,
+    //         drive::getCharacterizationVelocity));
 
     // Startup alerts
     if (Constants.tuningMode) {
@@ -167,12 +146,14 @@ public class RobotContainer {
         .onTrue(
             Commands.run(
                     () -> {
+                      driver.getHID().setRumble(RumbleType.kBothRumble, 1.0);
                       operator.getHID().setRumble(RumbleType.kBothRumble, 1.0);
                     })
                 .withTimeout(1.5)
                 .andThen(
                     Commands.run(
                             () -> {
+                              driver.getHID().setRumble(RumbleType.kBothRumble, 0.0);
                               operator.getHID().setRumble(RumbleType.kBothRumble, 0.0);
                             })
                         .withTimeout(1.0)));
@@ -185,21 +166,25 @@ public class RobotContainer {
             Commands.sequence(
                 Commands.run(
                         () -> {
+                          driver.getHID().setRumble(RumbleType.kBothRumble, 1.0);
                           operator.getHID().setRumble(RumbleType.kBothRumble, 1.0);
                         })
                     .withTimeout(0.5),
                 Commands.run(
                         () -> {
+                          driver.getHID().setRumble(RumbleType.kBothRumble, 0.0);
                           operator.getHID().setRumble(RumbleType.kBothRumble, 0.0);
                         })
                     .withTimeout(0.5),
                 Commands.run(
                         () -> {
+                          driver.getHID().setRumble(RumbleType.kBothRumble, 1.0);
                           operator.getHID().setRumble(RumbleType.kBothRumble, 1.0);
                         })
                     .withTimeout(0.5),
                 Commands.run(
                         () -> {
+                          driver.getHID().setRumble(RumbleType.kBothRumble, 0.0);
                           operator.getHID().setRumble(RumbleType.kBothRumble, 0.0);
                         })
                     .withTimeout(1.0)));
@@ -214,12 +199,9 @@ public class RobotContainer {
 
   /** Updates the alerts for disconnected controllers. */
   public void checkControllers() {
-    driverLeftDisconnected.set(
-        !DriverStation.isJoystickConnected(driverLeft.getHID().getPort())
-            || DriverStation.getJoystickIsXbox(driverLeft.getHID().getPort()));
-    driverRightDisconnected.set(
-        !DriverStation.isJoystickConnected(driverRight.getHID().getPort())
-            || DriverStation.getJoystickIsXbox(driverRight.getHID().getPort()));
+    driverDisconnected.set(
+        !DriverStation.isJoystickConnected(driver.getHID().getPort())
+            || !DriverStation.getJoystickIsXbox(driver.getHID().getPort()));
     operatorDisconnected.set(
         !DriverStation.isJoystickConnected(operator.getHID().getPort())
             || !DriverStation.getJoystickIsXbox(operator.getHID().getPort()));
@@ -230,16 +212,16 @@ public class RobotContainer {
     // Clear old buttons
     CommandScheduler.getInstance().getActiveButtonLoop().clear();
 
-    // *** DRIVER CONTROLS ***
+
+    // Drive controls
+
     drive.setDefaultCommand(
         new DriveWithJoysticks(
-            drive,
-            () -> -driverLeft.getRawAxis(1),
-            () -> -driverLeft.getRawAxis(0),
-            () -> -driverRight.getRawAxis(0)));
-    driverRight
-        .button(1)
-        .or(driverRight.button(2))
+            drive, () -> -driver.getLeftY(), () -> -driver.getLeftX(), () -> -driver.getRightX()));
+    driver
+        .start()
+        .or(driver.back())
+        .and(() -> DriverStation.isDisabled())
         .onTrue(
             Commands.runOnce(
                     () -> {
@@ -249,14 +231,13 @@ public class RobotContainer {
                               AllianceFlipUtil.apply(new Rotation2d())));
                     })
                 .ignoringDisable(true));
-    driverLeft.button(1).or(driverLeft.button(2)).onTrue(Commands.runOnce(drive::stopWithX, drive));
 
-    // *** OPERATOR CONTROLS ***
+    driver.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
     operator.b().whileTrue(cubeIntake.ejectCommand());
     operator.a().whileTrue(cubeIntake.intakeCommand());
   }
 
   public Command getAutonomousCommand() {
-    return autoChooser.get();
+    return Commands.none();
   }
 }
