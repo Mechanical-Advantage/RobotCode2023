@@ -28,16 +28,16 @@ public class ChoreoTrajectoryFactory {
   private static final HashMap<String, File> FILE_HASH_MAP = new HashMap<>();
   // load trajectory files into map
   static {
-    File trajectory_dir = Filesystem.getDeployDirectory();
+    File trajectory_dir = new File(Filesystem.getDeployDirectory(), "trajectories");
     if (trajectory_dir.isDirectory() && trajectory_dir.listFiles() != null) {
       for (File file : trajectory_dir.listFiles()) {
         String fileName = file.getName();
         // check if json
-        int pointIndex = fileName.lastIndexOf(".");
-        String type = fileName.substring(pointIndex);
+        int pointIndex = fileName.lastIndexOf('.');
+        String type = (pointIndex == -1) ? "not json" : fileName.substring(pointIndex);
         if (!type.equals(".json")) continue;
         // use name of file without ".json"
-        String trimmedName = fileName.substring(0, pointIndex - 1);
+        String trimmedName = fileName.substring(0, pointIndex);
         FILE_HASH_MAP.put(trimmedName, file);
       }
     }
