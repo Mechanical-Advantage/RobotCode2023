@@ -27,6 +27,8 @@ import org.littletonrobotics.frc2023.util.Alert.AlertType;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
 import org.littletonrobotics.frc2023.util.LoggedTunableNumber;
 import org.littletonrobotics.frc2023.util.trajectory.*;
+import org.littletonrobotics.frc2023.util.trajectory.updated.FullStateSwerveTrajectory;
+import org.littletonrobotics.frc2023.util.trajectory.updated.FullStateSwerveTrajectoryState;
 import org.littletonrobotics.junction.Logger;
 
 public class DriveTrajectory extends CommandBase {

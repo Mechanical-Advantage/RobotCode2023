@@ -17,7 +17,10 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import java.io.File;
+import java.util.Optional;
 import org.littletonrobotics.frc2023.Constants.Mode;
+import org.littletonrobotics.frc2023.commands.DriveTrajectoryNew;
 import org.littletonrobotics.frc2023.commands.DriveWithJoysticks;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization;
 import org.littletonrobotics.frc2023.commands.autos.*;
@@ -35,6 +38,7 @@ import org.littletonrobotics.frc2023.util.Alert;
 import org.littletonrobotics.frc2023.util.Alert.AlertType;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
 import org.littletonrobotics.frc2023.util.SparkMaxBurnManager;
+import org.littletonrobotics.frc2023.util.trajectory.updated.ChoreoTrajectoryFactory;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
@@ -148,6 +152,14 @@ public class RobotContainer {
             new FeedForwardCharacterization.FeedForwardCharacterizationData("drive"),
             (Double voltage) -> drive.runCharacterizationVolts(voltage),
             drive::getCharacterizationVelocity));
+    // only add to auto map if there
+    Optional<File> trajectoryFile = ChoreoTrajectoryFactory.getTrajectoryFile("OnePieceBalance");
+    trajectoryFile.ifPresent(
+        file ->
+            autoChooser.addOption(
+                "Test New DriveTrajectory Command",
+                new DriveTrajectoryNew(
+                    drive, ChoreoTrajectoryFactory.createTrajectoryFromFile(file))));
 
     // System.out.println("[Init] Instantiating auto routines (Drive Characterization)");
     // autoSelector.addRoutine(

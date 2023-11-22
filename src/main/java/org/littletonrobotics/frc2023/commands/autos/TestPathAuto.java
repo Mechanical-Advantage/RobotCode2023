@@ -14,7 +14,7 @@ import java.io.File;
 import org.littletonrobotics.frc2023.commands.DriveTrajectory;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
-import org.littletonrobotics.frc2023.util.trajectory.FullStateSwerveTrajectory;
+import org.littletonrobotics.frc2023.util.trajectory.updated.FullStateSwerveTrajectory;
 
 public class TestPathAuto extends SequentialCommandGroup {
   private static final FullStateSwerveTrajectory trajectory =

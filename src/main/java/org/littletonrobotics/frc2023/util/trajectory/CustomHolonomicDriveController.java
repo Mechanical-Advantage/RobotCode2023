@@ -12,6 +12,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.Trajectory;
+import org.littletonrobotics.frc2023.util.trajectory.updated.FullStateSwerveTrajectoryState;
 
 /**
  * This holonomic drive controller can be used to follow trajectories using a holonomic drivetrain
