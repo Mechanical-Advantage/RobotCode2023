@@ -153,7 +153,7 @@ public class RobotContainer {
             (Double voltage) -> drive.runCharacterizationVolts(voltage),
             drive::getCharacterizationVelocity));
     // only add to auto map if there
-    Optional<File> trajectoryFile = ChoreoTrajectoryFactory.getTrajectoryFile("OnePieceBalance");
+    Optional<File> trajectoryFile = ChoreoTrajectoryFactory.getTrajectoryFile("NewPath");
     trajectoryFile.ifPresent(
         file ->
             autoChooser.addOption(
@@ -280,6 +280,6 @@ public class RobotContainer {
   }
 
   public Command getAutonomousCommand() {
-    return Commands.none();
+    return autoChooser.get();
   }
 }

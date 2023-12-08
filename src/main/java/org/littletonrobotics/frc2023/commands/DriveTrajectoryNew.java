@@ -94,6 +94,7 @@ public class DriveTrajectoryNew extends CommandBase {
     Logger.getInstance().recordOutput("Odometry/Trajectory", trajectory.getTrajectoryPoses());
 
     // Reset all controllers
+    drive.setPose(trajectory.getTrajectoryPoses()[0]);
     timer.reset();
     timer.start();
     xController.reset();
