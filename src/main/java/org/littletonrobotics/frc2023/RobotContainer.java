@@ -378,11 +378,11 @@ public class RobotContainer {
       new Alert("WPI field selected, do not use in competition.", AlertType.INFO).set(true);
     }
 
-    Optional<File> trajectoryFile = ChoreoTrajectoryFactory.getTrajectoryFile("NewPath");
+    Optional<File> trajectoryFile = ChoreoTrajectoryFactory.getTrajectoryFile("CrazyPath");
     trajectoryFile.ifPresent(
         file ->
             autoSelector.addRoutine(
-                "Test New DriveTrajectory Command",
+                "CrazyPath",
                 List.of(),
                 new DriveTrajectoryNew(
                     drive, ChoreoTrajectoryFactory.createTrajectoryFromFile(file))));

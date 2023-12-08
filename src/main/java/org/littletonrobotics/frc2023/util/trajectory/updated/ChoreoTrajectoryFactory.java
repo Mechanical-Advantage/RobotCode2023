@@ -35,7 +35,7 @@ public class ChoreoTrajectoryFactory {
         // check if json
         int pointIndex = fileName.lastIndexOf('.');
         String type = (pointIndex == -1) ? "not json" : fileName.substring(pointIndex);
-        if (!type.equals(".json")) continue;
+        if (!type.equals(".traj")) continue;
         // use name of file without ".json"
         String trimmedName = fileName.substring(0, pointIndex);
         FILE_HASH_MAP.put(trimmedName, file);
@@ -64,7 +64,9 @@ public class ChoreoTrajectoryFactory {
   public static TrajectoryImplementation createTrajectoryFromFile(File trajectoryFile) {
     try {
       return createTrajectoryImplementation(
-          mapper.readValue(trajectoryFile, new TypeReference<>() {}));
+          mapper.convertValue(
+              mapper.readTree(trajectoryFile).get("samples"), new TypeReference<>() {}));
+
     } catch (IOException e) {
       e.printStackTrace();
       return createTrajectoryImplementation(Collections.emptyList());

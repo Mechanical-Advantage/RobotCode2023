@@ -128,6 +128,10 @@ public class DriveTrajectoryNew extends CommandBase {
     DriveDynamicState state = trajectory.sample(timer.get()).maybeFlip();
     Pose2d statePose = state.pose();
     Logger.getInstance().recordOutput("Odometry/TrajectorySetpoint", statePose);
+    Logger.getInstance()
+        .recordOutput(
+            "Odometry/TrajectoryError",
+            drive.getPose().relativeTo(statePose).getTranslation().getNorm());
     ChassisSpeeds nextDriveState = driveController.calculate(drive.getPose(), state);
 
     Logger.getInstance()
