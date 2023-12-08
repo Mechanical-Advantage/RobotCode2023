@@ -17,26 +17,16 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import java.io.File;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.littletonrobotics.frc2023.AutoSelector.AutoQuestion;
 import org.littletonrobotics.frc2023.AutoSelector.AutoQuestionResponse;
 import org.littletonrobotics.frc2023.Constants.Mode;
-import org.littletonrobotics.frc2023.commands.AutoCommands;
-import org.littletonrobotics.frc2023.commands.AutoScore;
-import org.littletonrobotics.frc2023.commands.DriveToSubstation;
-import org.littletonrobotics.frc2023.commands.DriveWithJoysticks;
-import org.littletonrobotics.frc2023.commands.EjectHeld;
-import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization;
+import org.littletonrobotics.frc2023.commands.*;
 import org.littletonrobotics.frc2023.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
-import org.littletonrobotics.frc2023.commands.FollowDemoTag;
-import org.littletonrobotics.frc2023.commands.HoldFlippableArmPreset;
-import org.littletonrobotics.frc2023.commands.IntakeConeFloor;
-import org.littletonrobotics.frc2023.commands.IntakeCubeHandoff;
-import org.littletonrobotics.frc2023.commands.IntakeSubstation;
-import org.littletonrobotics.frc2023.commands.MoveArmWithJoysticks;
-import org.littletonrobotics.frc2023.commands.ReachForDemoTag;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVision;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIO;
 import org.littletonrobotics.frc2023.subsystems.apriltagvision.AprilTagVisionIONorthstar;
@@ -75,6 +65,7 @@ import org.littletonrobotics.frc2023.util.DoublePressTracker;
 import org.littletonrobotics.frc2023.util.OverrideSwitches;
 import org.littletonrobotics.frc2023.util.SparkMaxBurnManager;
 import org.littletonrobotics.frc2023.util.TriggerUtil;
+import org.littletonrobotics.frc2023.util.trajectory.updated.ChoreoTrajectoryFactory;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardBoolean;
 import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
@@ -386,6 +377,15 @@ public class RobotContainer {
     if (FieldConstants.isWPIField) {
       new Alert("WPI field selected, do not use in competition.", AlertType.INFO).set(true);
     }
+
+    Optional<File> trajectoryFile = ChoreoTrajectoryFactory.getTrajectoryFile("NewPath");
+    trajectoryFile.ifPresent(
+        file ->
+            autoSelector.addRoutine(
+                "Test New DriveTrajectory Command",
+                List.of(),
+                new DriveTrajectoryNew(
+                    drive, ChoreoTrajectoryFactory.createTrajectoryFromFile(file))));
 
     // Endgame alerts
     new Trigger(
