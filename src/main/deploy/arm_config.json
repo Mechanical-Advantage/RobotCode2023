@@ -65,12 +65,6 @@
         0.35
       ]
     },
-    "maxHeight": {
-      "type": "maxY",
-      "args": [
-        1.5
-      ]
-    },
     "robotBody": {
       "type": "rectangle",
       "args": [
@@ -96,42 +90,6 @@
         -1,
         0.7,
         0.55
-      ]
-    },
-    "nodeMidFront": {
-      "type": "rectangle",
-      "args": [
-        0.54,
-        -1,
-        5,
-        0.98
-      ]
-    },
-    "nodeHighFront": {
-      "type": "rectangle",
-      "args": [
-        1,
-        -1,
-        5,
-        1.2
-      ]
-    },
-    "nodeMidBack": {
-      "type": "rectangle",
-      "args": [
-        -5,
-        -1,
-        -0.54,
-        0.98
-      ]
-    },
-    "nodeHighBack": {
-      "type": "rectangle",
-      "args": [
-        -5,
-        -1,
-        -1,
-        1.2
       ]
     }
   }

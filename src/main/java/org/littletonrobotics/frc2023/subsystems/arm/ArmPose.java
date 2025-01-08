@@ -11,13 +11,33 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.util.Units;
 import org.littletonrobotics.frc2023.FieldConstants;
 import org.littletonrobotics.frc2023.commands.AutoScore;
 
 /** Represents a target position for the arm. */
 public record ArmPose(Translation2d endEffectorPosition, Rotation2d globalWristAngle) {
+  private static final double branchDistanceX = 0.6; // Distance between branch and center of drive
+  private static final double L1Height = Units.feetToMeters(1.0) + Units.inchesToMeters(6.0);
+  private static final double L2Height = Units.feetToMeters(2.0) + Units.inchesToMeters(7.875);
+  private static final double L3Height = Units.feetToMeters(3.0) + Units.inchesToMeters(11.625);
+  private static final double L4Height = Units.feetToMeters(6.0);
+  private static final Translation2d L1Offset = new Translation2d(-0.25, 0.4);
+  private static final Translation2d L23Offset = new Translation2d(-0.25, 0.4);
+  private static final Translation2d L4Offset = new Translation2d(-0.25, -0.1);
+  private static final Rotation2d L1Rotation = Rotation2d.fromDegrees(-45.0);
+  private static final Rotation2d L23Rotation = Rotation2d.fromDegrees(-45.0);
+  private static final Rotation2d L4Rotation = Rotation2d.fromDegrees(45.0);
+
   public static enum Preset {
     HOMED(null),
+    SCORE_L1(new ArmPose(new Translation2d(branchDistanceX, L1Height).plus(L1Offset), L1Rotation)),
+    SCORE_L2(
+        new ArmPose(new Translation2d(branchDistanceX, L2Height).plus(L23Offset), L23Rotation)),
+    SCORE_L3(
+        new ArmPose(new Translation2d(branchDistanceX, L3Height).plus(L23Offset), L23Rotation)),
+    SCORE_L4(new ArmPose(new Translation2d(branchDistanceX, L4Height).plus(L4Offset), L4Rotation)),
+
     SCORE_HYBRID(
         new ArmPose(
             new Translation2d(

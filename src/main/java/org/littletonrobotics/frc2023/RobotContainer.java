@@ -610,10 +610,10 @@ public class RobotContainer {
                     arm,
                     gripper,
                     objectiveTracker.objective,
-                    driveWithJoysticksFactory.apply(true),
+                    driveWithJoysticksFactory.apply(false),
                     demo ? Commands.none() : moveArmWithJoysticksFactory.get(),
                     () -> ejectTrigger.getAsBoolean(),
-                    () -> manualDrive.getAsBoolean(),
+                    () -> true,
                     () -> autoEject.getAsBoolean(),
                     () -> false)
                 .deadlineWith(

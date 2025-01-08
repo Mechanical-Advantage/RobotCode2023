@@ -24,6 +24,7 @@ import org.littletonrobotics.frc2023.subsystems.arm.ArmPose;
 import org.littletonrobotics.frc2023.subsystems.drive.Drive;
 import org.littletonrobotics.frc2023.subsystems.gripper.Gripper;
 import org.littletonrobotics.frc2023.subsystems.gripper.Gripper.EjectSpeed;
+import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.ConeOrientation;
 import org.littletonrobotics.frc2023.subsystems.objectivetracker.ObjectiveTracker.Objective;
 import org.littletonrobotics.frc2023.util.AllianceFlipUtil;
 import org.littletonrobotics.frc2023.util.GeomUtil;
@@ -177,17 +178,34 @@ public class AutoScore extends SequentialCommandGroup {
             return AllianceFlipUtil.apply(shiftedTargetPose);
           }
         };
+    // Supplier<ArmPose> armTargetSupplier =
+    //     () ->
+    //         getArmTarget(
+    //             getDriveTarget(
+    //                 AllianceFlipUtil.apply(drive.getPose()), // Unflip
+    //                 objective,
+    //                 arm,
+    //                 reachScoreEnable.get()),
+    //             objective,
+    //             arm,
+    //             reachScoreEnable.get());
     Supplier<ArmPose> armTargetSupplier =
-        () ->
-            getArmTarget(
-                getDriveTarget(
-                    AllianceFlipUtil.apply(drive.getPose()), // Unflip
-                    objective,
-                    arm,
-                    reachScoreEnable.get()),
-                objective,
-                arm,
-                reachScoreEnable.get());
+        () -> {
+          if (objective.coneOrientation == ConeOrientation.TIPPED) {
+            return ArmPose.Preset.SCORE_L4.getPose().withFlip(true);
+          } else {
+            switch (objective.nodeLevel) {
+              case HYBRID:
+                return ArmPose.Preset.SCORE_L1.getPose().withFlip(true);
+              case MID:
+                return ArmPose.Preset.SCORE_L2.getPose().withFlip(true);
+              case HIGH:
+                return ArmPose.Preset.SCORE_L3.getPose().withFlip(true);
+              default:
+                return ArmPose.Preset.HOMED.getPose();
+            }
+          }
+        };
 
     // Create drive and arm commands
     var driveToPose = new DriveToPose(drive, driveTargetSupplier);
@@ -241,7 +259,7 @@ public class AutoScore extends SequentialCommandGroup {
                 gripper.ejectCommand(objective),
                 new ScheduleCommand(
                     gripper
-                        .ejectCommand(EjectSpeed.FAST, true)
+                        .ejectCommand(EjectSpeed.VERY_FAST, true)
                         .withTimeout(1.0)) // Eject while retracting to remove trapped game pieces
                 )
             .finallyDo((interrupted) -> arm.runPath(ArmPose.Preset.HOMED)));
@@ -351,26 +369,27 @@ public class AutoScore extends SequentialCommandGroup {
 
   /** Returns whether to score off of the front or back of the robot. */
   public static boolean shouldScoreFront(Pose2d unflippedPose, Objective objective) {
-    switch (objective.getScoringSide()) {
-      case FRONT:
-        return true;
-      case BACK:
-        return false;
-      case EITHER:
-        if (preferFront.get()) {
-          return true;
-        } else {
-          var nodeTranslation = GeomUtil.translation3dTo2dXY(getNodeTranslation(objective));
-          var relativeRotation =
-              nodeTranslation
-                  .minus(unflippedPose.getTranslation())
-                  .getAngle()
-                  .minus(unflippedPose.getRotation());
-          return relativeRotation.getCos() > 0.0;
-        }
-      default:
-        return true;
-    }
+    return true;
+    // switch (objective.getScoringSide()) {
+    //   case FRONT:
+    //     return true;
+    //   case BACK:
+    //     return false;
+    //   case EITHER:
+    //     if (preferFront.get()) {
+    //       return true;
+    //     } else {
+    //       var nodeTranslation = GeomUtil.translation3dTo2dXY(getNodeTranslation(objective));
+    //       var relativeRotation =
+    //           nodeTranslation
+    //               .minus(unflippedPose.getTranslation())
+    //               .getAngle()
+    //               .minus(unflippedPose.getRotation());
+    //       return relativeRotation.getCos() > 0.0;
+    //     }
+    //   default:
+    //     return true;
+    // }
   }
 
   /** Returns the position of the target node. */
